@@ -1,0 +1,10 @@
+{
+    "id": "mpeasy-obsidian",
+    "name": "MPEasy",
+    "version": "1.0.0",
+    "minAppVersion": "1.0.0",
+    "description": "一个强大的 Markdown 格式化工具，专为微信公众号排版设计。",
+    "author": "Your Name",
+    "authorUrl": "",
+    "isDesktopOnly": false
+}
