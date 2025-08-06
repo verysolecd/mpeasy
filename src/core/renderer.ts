@@ -69,28 +69,10 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
         processedTheme.styles.block = processedTheme.styles.block || {};
 
         const renderer: RendererObject = {
-            async code(code, language) {
+            code(code, language) {
                 if (language === 'mermaid') {
-                    try {
-                        // @ts-ignore
-                        if (!iframeWindow.mermaid) {
-                            await new Promise((resolve, reject) => {
-                                const script = iframeWindow.document.createElement('script');
-                                script.src = currentOpts.mermaidPath;
-                                script.onload = resolve;
-                                script.onerror = () => reject(new Error('Failed to load mermaid.js'));
-                                iframeWindow.document.head.appendChild(script);
-                            });
-                        }
-                        // @ts-ignore
-                        const mermaid = iframeWindow.mermaid;
-                        mermaid.initialize({ startOnLoad: false });
-                        const { svg } = await mermaid.render('mermaid-' + Date.now(), code);
-                        return `<div class="mermaid">${svg}</div>`;
-                    } catch (error) {
-                        console.error('Mermaid rendering failed:', error);
-                        return `<pre class="mermaid-error">Mermaid rendering failed: ${error.message}</pre>`;
-                    }
+                    // 对于 mermaid，我们使用占位符，实际的异步渲染在 parse 方法中处理
+                    return `<div class="mermaid-async" data-mermaid-code="${encodeURIComponent(code)}">Loading mermaid diagram...</div>`;
                 }
                 const validLanguage = hljs.getLanguage(language || '') ? language : 'plaintext';
                 const stringCode = String(code || '');
@@ -118,7 +100,7 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
             markedToc(),
         ];
 
-        return new Marked({ renderer, extensions, breaks: true, gfm: true, async: true });
+        return new Marked({ renderer, extensions, breaks: true, gfm: true, async: false });
     };
 
     localMarked = createMarkedInstance(opts);
@@ -129,7 +111,85 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
     }
 
     async function parse(markdown: string): Promise<string> {
-        return await localMarked.parse(markdown) as string;
+        let html = localMarked.parse(markdown) as string;
+        
+        // 处理 mermaid 图表的异步渲染
+        const mermaidRegex = /<div class="mermaid-async" data-mermaid-code="([^"]*)">Loading mermaid diagram...<\/div>/g;
+        const mermaidMatches = [...html.matchAll(mermaidRegex)];
+        
+        for (const match of mermaidMatches) {
+            const encodedCode = match[1];
+            const code = decodeURIComponent(encodedCode);
+            
+            try {
+                // @ts-ignore
+                if (!iframeWindow.mermaid) {
+                    await new Promise((resolve, reject) => {
+                        const script = iframeWindow.document.createElement('script');
+                        script.src = opts.mermaidPath;
+                        script.onload = resolve;
+                        script.onerror = () => reject(new Error('Failed to load mermaid.js'));
+                        iframeWindow.document.head.appendChild(script);
+                    });
+                }
+                // @ts-ignore
+                const mermaid = iframeWindow.mermaid;
+                mermaid.initialize({ startOnLoad: false });
+                const { svg } = await mermaid.render('mermaid-' + Date.now(), code);
+                html = html.replace(match[0], `<div class="mermaid">${svg}</div>`);
+            } catch (error) {
+                console.error('Mermaid rendering failed:', error);
+                html = html.replace(match[0], `<pre class="mermaid-error">Mermaid rendering failed: ${error.message}</pre>`);
+            }
+        }
+
+        // 处理 MathJax 公式的异步渲染
+        const katexRegex = /<span class="(inline-katex|block-katex)-placeholder" data-katex-text="([^"]*)" data-display="([^"]*)">Loading math...<\/span>/g;
+        const katexMatches = [...html.matchAll(katexRegex)];
+        
+        for (const match of katexMatches) {
+            const displayType = match[1];
+            const encodedText = match[2];
+            const display = match[3] === 'true';
+            const text = decodeURIComponent(encodedText);
+            
+            try {
+                // @ts-ignore
+                if (!iframeWindow.MathJax) {
+                    await new Promise((resolve, reject) => {
+                        const script = iframeWindow.document.createElement('script');
+                        script.src = opts.mathjaxPath;
+                        script.onload = resolve;
+                        script.onerror = () => reject(new Error('Failed to load MathJax'));
+                        iframeWindow.document.head.appendChild(script);
+                    });
+                }
+                // @ts-ignore
+                iframeWindow.MathJax.texReset();
+                // @ts-ignore
+                const mjxContainer = iframeWindow.MathJax.tex2svg(text, { display });
+                const svg = mjxContainer.firstChild;
+                const width = svg.style['min-width'] || svg.getAttribute('width');
+                svg.removeAttribute('width');
+
+                svg.style = `max-width: 300vw !important; display: initial; flex-shrink: 0;`;
+                svg.style.width = width;
+
+                let renderedHtml;
+                if (!display) {
+                    renderedHtml = `<span>${svg.outerHTML}</span>`;
+                } else {
+                    renderedHtml = `<section>${svg.outerHTML}</section>`;
+                }
+                
+                html = html.replace(match[0], renderedHtml);
+            } catch (error) {
+                console.error('MathJax rendering failed:', error);
+                html = html.replace(match[0], `<pre class="mathjax-error">MathJax rendering failed: ${error.message}</pre>`);
+            }
+        }
+        
+        return html;
     }
 
     function parseFrontMatterAndContent(content: string) {

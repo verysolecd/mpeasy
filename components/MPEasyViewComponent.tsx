@@ -56,7 +56,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         // Pass all necessary options, including static props
         const initialOpts: IOpts = {
             ...opts as IOpts, // Cast to IOpts, assuming all required fields are present or optional
-            customCSS,
+            customCSS: customCss,
             mermaidPath,
             mathjaxPath,
         };
