@@ -1,10 +1,15 @@
 import type { PropertiesHyphen } from 'csstype';
 
+export type Block = | `container` | `h1` | `h2` | `h3` | `h4` | `h5` | `h6` | `p` | `blockquote` | `blockquote_p` | `blockquote_title` | `code` | `code_pre` | `hr` | `image` | `ol` | `ul` | `block_katex`;
+export type Inline = | `listitem` | `codespan` | `link` | `wx_link` | `strong` | `table` | `thead` | `td` | `footnote` | `figcaption` | `em` | `inline_katex`;
+
 // A basic theme structure
 export interface Theme {
+    name: string;
     base: PropertiesHyphen;
     inline: Record<string, PropertiesHyphen>;
     block: Record<string, PropertiesHyphen>;
+    styles: ThemeStyles;
 }
 
 // Options for the renderer
@@ -16,6 +21,12 @@ export interface IOpts {
     legend?: string;
     citeStatus?: boolean;
     countStatus?: boolean;
+    isMacCodeBlock?: boolean;
+    codeBlockTheme?: string;
+    primaryColor?: string;
+    customCSS?: string;
+    mermaidPath?: string;
+    mathjaxPath?: string;
 }
 
 // Flattened theme styles
@@ -25,14 +36,8 @@ export interface ThemeStyles {
 
 // API returned by the renderer initializer
 export interface RendererAPI {
-    buildAddition(): string;
-    buildFootnotes(): string;
     setOptions(newOpts: Partial<IOpts>): void;
-    reset(newOpts: Partial<IOpts>): void;
-    parseFrontMatterAndContent(markdownText: string): { yamlData: any; markdownContent: string; readingTime: any };
-    buildReadingTime(readingTime: any): string;
-    createContainer(content: string): string;
-    getOpts(): IOpts;
+    parseFrontMatterAndContent(content: string): { frontMatter: any; markdownContent: string; };
     parse(markdown: string): string | Promise<string>;
 }
 
@@ -55,4 +60,10 @@ export interface AlertVariantItem {
     type: string;
     icon: string;
     title?: string;
+}
+
+export interface HeadingItem {
+    text: string;
+    depth: number;
+    slug: string;
 }

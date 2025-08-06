@@ -5,7 +5,9 @@
     "main": "main.js",
     "scripts": {
         "dev": "node esbuild.config.mjs --watch",
-        "build": "node esbuild.config.mjs production"
+        "build": "npm run build:libs && npm run build:plugin",
+        "build:plugin": "node esbuild.config.mjs production",
+        "build:libs": "node esbuild.config.mjs libs"
     },
     "keywords": [],
     "author": "",
@@ -23,7 +25,9 @@
         "es-toolkit": "^1.39.8",
         "front-matter": "^4.0.2",
         "highlight.js": "^11.11.1",
-        "marked": "^16.1.1",
+        "juice": "^11.0.1",
+        "marked": "^16.1.2",
+        "mathjax": "^4.0.0",
         "mermaid": "^11.9.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",

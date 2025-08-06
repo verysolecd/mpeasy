@@ -1,0 +1,15 @@
+{
+  "wxAppId": "",
+  "wxSecret": "",
+  "wxToken": "",
+  "themeName": "grace",
+  "fontSize": "16px",
+  "isUseIndent": true,
+  "primaryColor": "#df0707",
+  "legend": "alt",
+  "isMacCodeBlock": true,
+  "isCiteStatus": true,
+  "isCountStatus": true,
+  "useCustomCSS": true,
+  "codeBlockTheme": "atom-one-dark.css"
+}

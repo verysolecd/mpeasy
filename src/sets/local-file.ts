@@ -1,7 +1,7 @@
 import {MarkedExtension, Token, Tokens} from "marked";
 import {MarkdownView, requestUrl, TAbstractFile, TFile} from "obsidian";
 import {NMPSettings} from "../settings";
-import {Extension} from "./extension";
+// import {Extension} from "./extension";
 
 declare module 'obsidian' {
 	interface Vault {
@@ -73,7 +73,7 @@ export class LocalImageManager {
 }
 
 
-export class LocalFile extends Extension {
+export class LocalFile /*extends Extension*/ {
 	index: number = 0;
 
 	getName(): string {

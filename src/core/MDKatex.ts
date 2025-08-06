@@ -2,22 +2,39 @@ const inlineRule = /^(\$){1,2}(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1(?=[\s?
 const inlineRuleNonStandard = /^(\$){1,2}(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/;
 const blockRule = /^\s{0,3}(\$){1,2}[ \t]*\n([\s\S]+?)\n\s{0,3}\1[ \t]*(?:\n|$)/;
 
-function createRenderer(display, inlineStyle, blockStyle, iframeWindow) {
-  return (token) => {
-    iframeWindow.MathJax.texReset()
-    const mjxContainer = iframeWindow.MathJax.tex2svg(token.text, { display })
-    const svg = mjxContainer.firstChild
-    const width = svg.style[`min-width`] || svg.getAttribute(`width`)
-    svg.removeAttribute(`width`)
+function createRenderer(display, inlineStyle, blockStyle, iframeWindow, mathjaxPath) {
+  return async (token) => {
+    try {
+        // @ts-ignore
+        if (!iframeWindow.MathJax) {
+            await new Promise((resolve, reject) => {
+                const script = iframeWindow.document.createElement('script');
+                script.src = mathjaxPath;
+                script.onload = resolve;
+                script.onerror = reject;
+                iframeWindow.document.head.appendChild(script);
+            });
+        }
+        // @ts-ignore
+        iframeWindow.MathJax.texReset();
+        // @ts-ignore
+        const mjxContainer = iframeWindow.MathJax.tex2svg(token.text, { display });
+        const svg = mjxContainer.firstChild;
+        const width = svg.style['min-width'] || svg.getAttribute('width');
+        svg.removeAttribute('width');
 
-    svg.style = `max-width: 300vw !important; display: initial; flex-shrink: 0;`
-    svg.style.width = width
+        svg.style = `max-width: 300vw !important; display: initial; flex-shrink: 0;`;
+        svg.style.width = width;
 
-    if (!display) {
-      return `<span ${inlineStyle}>${svg.outerHTML}</span>`
+        if (!display) {
+            return `<span style="${inlineStyle}">${svg.outerHTML}</span>`;
+        }
+
+        return `<section style="${blockStyle}">${svg.outerHTML}</section>`;
+    } catch (error) {
+        console.error('MathJax rendering failed:', error);
+        return `<pre class="mathjax-error">MathJax rendering failed. Check console for details.</pre>`;
     }
-
-    return `<section ${blockStyle}>${svg.outerHTML}</section>`
   }
 }
 
@@ -82,11 +99,12 @@ function blockKatex(options, renderer) {
   }
 }
 
-export function MDKatex(options, inlineStyle, blockStyle, iframeWindow) {
+export function MDKatex(options, inlineStyle, blockStyle, iframeWindow, mathjaxPath) {
   return {
+    name: 'katex',
     extensions: [
-      inlineKatex(options, createRenderer(false, inlineStyle, blockStyle, iframeWindow)),
-      blockKatex(options, createRenderer(true, inlineStyle, blockStyle, iframeWindow)),
+      inlineKatex(options, createRenderer(false, inlineStyle, blockStyle, iframeWindow, mathjaxPath)),
+      blockKatex(options, createRenderer(true, inlineStyle, blockStyle, iframeWindow, mathjaxPath)),
     ],
   }
 }
