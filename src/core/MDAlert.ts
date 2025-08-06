@@ -57,6 +57,7 @@ export default function markedAlert(options: AlertOptions = {}): MarkedExtension
   }
 
   return {
+    name: 'mpeasy-alert',
     walkTokens(token) {
       if (token.type !== `blockquote`)
         return

@@ -10,6 +10,7 @@ export default function markedFootnotes(): MarkedExtension {
   const fnMap = new Map<string, MapContent>()
 
   return {
+    name: 'mpeasy-footnotes',
     extensions: [
       {
         name: `footnoteDef`,

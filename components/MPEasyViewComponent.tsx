@@ -1,44 +1,67 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { App, Notice, requestUrl } from 'obsidian';
+import { App, Notice, requestUrl, TFile } from 'obsidian';
 import Header from './Header';
 import StylePanel from './StylePanel';
 import { initRenderer } from '../src/core/renderer';
 import { themeMap } from '../src/core/theme';
-import type { RendererAPI, IOpts } from '../types';
+import type { RendererAPI, IOpts } from '../src/types';
 import { UploadModal } from './UploadModal';
 import { wxAddDraft, wxUploadImage } from '../src/core/wechatApi';
 import { processLocalImages } from '../src/core/htmlPostProcessor';
 import type MPEasyPlugin from '../main';
+import { processClipboardContent } from '../src/utils';
 
 interface MPEasyViewProps {
-    markdownContent: string;
+    file: TFile;
     app: App;
     plugin: MPEasyPlugin;
 }
 
-const MPEasyViewComponent = ({ markdownContent, app, plugin }: MPEasyViewProps) => {
+const MPEasyViewComponent = ({ file, app, plugin }: MPEasyViewProps) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [rendererApi, setRendererApi] = useState<RendererAPI | null>(null);
-    const [opts, setOpts] = useState<IOpts>(() => ({
+    const [markdownContent, setMarkdownContent] = useState('');
+
+    const [opts, setOpts] = useState<Partial<IOpts>>(() => ({
         theme: themeMap[plugin.settings.themeName as keyof typeof themeMap] || themeMap.default,
         size: plugin.settings.fontSize,
         isUseIndent: plugin.settings.isUseIndent,
-        legend: 'alt',
-        citeStatus: true,
-        countStatus: true,
+        legend: plugin.settings.legend,
+        citeStatus: plugin.settings.isCiteStatus,
+        countStatus: plugin.settings.isCountStatus,
+        isMacCodeBlock: plugin.settings.isMacCodeBlock,
+        codeBlockTheme: plugin.settings.codeBlockTheme,
+        primaryColor: plugin.settings.primaryColor,
+        fonts: `"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "\u5FAE软雅黑", Arial, sans-serif`,
     }));
 
+    useEffect(() => {
+        if (file) {
+            app.vault.read(file).then(setMarkdownContent);
+        }
+    }, [file, app.vault]);
+
     const handleCopy = async () => {
-        if (!rendererApi) {
+        if (!rendererApi || !iframeRef.current) {
             new Notice('渲染器尚未准备好。');
             return;
         }
-        const { markdownContent: body } = rendererApi.parseFrontMatterAndContent(markdownContent);
-        const rawHtml = rendererApi.parse(body);
-        const finalHtml = await processLocalImages(rawHtml, plugin);
-        navigator.clipboard.writeText(finalHtml).then(() => {
+        const outputElement = iframeRef.current.contentDocument.getElementById('output');
+        if (!outputElement) {
+            new Notice('无法找到渲染内容。');
+            return;
+        }
+
+        processClipboardContent(outputElement, opts.primaryColor || '#000000');
+
+        const blob = new Blob([outputElement.outerHTML], { type: 'text/html' });
+        const clipboardItem = new ClipboardItem({ 'text/html': blob });
+
+        navigator.clipboard.write([clipboardItem]).then(() => {
             new Notice('已成功复制到剪贴板！');
+        }, (err) => {
+            new Notice('复制失败: ' + err);
         });
     };
 
@@ -48,18 +71,20 @@ const MPEasyViewComponent = ({ markdownContent, app, plugin }: MPEasyViewProps) 
 
             new Notice('正在上传封面图...');
             let thumb_media_id = '';
-            try {
-                const imageRes = await requestUrl({ url: coverUrl, method: 'GET', throw: false });
-                if (imageRes.status !== 200) throw new Error('封面图下载失败');
-                const imageBlob = new Blob([imageRes.arrayBuffer], { type: imageRes.headers['content-type'] });
+            if (coverUrl) {
+                try {
+                    const imageRes = await requestUrl({ url: coverUrl, method: 'GET', throw: false });
+                    if (imageRes.status !== 200) throw new Error('封面图下载失败');
+                    const imageBlob = new Blob([imageRes.arrayBuffer], { type: imageRes.headers['content-type'] });
 
-                const uploadRes = await wxUploadImage(plugin.settings, imageBlob, 'cover.jpg');
-                if (!uploadRes.media_id) throw new Error(`封面图上传失败: ${uploadRes.errmsg}`);
-                thumb_media_id = uploadRes.media_id;
-                new Notice('封面图上传成功!');
-            } catch (e) {
-                new Notice(`封面图处理失败: ${e.message}`);
-                return;
+                    const uploadRes = await wxUploadImage(plugin.settings, imageBlob, 'cover.jpg');
+                    if (!uploadRes.media_id) throw new Error(`封面图上传失败: ${uploadRes.errmsg}`);
+                    thumb_media_id = uploadRes.media_id;
+                    new Notice('封面图上传成功!');
+                } catch (e) {
+                    new Notice(`封面图处理失败: ${e.message}`);
+                    return;
+                }
             }
 
             new Notice('正在上传草稿...');
@@ -86,16 +111,14 @@ const MPEasyViewComponent = ({ markdownContent, app, plugin }: MPEasyViewProps) 
 
     const handleOptsChange = (newOpts: Partial<IOpts>) => {
         const updatedOpts = { ...opts, ...newOpts };
-        if (newOpts.theme) {
-            updatedOpts.theme = themeMap[newOpts.theme as any as keyof typeof themeMap] || opts.theme;
-            plugin.settings.themeName = updatedOpts.theme.name;
+
+        if (newOpts.theme && typeof newOpts.theme === 'string') {
+            plugin.settings.themeName = newOpts.theme;
+            updatedOpts.theme = themeMap[newOpts.theme as keyof typeof themeMap] || opts.theme;
+        } else {
+            Object.assign(plugin.settings, newOpts);
         }
-        if (newOpts.isUseIndent !== undefined) {
-            plugin.settings.isUseIndent = newOpts.isUseIndent;
-        }
-        if (newOpts.size) {
-            plugin.settings.fontSize = newOpts.size;
-        }
+
         setOpts(updatedOpts);
         rendererApi?.setOptions(updatedOpts);
         plugin.saveSettings();
@@ -106,12 +129,7 @@ const MPEasyViewComponent = ({ markdownContent, app, plugin }: MPEasyViewProps) 
         const iframeWindow = iframeRef.current.contentWindow;
         if (!iframeWindow) return;
 
-        const finalOpts = {
-            ...opts,
-            fonts: `"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "\u5FAE软雅黑", Arial, sans-serif`,
-        };
-
-        const api = initRenderer(finalOpts, iframeWindow);
+        const api = initRenderer(opts as IOpts, iframeWindow);
         setRendererApi(api);
 
         const script = iframeWindow.document.createElement('script');
@@ -122,13 +140,42 @@ const MPEasyViewComponent = ({ markdownContent, app, plugin }: MPEasyViewProps) 
     }, []);
 
     useEffect(() => {
-        if (!rendererApi || !iframeRef.current) return;
+        if (!rendererApi || !iframeRef.current || !markdownContent) return;
 
-        const parsedHtml = rendererApi.parse(markdownContent);
-        const finalHtml = `<html><body>${parsedHtml}</body></html>`;
-        iframeRef.current.srcdoc = finalHtml;
+        const renderPreview = async () => {
+            const parsedHtml = rendererApi.parse(markdownContent);
+            const finalHtml = await processLocalImages(parsedHtml, plugin);
 
-    }, [markdownContent, rendererApi, opts]);
+            try {
+                const hljsThemeUrl = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/${opts.codeBlockTheme}`;
+                const hljsThemeCss = await requestUrl({ url: hljsThemeUrl });
+
+                if (iframeRef.current) {
+                    const doc = iframeRef.current.contentDocument;
+                    if (doc) {
+                        doc.open();
+                        doc.write(`<html><head><style>${hljsThemeCss.text}</style></head><body><section id="output">${finalHtml}</section></body></html>`);
+                        doc.close();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading highlight.js theme:', error);
+                new Notice('加载代码块主题失败，请检查网络连接。');
+                // Fallback rendering without the theme
+                if (iframeRef.current) {
+                    const doc = iframeRef.current.contentDocument;
+                    if (doc) {
+                        doc.open();
+                        doc.write(`<html><head></head><body><section id="output">${finalHtml}</section></body></html>`);
+                        doc.close();
+                    }
+                }
+            }
+        };
+
+        renderPreview();
+
+    }, [markdownContent, rendererApi, opts, plugin]);
 
     return (
         <div className="mpeasy-view-container">

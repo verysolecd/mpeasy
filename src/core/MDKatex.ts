@@ -84,6 +84,7 @@ function blockKatex(options, renderer) {
 
 export function MDKatex(options, inlineStyle, blockStyle, iframeWindow) {
   return {
+    name: 'katex',
     extensions: [
       inlineKatex(options, createRenderer(false, inlineStyle, blockStyle, iframeWindow)),
       blockKatex(options, createRenderer(true, inlineStyle, blockStyle, iframeWindow)),

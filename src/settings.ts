@@ -1,10 +1,23 @@
 export interface MPEasySettings {
+    // WeChat Official Account Settings
     wxAppId: string;
     wxSecret: string;
     wxToken: string;
+
+    // Typography Settings
     themeName: string;
-    isUseIndent: boolean;
     fontSize: string;
+    isUseIndent: boolean;
+    primaryColor: string;
+    legend: string; // 'alt', 'title', or 'none'
+
+    // Feature Toggles
+    isMacCodeBlock: boolean;
+    isCiteStatus: boolean;
+    isCountStatus: boolean;
+
+    // Code Block Settings
+    codeBlockTheme: string;
 }
 
 export const DEFAULT_SETTINGS: MPEasySettings = {
@@ -12,6 +25,12 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     wxSecret: '',
     wxToken: '',
     themeName: 'default',
-    isUseIndent: true,
     fontSize: '16px',
+    isUseIndent: true,
+    primaryColor: '#000000',
+    legend: 'alt',
+    isMacCodeBlock: true,
+    isCiteStatus: true,
+    isCountStatus: true,
+    codeBlockTheme: 'atom-one-dark.css', // A default theme
 }

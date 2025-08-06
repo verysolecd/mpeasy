@@ -2,67 +2,7 @@ import { Plugin } from 'obsidian';
 import { MPEasyView, VIEW_TYPE_MPEASY } from './view';
 import { MPEasySettings, DEFAULT_SETTINGS } from './src/settings';
 import { MPEasySettingTab } from './src/setting-tab';
-
-const STYLES = `
-.mpeasy-view-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.mpeasy-view-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.mpeasy-header-title {
-    margin: 0;
-    font-size: 1.2em;
-}
-
-.mpeasy-main-content {
-    display: flex;
-    flex-grow: 1;
-    height: calc(100% - 50px); /* Adjust based on header height */
-}
-
-.mpeasy-preview-wrapper {
-    flex-grow: 1;
-    padding: 15px;
-    overflow-y: auto;
-}
-
-/* Style Panel Styles */
-.style-panel-container {
-    padding: 10px;
-    border-left: 1px solid var(--background-modifier-border);
-}
-
-.style-panel-title {
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 1.1em;
-}
-
-.style-panel-form .style-panel-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.style-panel-form label {
-    font-size: 0.9em;
-}
-
-.style-panel-form select,
-.style-panel-form input {
-    max-width: 60%;
-}
-`;
+import STYLES from './styles.css';
 
 export default class MPEasyPlugin extends Plugin {
     settings: MPEasySettings;

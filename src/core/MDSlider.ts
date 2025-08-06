@@ -9,6 +9,7 @@ import { getStyleString } from './renderer';
  */
 export default function markedSlider(options: { styles?: ThemeStyles } = {}): MarkedExtension {
   return {
+    name: 'mpeasy-slider',
     extensions: [
       {
         name: `horizontalSlider`,
