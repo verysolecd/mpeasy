@@ -53,7 +53,7 @@ function buildThemeStyles(theme: Theme, opts: Partial<IOpts>): ThemeStyles {
 }
 
 export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI {
-    console.log('Initializing MPEasy Renderer v1.0.1'); // Debugging line
+    console.log('Initializing MPEasy Renderer v1.0.2'); // Debugging line
     let opts = options;
     let localMarked: Marked;
 
@@ -118,7 +118,7 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
             markedToc(),
         ];
 
-        return new Marked().use({ renderer, extensions, breaks: true, gfm: true, async: true });
+        return new Marked({ renderer, extensions, breaks: true, gfm: true, async: true });
     };
 
     localMarked = createMarkedInstance(opts);

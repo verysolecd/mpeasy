@@ -26,6 +26,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     const [rendererApi, setRendererApi] = useState<RendererAPI | null>(null);
     const [markdownContent, setMarkdownContent] = useState('');
 
+    // Initialize opts state without static props
     const [opts, setOpts] = useState<Partial<IOpts>>(() => ({
         theme: themeMap[plugin.settings.themeName as keyof typeof themeMap] || themeMap.default,
         size: plugin.settings.fontSize,
@@ -37,14 +38,56 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         codeBlockTheme: plugin.settings.codeBlockTheme,
         primaryColor: plugin.settings.primaryColor,
         fonts: `"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "\u5FAE软雅黑", Arial, sans-serif`,
-        customCSS: customCss,
     }));
 
+    // Effect to read file content
     useEffect(() => {
         if (file) {
             app.vault.read(file).then(setMarkdownContent);
         }
     }, [file, app.vault]);
+
+    // Effect to initialize renderer (runs only once on mount)
+    useEffect(() => {
+        if (!iframeRef.current) return;
+        const iframeWindow = iframeRef.current.contentWindow;
+        if (!iframeWindow) return;
+
+        // Pass all necessary options, including static props
+        const initialOpts: IOpts = {
+            ...opts as IOpts, // Cast to IOpts, assuming all required fields are present or optional
+            customCSS,
+            mermaidPath,
+            mathjaxPath,
+        };
+
+        const api = initRenderer(initialOpts, iframeWindow);
+        setRendererApi(api);
+
+        // Cleanup function if needed (e.g., unmount renderer)
+        // return () => { /* cleanup */ };
+    }, []); // Empty dependency array ensures this runs only once
+
+    // Effect to update renderer options when opts state changes
+    useEffect(() => {
+        if (rendererApi) {
+            // Only update options that are part of the opts state
+            const currentOpts: Partial<IOpts> = {
+                theme: opts.theme,
+                size: opts.size,
+                isUseIndent: opts.isUseIndent,
+                legend: opts.legend,
+                citeStatus: opts.citeStatus,
+                countStatus: opts.countStatus,
+                isMacCodeBlock: opts.isMacCodeBlock,
+                codeBlockTheme: opts.codeBlockTheme,
+                primaryColor: opts.primaryColor,
+                fonts: opts.fonts,
+                // customCSS, mermaidPath, mathjaxPath are static for the renderer instance
+            };
+            rendererApi.setOptions(currentOpts);
+        }
+    }, [opts, rendererApi]); // Triggered when opts state or rendererApi changes
 
     const handleCopy = async () => {
         if (!rendererApi || !iframeRef.current) {
@@ -124,26 +167,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         }
 
         setOpts(updatedOpts);
-        rendererApi?.setOptions(updatedOpts);
         plugin.saveSettings();
     };
 
-    useEffect(() => {
-        if (!iframeRef.current) return;
-        const iframeWindow = iframeRef.current.contentWindow;
-        if (!iframeWindow) return;
-
-        const fullOpts = {
-            ...opts,
-            mermaidPath,
-            mathjaxPath,
-        };
-
-        const api = initRenderer(fullOpts as IOpts, iframeWindow);
-        setRendererApi(api);
-
-    }, [opts, mermaidPath, mathjaxPath]);
-
+    // The renderPreview useEffect will now correctly depend on rendererApi and markdownContent
     useEffect(() => {
         if (!rendererApi || !iframeRef.current || !markdownContent) return;
 
@@ -172,7 +199,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
         renderPreview();
 
-    }, [markdownContent, rendererApi, opts, plugin, app.vault.adapter]);
+    }, [markdownContent, rendererApi, opts.codeBlockTheme, plugin, app.vault.adapter]); // opts.codeBlockTheme is specific enough
 
     return (
         <div className="mpeasy-view-container">
