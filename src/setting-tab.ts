@@ -3,7 +3,6 @@ import MPEasyPlugin from "./main";
 import { wxGetToken } from "./core/wechatApi";
 import { themeOptions } from "./core/theme";
 
-// You might want to define this in a constants file
 const CODE_BLOCK_THEMES = [
     'a11y-dark.css',
     'a11y-light.css',
@@ -74,6 +73,16 @@ export class MPEasySettingTab extends PluginSettingTab {
                 }));
 
         containerEl.createEl('h2', {text: '排版与功能设置'});
+
+        new Setting(containerEl)
+            .setName('启用自定义 CSS')
+            .setDesc('开启后，将加载插件根目录下 assets/custom.css 文件中的样式。')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.useCustomCSS)
+                .onChange(async (value) => {
+                    this.plugin.settings.useCustomCSS = value;
+                    await this.plugin.saveSettings();
+                }));
 
         new Setting(containerEl)
             .setName('主题选择')

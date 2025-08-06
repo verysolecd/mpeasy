@@ -23,10 +23,17 @@ export class MPEasyView extends ItemView {
         if (!this.root) {
             this.root = createRoot(container);
         }
+
+        const mermaidPath = this.app.vault.adapter.getResourcePath(`${this.plugin.manifest.dir}/mermaid.js`);
+        const mathjaxPath = this.app.vault.adapter.getResourcePath(`${this.plugin.manifest.dir}/mathjax.js`);
+
         const component = React.createElement(MPEasyViewComponent, { 
             file: file, 
             app: this.app, 
-            plugin: this.plugin 
+            plugin: this.plugin,
+            customCss: this.plugin.customCss,
+            mermaidPath: mermaidPath,
+            mathjaxPath: mathjaxPath,
         });
         this.root.render(component);
     }

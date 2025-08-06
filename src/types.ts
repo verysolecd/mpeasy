@@ -25,6 +25,8 @@ export interface IOpts {
     codeBlockTheme?: string;
     primaryColor?: string;
     customCSS?: string;
+    mermaidPath?: string;
+    mathjaxPath?: string;
 }
 
 // Flattened theme styles

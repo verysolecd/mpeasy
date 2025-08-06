@@ -2,7 +2,7 @@ import type { RendererObject, MarkedExtension, PropertiesHyphen } from 'marked';
 import { Marked } from 'marked';
 import frontMatter from 'front-matter';
 import hljs from 'highlight.js';
-import type { IOpts, RendererAPI, Theme, ThemeStyles, Block, Inline } from '../types';
+import type { IOpts, RendererAPI, Theme, ThemeStyles } from '../types';
 import { customCssWithTemplate, css2json } from '../utils';
 import { cloneDeep, toMerged } from 'es-toolkit';
 
@@ -53,6 +53,7 @@ function buildThemeStyles(theme: Theme, opts: Partial<IOpts>): ThemeStyles {
 }
 
 export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI {
+    console.log('Initializing MPEasy Renderer v1.0.1'); // Debugging line
     let opts = options;
     let localMarked: Marked;
 
@@ -63,16 +64,42 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
             currentOpts.theme || fallbackTheme
         );
 
-        processedTheme.styles = buildThemeStyles(processedTheme, currentOpts, currentOpts.fonts, currentOpts.size);
+        processedTheme.styles = buildThemeStyles(processedTheme, currentOpts);
+        processedTheme.styles.inline = processedTheme.styles.inline || {};
+        processedTheme.styles.block = processedTheme.styles.block || {};
 
         const renderer: RendererObject = {
-            code(code, language) {
+            async code(code, language) {
                 if (language === 'mermaid') {
-                    return `<div class="mermaid">${code}</div>`;
+                    try {
+                        // @ts-ignore
+                        if (!iframeWindow.mermaid) {
+                            await new Promise((resolve, reject) => {
+                                const script = iframeWindow.document.createElement('script');
+                                script.src = currentOpts.mermaidPath;
+                                script.onload = resolve;
+                                script.onerror = () => reject(new Error('Failed to load mermaid.js'));
+                                iframeWindow.document.head.appendChild(script);
+                            });
+                        }
+                        // @ts-ignore
+                        const mermaid = iframeWindow.mermaid;
+                        mermaid.initialize({ startOnLoad: false });
+                        const { svg } = await mermaid.render('mermaid-' + Date.now(), code);
+                        return `<div class="mermaid">${svg}</div>`;
+                    } catch (error) {
+                        console.error('Mermaid rendering failed:', error);
+                        return `<pre class="mermaid-error">Mermaid rendering failed: ${error.message}</pre>`;
+                    }
                 }
                 const validLanguage = hljs.getLanguage(language || '') ? language : 'plaintext';
                 const stringCode = String(code || '');
                 const highlightedCode = hljs.highlight(stringCode, { language: validLanguage || 'plaintext' }).value;
+
+                if (currentOpts.isMacCodeBlock) {
+                    return `<style>.mac-sign{padding:10px 10px 0;text-align:left;border-top-left-radius:5px;border-top-right-radius:5px;background-color:#333;}.mac-sign-item{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;}.mac-sign-item.red{background-color:#ff5f56;}.mac-sign-item.yellow{background-color:#ffbd2e;}.mac-sign-item.green{background-color:#27c93f;}</style><pre class="hljs" style="margin-top:0;border-top-left-radius:0;border-top-right-radius:0;"><div class="mac-sign"><span class="mac-sign-item red"></span><span class="mac-sign-item yellow"></span><span class="mac-sign-item green"></span></div><code class="${validLanguage}">${highlightedCode}</code></pre>`;
+                }
+
                 return `<pre><code class="hljs ${validLanguage}">${highlightedCode}</code></pre>`;
             },
         };
@@ -80,17 +107,18 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
         const extensions: MarkedExtension[] = [
             markedAlert({ styles: processedTheme.styles }),
             markedFootnotes(),
-            MDKatex({}, getStyleString(processedTheme.styles.inline?.code), getStyleString(processedTheme.styles.block?.code), iframeWindow),
+            MDKatex(
+                { styles: processedTheme.styles }, 
+                getStyleString(processedTheme.styles.inline?.code),
+                getStyleString(processedTheme.styles.block?.code),
+                iframeWindow, 
+                currentOpts.mathjaxPath
+            ),
             markedSlider({ styles: processedTheme.styles }),
             markedToc(),
         ];
 
-        return new Marked({
-            renderer,
-            extensions,
-            breaks: true,
-            gfm: true,
-        });
+        return new Marked().use({ renderer, extensions, breaks: true, gfm: true, async: true });
     };
 
     localMarked = createMarkedInstance(opts);
@@ -100,8 +128,8 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
         localMarked = createMarkedInstance(opts);
     }
 
-    function parse(markdown: string): string {
-        return localMarked.parse(markdown) as string;
+    async function parse(markdown: string): Promise<string> {
+        return await localMarked.parse(markdown) as string;
     }
 
     function parseFrontMatterAndContent(content: string) {

@@ -7,10 +7,24 @@ import STYLES from './styles.css';
 export default class MPEasyPlugin extends Plugin {
     settings: MPEasySettings;
     styleEl: HTMLElement;
+    customCss: string;
 
     async onload() {
         console.log('正在加载 MPEasy 插件');
         await this.loadSettings();
+
+        if (this.settings.useCustomCSS) {
+            try {
+                this.customCss = await this.app.vault.adapter.read(
+                    `${this.app.vault.configDir}/plugins/mpeasy/assets/custom.css`
+                );
+            } catch (e) {
+                console.error('Failed to load custom.css', e);
+                this.customCss = '';
+            }
+        } else {
+            this.customCss = '';
+        }
 
         this.addSettingTab(new MPEasySettingTab(this.app, this));
 
@@ -61,5 +75,17 @@ export default class MPEasyPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+        if (this.settings.useCustomCSS) {
+            try {
+                this.customCss = await this.app.vault.adapter.read(
+                    `${this.app.vault.configDir}/plugins/mpeasy/assets/custom.css`
+                );
+            } catch (e) {
+                console.error('Failed to load custom.css', e);
+                this.customCss = '';
+            }
+        } else {
+            this.customCss = '';
+        }
     }
 }

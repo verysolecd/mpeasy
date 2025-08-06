@@ -2,13 +2,14 @@
   "wxAppId": "",
   "wxSecret": "",
   "wxToken": "",
-  "themeName": "simple",
+  "themeName": "default",
   "fontSize": "16px",
   "isUseIndent": true,
-  "primaryColor": "#000000",
+  "primaryColor": "#df0707",
   "legend": "alt",
   "isMacCodeBlock": true,
   "isCiteStatus": true,
   "isCountStatus": true,
+  "useCustomCSS": true,
   "codeBlockTheme": "atom-one-dark.css"
 }

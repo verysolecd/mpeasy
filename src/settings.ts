@@ -15,6 +15,7 @@ export interface MPEasySettings {
     isMacCodeBlock: boolean;
     isCiteStatus: boolean;
     isCountStatus: boolean;
+    useCustomCSS: boolean; // Added this line
 
     // Code Block Settings
     codeBlockTheme: string;
@@ -32,5 +33,6 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     isMacCodeBlock: true,
     isCiteStatus: true,
     isCountStatus: true,
+    useCustomCSS: false, // Added this line
     codeBlockTheme: 'atom-one-dark.css', // A default theme
 }

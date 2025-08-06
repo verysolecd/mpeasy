@@ -1,7 +1,7 @@
 import type { MarkedExtension, Tokens } from 'marked'
 // 稍后我们会定义这些类型
 import type { ThemeStyles } from '../types'; 
-import { getStyleString } from './renderer';
+
 
 /**
  * A marked extension to support horizontal sliding images.

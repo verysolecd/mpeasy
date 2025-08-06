@@ -9,9 +9,19 @@ if you want to view the source, please visit the github repository of this plugi
 */
 `;
 
-const prod = (process.argv[2] === 'production');
+const buildMode = process.argv[2] || 'dev';
+const isProd = buildMode === 'production' || buildMode === 'libs';
 
-// esbuild plugin to handle css files
+const baseConfig = {
+    bundle: true,
+    target: 'es2018',
+    logLevel: 'info',
+    sourcemap: isProd ? false : 'inline',
+    treeShaking: true,
+    minify: isProd,
+    allowOverwrite: true,
+};
+
 const cssPlugin = {
     name: 'css-loader',
     setup(build) {
@@ -25,33 +35,75 @@ const cssPlugin = {
     },
 };
 
-esbuild.build({
-    banner: {
-        js: banner,
-    },
-    entryPoints: ['main.ts'],
-    bundle: true,
-    external: [
-        'obsidian',
-        'electron',
-        '@codemirror/autocomplete',
-        '@codemirror/collab',
-        '@codemirror/commands',
-        '@codemirror/language',
-        '@codemirror/lint',
-        '@codemirror/search',
-        '@codemirror/state',
-        '@codemirror/view',
-        '@lezer/common',
-        '@lezer/highlight',
-        '@lezer/lr',
-        ...builtins()
-    ],
-    format: 'cjs',
-    target: 'es2018',
-    logLevel: 'info',
-    sourcemap: prod ? false : 'inline',
-    treeShaking: true,
-    outfile: 'main.js',
-    plugins: [cssPlugin], // Add the css plugin here
-}).catch(() => process.exit(1));
+const buildPlugin = () => {
+    const pluginConfig = {
+        ...baseConfig,
+        banner: {
+            js: banner,
+        },
+        entryPoints: ['main.ts'],
+        external: [
+            'obsidian',
+            'electron',
+            '@codemirror/autocomplete',
+            '@codemirror/collab',
+            '@codemirror/commands',
+            '@codemirror/language',
+            '@codemirror/lint',
+            '@codemirror/search',
+            '@codemirror/state',
+            '@codemirror/view',
+            '@lezer/common',
+            '@lezer/highlight',
+            '@lezer/lr',
+            'mathjax-full/*',
+            ...builtins()
+        ],
+        format: 'cjs',
+        outfile: 'main.js',
+        plugins: [cssPlugin],
+    };
+
+    if (buildMode === 'watch') {
+        pluginConfig.watch = { onRebuild: (err) => err && console.error(err) };
+    }
+
+    esbuild.build(pluginConfig).catch(() => process.exit(1));
+};
+
+const buildLibs = () => {
+    // Build mermaid library
+    fs.writeFileSync('mermaid-entry.js', 'import mermaid from "mermaid"; window.mermaid = mermaid;');
+    esbuild.build({
+        ...baseConfig,
+        entryPoints: ['mermaid-entry.js'],
+        outfile: 'mermaid.js',
+        format: 'iife',
+    }).then(() => {
+        fs.unlinkSync('mermaid-entry.js');
+    }).catch(() => {
+        fs.unlinkSync('mermaid-entry.js');
+        process.exit(1)
+    });
+
+    // Build mathjax library
+    fs.writeFileSync('mathjax-entry.js', 'import "mathjax";');
+    esbuild.build({
+        ...baseConfig,
+        entryPoints: ['mathjax-entry.js'],
+        outfile: 'mathjax.js',
+        format: 'iife',
+        platform: 'node',
+    }).then(() => {
+        fs.unlinkSync('mathjax-entry.js');
+    }).catch(() => {
+        fs.unlinkSync('mathjax-entry.js');
+        process.exit(1)
+    });
+};
+
+if (buildMode === 'libs') {
+    buildLibs();
+} else {
+    buildPlugin();
+}

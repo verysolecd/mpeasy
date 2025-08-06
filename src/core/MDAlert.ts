@@ -1,6 +1,5 @@
 import type { MarkedExtension, Tokens } from 'marked'
 import type { AlertOptions, AlertVariantItem } from '../types'
-import { getStyleString } from './renderer'
 
 /**
  * https://github.com/bent10/marked-extensions/tree/main/packages/alert

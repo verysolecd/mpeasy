@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { App, Notice, requestUrl, TFile } from 'obsidian';
+import { App, Notice, TFile } from 'obsidian';
 import Header from './Header';
 import StylePanel from './StylePanel';
 import { initRenderer } from '../src/core/renderer';
@@ -16,9 +16,12 @@ interface MPEasyViewProps {
     file: TFile;
     app: App;
     plugin: MPEasyPlugin;
+    customCss: string;
+    mermaidPath: string;
+    mathjaxPath: string;
 }
 
-const MPEasyViewComponent = ({ file, app, plugin }: MPEasyViewProps) => {
+const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathjaxPath }: MPEasyViewProps) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [rendererApi, setRendererApi] = useState<RendererAPI | null>(null);
     const [markdownContent, setMarkdownContent] = useState('');
@@ -34,6 +37,7 @@ const MPEasyViewComponent = ({ file, app, plugin }: MPEasyViewProps) => {
         codeBlockTheme: plugin.settings.codeBlockTheme,
         primaryColor: plugin.settings.primaryColor,
         fonts: `"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "\u5FAE软雅黑", Arial, sans-serif`,
+        customCSS: customCss,
     }));
 
     useEffect(() => {
@@ -73,7 +77,7 @@ const MPEasyViewComponent = ({ file, app, plugin }: MPEasyViewProps) => {
             let thumb_media_id = '';
             if (coverUrl) {
                 try {
-                    const imageRes = await requestUrl({ url: coverUrl, method: 'GET', throw: false });
+                    const imageRes = await app.requestUrl({ url: coverUrl, method: 'GET', throw: false });
                     if (imageRes.status !== 200) throw new Error('封面图下载失败');
                     const imageBlob = new Blob([imageRes.arrayBuffer], { type: imageRes.headers['content-type'] });
 
@@ -89,7 +93,7 @@ const MPEasyViewComponent = ({ file, app, plugin }: MPEasyViewProps) => {
 
             new Notice('正在上传草稿...');
             const { markdownContent: body } = rendererApi.parseFrontMatterAndContent(markdownContent);
-            const rawHtml = rendererApi.parse(body);
+            const rawHtml = await rendererApi.parse(body);
             const finalHtml = await processLocalImages(rawHtml, plugin);
 
             try {
@@ -129,53 +133,46 @@ const MPEasyViewComponent = ({ file, app, plugin }: MPEasyViewProps) => {
         const iframeWindow = iframeRef.current.contentWindow;
         if (!iframeWindow) return;
 
-        const api = initRenderer(opts as IOpts, iframeWindow);
+        const fullOpts = {
+            ...opts,
+            mermaidPath,
+            mathjaxPath,
+        };
+
+        const api = initRenderer(fullOpts as IOpts, iframeWindow);
         setRendererApi(api);
 
-        const script = iframeWindow.document.createElement('script');
-        script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js";
-        script.async = true;
-        iframeWindow.document.head.appendChild(script);
-
-    }, []);
+    }, [opts, mermaidPath, mathjaxPath]);
 
     useEffect(() => {
         if (!rendererApi || !iframeRef.current || !markdownContent) return;
 
         const renderPreview = async () => {
-            const parsedHtml = rendererApi.parse(markdownContent);
+            const parsedHtml = await rendererApi.parse(markdownContent);
             const finalHtml = await processLocalImages(parsedHtml, plugin);
 
             try {
-                const hljsThemeUrl = `https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/${opts.codeBlockTheme}`;
-                const hljsThemeCss = await requestUrl({ url: hljsThemeUrl });
+                const hljsThemePath = `${plugin.manifest.dir}/node_modules/highlight.js/styles/${opts.codeBlockTheme}`;
+                const hljsThemeCss = await app.vault.adapter.read(hljsThemePath);
 
-                if (iframeRef.current) {
-                    const doc = iframeRef.current.contentDocument;
+                const iframe = iframeRef.current;
+                if (iframe) {
+                    const doc = iframe.contentDocument;
                     if (doc) {
                         doc.open();
-                        doc.write(`<html><head><style>${hljsThemeCss.text}</style></head><body><section id="output">${finalHtml}</section></body></html>`);
+                        doc.write(`<html><head><style>${hljsThemeCss}</style></head><body><section id="output">${finalHtml}</section></body></html>`);
                         doc.close();
                     }
                 }
             } catch (error) {
-                console.error('Error loading highlight.js theme:', error);
-                new Notice('加载代码块主题失败，请检查网络连接。');
-                // Fallback rendering without the theme
-                if (iframeRef.current) {
-                    const doc = iframeRef.current.contentDocument;
-                    if (doc) {
-                        doc.open();
-                        doc.write(`<html><head></head><body><section id="output">${finalHtml}</section></body></html>`);
-                        doc.close();
-                    }
-                }
+                console.error('Error during rendering:', error);
+                new Notice('渲染预览时发生错误，请检查开发者控制台。');
             }
         };
 
         renderPreview();
 
-    }, [markdownContent, rendererApi, opts, plugin]);
+    }, [markdownContent, rendererApi, opts, plugin, app.vault.adapter]);
 
     return (
         <div className="mpeasy-view-container">
