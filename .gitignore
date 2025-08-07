@@ -3,6 +3,8 @@
 
 # Build output
 /main.js
+/mathjax.js
+/mermaid.js
 
 # IDE config
 .vscode/
@@ -17,4 +19,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# 参考文件
 /onlyref
+/refAPI

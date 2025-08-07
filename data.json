@@ -5,11 +5,11 @@
   "themeName": "default",
   "fontSize": "16px",
   "isUseIndent": true,
-  "primaryColor": "#df0707",
-  "legend": "alt",
-  "isMacCodeBlock": true,
+  "primaryColor": "#f70808",
+  "legend": "title",
+  "isMacCodeBlock": false,
   "isCiteStatus": true,
   "isCountStatus": true,
   "useCustomCSS": true,
-  "codeBlockTheme": "vs2015.css"
+  "codeBlockTheme": "a11y-light.css"
 }

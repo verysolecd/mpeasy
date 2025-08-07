@@ -70,12 +70,12 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
 
         const renderer: RendererObject = {
             code(code, language) {
-                if (language === 'mermaid') {
+                if (code.lang === 'mermaid') {
                     // 对于 mermaid，我们使用占位符，实际的异步渲染在 parse 方法中处理
-                    return `<div class="mermaid-async" data-mermaid-code="${encodeURIComponent(code)}">Loading mermaid diagram...</div>`;
+                    return `<div class="mermaid-async" data-mermaid-code="${encodeURIComponent(code.text)}">Loading mermaid diagram...</div>`;
                 }
                 const validLanguage = hljs.getLanguage(language || '') ? language : 'plaintext';
-                const stringCode = String(code || '');
+                const stringCode = String(code.text || '');
                 const highlightedCode = hljs.highlight(stringCode, { language: validLanguage || 'plaintext' }).value;
 
                 if (currentOpts.isMacCodeBlock) {
@@ -134,6 +134,7 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
                 }
                 // @ts-ignore
                 const mermaid = iframeWindow.mermaid;
+                console.log('iframeWindow.mermaid object:', mermaid); // New debugging line
                 mermaid.initialize({ startOnLoad: false });
                 const { svg } = await mermaid.render('mermaid-' + Date.now(), code);
                 html = html.replace(match[0], `<div class="mermaid">${svg}</div>`);
