@@ -122,8 +122,8 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
             const code = decodeURIComponent(encodedCode);
             
             try {
-                // @ts-ignore
-                if (!iframeWindow.mermaid) {
+                // 确保 mermaid.js 脚本在 iframe 内部加载
+                if (!iframeWindow.document.querySelector('script[src="' + opts.mermaidPath + '"]')) {
                     await new Promise((resolve, reject) => {
                         const script = iframeWindow.document.createElement('script');
                         script.src = opts.mermaidPath;
@@ -132,12 +132,136 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
                         iframeWindow.document.head.appendChild(script);
                     });
                 }
+
+                // 等待 Mermaid 库完全加载并初始化
+                await new Promise(resolve => {
+                    const checkMermaid = () => {
+                        // @ts-ignore
+                        if (iframeWindow.mermaid) {
+                            resolve(undefined);
+                        } else {
+                            setTimeout(checkMermaid, 10);
+                        }
+                    };
+                    checkMermaid();
+                });
+
                 // @ts-ignore
                 const mermaid = iframeWindow.mermaid;
-                console.log('iframeWindow.mermaid object:', mermaid); // New debugging line
-                mermaid.initialize({ startOnLoad: false });
-                const { svg } = await mermaid.render('mermaid-' + Date.now(), code);
-                html = html.replace(match[0], `<div class="mermaid">${svg}</div>`);
+                console.log('iframeWindow.mermaid object:', mermaid); // Debugging line
+                console.log('iframeWindow.mermaid object keys:', Object.keys(mermaid || {})); // More debugging
+                
+                // 更完善的Mermaid API兼容性处理
+                try {
+                    let mermaidInstance = null;
+                    let renderFunction = null;
+                    let initializeFunction = null;
+                    
+                    // 调试：输出mermaid对象结构
+                    console.log('iframeWindow.mermaid object:', mermaid);
+                    console.log('iframeWindow.mermaid object keys:', Object.keys(mermaid || {}));
+                    
+                    // 检查window.mermaid（全局变量）
+                    if (mermaid) {
+                        // 直接访问主mermaid对象
+                        if (typeof mermaid.initialize === 'function' && typeof mermaid.mermaidAPI?.render === 'function') {
+                            mermaidInstance = mermaid;
+                            initializeFunction = mermaid.initialize;
+                            renderFunction = mermaid.mermaidAPI.render;
+                        }
+                        // 尝试访问mermaid.mermaidAPI
+                        else if (mermaid.mermaidAPI && typeof mermaid.mermaidAPI.initialize === 'function' && typeof mermaid.mermaidAPI.render === 'function') {
+                            mermaidInstance = mermaid.mermaidAPI;
+                            initializeFunction = mermaid.mermaidAPI.initialize;
+                            renderFunction = mermaid.mermaidAPI.render;
+                        }
+                        // 尝试直接访问render函数
+                        else if (typeof mermaid.render === 'function') {
+                            mermaidInstance = mermaid;
+                            initializeFunction = mermaid.initialize || (() => {});
+                            renderFunction = mermaid.render;
+                        }
+                        // 尝试访问default属性
+                        else if (mermaid.default && typeof mermaid.default.initialize === 'function' && typeof mermaid.default.render === 'function') {
+                            mermaidInstance = mermaid.default;
+                            initializeFunction = mermaid.default.initialize;
+                            renderFunction = mermaid.default.render;
+                        }
+                    }
+                    
+                    // 如果仍然找不到，尝试通过window访问
+                    if (!mermaidInstance && iframeWindow.window && iframeWindow.window.mermaid) {
+                        const winMermaid = iframeWindow.window.mermaid;
+                        if (typeof winMermaid.initialize === 'function' && typeof winMermaid.mermaidAPI?.render === 'function') {
+                            mermaidInstance = winMermaid;
+                            initializeFunction = winMermaid.initialize;
+                            renderFunction = winMermaid.mermaidAPI.render;
+                        } else if (winMermaid.mermaidAPI && typeof winMermaid.mermaidAPI.initialize === 'function' && typeof winMermaid.mermaidAPI.render === 'function') {
+                            mermaidInstance = winMermaid.mermaidAPI;
+                            initializeFunction = winMermaid.mermaidAPI.initialize;
+                            renderFunction = winMermaid.mermaidAPI.render;
+                        } else if (typeof winMermaid.render === 'function') {
+                            mermaidInstance = winMermaid;
+                            initializeFunction = winMermaid.initialize || (() => {});
+                            renderFunction = winMermaid.render;
+                        }
+                    }
+                    
+                    if (mermaidInstance && initializeFunction && renderFunction) {
+                        console.log('Successfully identified Mermaid API structure:', { mermaidInstance, initializeFunction, renderFunction }); // Debugging
+                        // 调用初始化函数
+                        initializeFunction.call(mermaidInstance, { startOnLoad: false });
+                        // 调用渲染函数
+                        const { svg } = await renderFunction.call(mermaidInstance, 'mermaid-' + Date.now(), code);
+                        html = html.replace(match[0], `<div class="mermaid">${svg}</div>`);
+                    } else {
+                        // 如果以上方法都失败，尝试直接调用 mermaid.default (如果它是一个函数)
+                        if (mermaid && typeof mermaid.default === 'function') {
+                            console.log('Attempting to use mermaid.default as a function'); // Debugging
+                            try {
+                                const { svg } = await mermaid.default(code);
+                                html = html.replace(match[0], `<div class="mermaid">${svg}</div>`);
+                                continue; // 成功渲染，继续下一个图表
+                            } catch (directCallError) {
+                                console.error('Direct call to mermaid.default failed:', directCallError);
+                            }
+                        }
+                        // 如果所有方法都失败，抛出一个带有更多信息的错误
+                        const errorMessage = `无法识别Mermaid API结构。已尝试的结构: ${[
+                            'mermaid',
+                            'mermaid.mermaidAPI',
+                            'mermaid.default (object with initialize/render)',
+                            'mermaid.default.mermaidAPI',
+                            'mermaid.default.default',
+                            'mermaid.default (function with initialize/render)',
+                            'mermaid.default() (function call)'
+                        ].join(', ')}.`;
+                        console.error(errorMessage);
+                        throw new Error(errorMessage);
+                    }
+                } catch (apiError) {
+                    console.error('Mermaid API调用失败:', apiError);
+                    // 降级处理：在iframe中动态创建一个<script>标签来执行Mermaid代码
+                    // 这种方式可以确保Mermaid库在正确的上下文中运行
+                    const id = 'mermaid-' + Date.now();
+                    const scriptContent = `
+                        if (typeof mermaid !== 'undefined') {
+                            try {
+                                mermaid.initialize({ startOnLoad: true });
+                                mermaid.run({
+                                    querySelector: '#${id}'
+                                });
+                            } catch (initError) {
+                                console.error('Mermaid初始化失败:', initError);
+                            }
+                        }
+                    `;
+                    
+                    html = html.replace(match[0], `
+                        <div class="mermaid" id="${id}">${code}</div>
+                        <script>${scriptContent}</script>
+                    `);
+                }
             } catch (error) {
                 console.error('Mermaid rendering failed:', error);
                 html = html.replace(match[0], `<pre class="mermaid-error">Mermaid rendering failed: ${error.message}</pre>`);
