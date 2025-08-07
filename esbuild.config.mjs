@@ -72,28 +72,41 @@ const buildPlugin = () => {
 };
 
 const buildLibs = () => {
-    // Build mermaid library
-    fs.writeFileSync('mermaid-entry.js', 'import mermaid from "mermaid"; window.mermaid = mermaid;');
-    esbuild.build({
-        ...baseConfig,
-        entryPoints: ['mermaid-entry.js'],
-        outfile: 'mermaid.js',
-        format: 'iife',
-    }).then(() => {
-        fs.unlinkSync('mermaid-entry.js');
-    }).catch(() => {
-        fs.unlinkSync('mermaid-entry.js');
-        process.exit(1)
+    // Copy mermaid library from node_modules
+    const mermaidSrc = './node_modules/mermaid/dist/mermaid.min.js';
+    const mermaidDest = 'mermaid.js';
+    fs.copyFile(mermaidSrc, mermaidDest, (err) => {
+        if (err) {
+            console.error('Error copying mermaid library:', err);
+            process.exit(1);
+        }
+        console.log('Mermaid library copied successfully.');
     });
 
-    // Build mathjax library
-    fs.writeFileSync('mathjax-entry.js', 'import "mathjax";');
+    // Build mathjax library - use CDN version to avoid require issues
+    fs.writeFileSync('mathjax-entry.js', `
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+        (function() {
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
+            script.async = true;
+            document.head.appendChild(script);
+        })();
+    `);
     esbuild.build({
         ...baseConfig,
         entryPoints: ['mathjax-entry.js'],
         outfile: 'mathjax.js',
         format: 'iife',
-        platform: 'node',
+        platform: 'browser',
     }).then(() => {
         fs.unlinkSync('mathjax-entry.js');
     }).catch(() => {

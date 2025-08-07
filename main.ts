@@ -57,15 +57,29 @@ export default class MPEasyPlugin extends Plugin {
     }
 
     async activateView() {
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_MPEASY);
-
-        const rightLeaf = this.app.workspace.getRightLeaf(false);
-        if (rightLeaf) {
-            await rightLeaf.setViewState({
-                type: VIEW_TYPE_MPEASY,
-                active: true,
-            });
-            this.app.workspace.revealLeaf(rightLeaf);
+        // 检查是否已存在 MPEasy 视图
+        const existingLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MPEASY);
+        
+        if (existingLeaves.length > 0) {
+            // 如果已存在，激活并刷新现有视图
+            const existingLeaf = existingLeaves[0];
+            this.app.workspace.revealLeaf(existingLeaf);
+            
+            // 刷新内容：获取当前活动文件并重新渲染
+            const activeFile = this.app.workspace.getActiveFile();
+            if (activeFile && existingLeaf.view instanceof MPEasyView) {
+                existingLeaf.view.renderComponent(activeFile);
+            }
+        } else {
+            // 如果不存在，创建新视图
+            const rightLeaf = this.app.workspace.getRightLeaf(false);
+            if (rightLeaf) {
+                await rightLeaf.setViewState({
+                    type: VIEW_TYPE_MPEASY,
+                    active: true,
+                });
+                this.app.workspace.revealLeaf(rightLeaf);
+            }
         }
     }
 

@@ -84,6 +84,37 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
 
                 return `<pre><code class="hljs ${validLanguage}">${highlightedCode}</code></pre>`;
             },
+            image(href: any, title: string | null, text: string): string {
+                // 处理marked.js传递的对象类型href
+                let imageUrl = '';
+                if (typeof href === 'object' && href !== null) {
+                    // marked.js可能传递包含href属性的对象
+                    imageUrl = href.href || href.url || String(href) || '';
+                } else if (typeof href === 'string') {
+                    imageUrl = href;
+                } else {
+                    imageUrl = String(href || '');
+                }
+                
+                if (!imageUrl) {
+                    console.warn('Invalid image href:', href);
+                    return `<span class="image-error">[Invalid image: ${text || ''}]</span>`;
+                }
+                
+                // 处理 Obsidian 的 [[image.png]] 语法
+                if (imageUrl.startsWith('[[') && imageUrl.endsWith(']]')) {
+                    const imageName = imageUrl.slice(2, -2);
+                    imageUrl = imageName;
+                }
+                
+                // 处理 Obsidian 内部链接
+                if (imageUrl.startsWith('app://')) {
+                    return `<img src="${imageUrl}" alt="${text || ''}" title="${title || ''}" style="max-width: 100%; height: auto;" loading="lazy">`;
+                }
+                
+                // 处理本地相对路径和网络图片
+                return `<img src="${imageUrl}" alt="${text || ''}" title="${title || ''}" style="max-width: 100%; height: auto;" loading="lazy">`;
+            },
         };
 
         const extensions: MarkedExtension[] = [
@@ -103,6 +134,12 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
         return new Marked({ renderer, extensions, breaks: true, gfm: true, async: false });
     };
 
+    // 缓存已加载的库
+    let mermaidLoaded = false;
+    let mathJaxLoaded = false;
+    let mermaidReady = false;
+    let mathJaxReady = false;
+
     localMarked = createMarkedInstance(opts);
 
     function setOptions(newOpts: Partial<IOpts>) {
@@ -110,161 +147,146 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
         localMarked = createMarkedInstance(opts);
     }
 
+    // 预加载资源
+    async function preloadResources() {
+        // 并行预加载Mermaid和MathJax
+        const loadPromises = [];
+        
+        if (!mermaidLoaded && opts.mermaidPath) {
+            loadPromises.push(
+                new Promise<void>((resolve) => {
+                    if (!iframeWindow.document.querySelector(`script[src="${opts.mermaidPath}"]`)) {
+                        const script = iframeWindow.document.createElement('script');
+                        script.src = opts.mermaidPath;
+                        script.onload = () => {
+                            mermaidLoaded = true;
+                            resolve();
+                        };
+                        script.onerror = () => resolve(); // 失败也继续
+                        iframeWindow.document.head.appendChild(script);
+                    } else {
+                        mermaidLoaded = true;
+                        resolve();
+                    }
+                })
+            );
+        }
+
+        if (!mathJaxLoaded && opts.mathjaxPath) {
+            loadPromises.push(
+                new Promise<void>((resolve) => {
+                    if (!iframeWindow.document.querySelector(`script[src="${opts.mathjaxPath}"]`)) {
+                        const script = iframeWindow.document.createElement('script');
+                        script.src = opts.mathjaxPath;
+                        script.onload = () => {
+                            mathJaxLoaded = true;
+                            resolve();
+                        };
+                        script.onerror = () => resolve(); // 失败也继续
+                        iframeWindow.document.head.appendChild(script);
+                    } else {
+                        mathJaxLoaded = true;
+                        resolve();
+                    }
+                })
+            );
+        }
+
+        if (loadPromises.length > 0) {
+            await Promise.allSettled(loadPromises);
+        }
+    }
+
     async function parse(markdown: string): Promise<string> {
         let html = localMarked.parse(markdown) as string;
+        
+        // 预加载资源
+        await preloadResources();
         
         // 处理 mermaid 图表的异步渲染
         const mermaidRegex = /<div class="mermaid-async" data-mermaid-code="([^"]*)">Loading mermaid diagram...<\/div>/g;
         const mermaidMatches = [...html.matchAll(mermaidRegex)];
         
-        for (const match of mermaidMatches) {
-            const encodedCode = match[1];
-            const code = decodeURIComponent(encodedCode);
-            
+        if (mermaidMatches.length > 0) {
             try {
-                // 确保 mermaid.js 脚本在 iframe 内部加载
-                if (!iframeWindow.document.querySelector('script[src="' + opts.mermaidPath + '"]')) {
-                    await new Promise((resolve, reject) => {
-                        const script = iframeWindow.document.createElement('script');
-                        script.src = opts.mermaidPath;
-                        script.onload = resolve;
-                        script.onerror = () => reject(new Error('Failed to load mermaid.js'));
-                        iframeWindow.document.head.appendChild(script);
-                    });
+                // @ts-ignore
+                let mermaid = iframeWindow.mermaid;
+                if (!mermaid) {
+                    console.warn('Mermaid library not found in iframe');
+                    // 如果Mermaid不可用，直接显示代码
+                    for (const match of mermaidMatches) {
+                        const code = decodeURIComponent(match[1]);
+                        html = html.replace(match[0], `<pre class="mermaid-fallback">${code}</pre>`);
+                    }
+                    return html;
                 }
 
-                // 等待 Mermaid 库完全加载并初始化
-                await new Promise(resolve => {
-                    const checkMermaid = () => {
-                        // @ts-ignore
-                        if (iframeWindow.mermaid) {
-                            resolve(undefined);
-                        } else {
-                            setTimeout(checkMermaid, 10);
-                        }
-                    };
-                    checkMermaid();
-                });
+                // 检查Mermaid API结构
+                console.log('Mermaid API available:', typeof mermaid.initialize, typeof mermaid.render);
+                console.log('Mermaid object structure:', Object.keys(mermaid));
+                console.log('Mermaid API:', mermaid);
 
-                // @ts-ignore
-                const mermaid = iframeWindow.mermaid;
-                console.log('iframeWindow.mermaid object:', mermaid); // Debugging line
-                console.log('iframeWindow.mermaid object keys:', Object.keys(mermaid || {})); // More debugging
-                
-                // 更完善的Mermaid API兼容性处理
-                try {
-                    let mermaidInstance = null;
-                    let renderFunction = null;
-                    let initializeFunction = null;
-                    
-                    // 调试：输出mermaid对象结构
-                    console.log('iframeWindow.mermaid object:', mermaid);
-                    console.log('iframeWindow.mermaid object keys:', Object.keys(mermaid || {}));
-                    
-                    // 检查window.mermaid（全局变量）
-                    if (mermaid) {
-                        // 直接访问主mermaid对象
-                        if (typeof mermaid.initialize === 'function' && typeof mermaid.mermaidAPI?.render === 'function') {
-                            mermaidInstance = mermaid;
-                            initializeFunction = mermaid.initialize;
-                            renderFunction = mermaid.mermaidAPI.render;
+                // 只初始化一次
+                if (!mermaid._initialized) {
+                    try {
+                        const mermaidConfig = {
+                            startOnLoad: false,
+                            theme: opts.theme === 'dark' ? 'dark' : 'default',
+                            securityLevel: 'loose',
+                            fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"',
+                            themeVariables: {
+                                fontSize: '14px'
+                            },
+                            flowchart: { useMaxWidth: false, htmlLabels: true },
+                            sequence: { useMaxWidth: false },
+                            gantt: { useMaxWidth: false }
+                        };
+
+                        if (typeof mermaid.initialize === 'function') {
+                            mermaid.initialize(mermaidConfig);
+                        } else if (mermaid.default && typeof mermaid.default.initialize === 'function') {
+                            // Handle possible default export
+                            mermaid.default.initialize(mermaidConfig);
+                            mermaid = mermaid.default; // Reassign
+                        } else {
+                            console.warn('Mermaid.initialize is not a function');
                         }
-                        // 尝试访问mermaid.mermaidAPI
-                        else if (mermaid.mermaidAPI && typeof mermaid.mermaidAPI.initialize === 'function' && typeof mermaid.mermaidAPI.render === 'function') {
-                            mermaidInstance = mermaid.mermaidAPI;
-                            initializeFunction = mermaid.mermaidAPI.initialize;
-                            renderFunction = mermaid.mermaidAPI.render;
-                        }
-                        // 尝试直接访问render函数
-                        else if (typeof mermaid.render === 'function') {
-                            mermaidInstance = mermaid;
-                            initializeFunction = mermaid.initialize || (() => {});
-                            renderFunction = mermaid.render;
-                        }
-                        // 尝试访问default属性
-                        else if (mermaid.default && typeof mermaid.default.initialize === 'function' && typeof mermaid.default.render === 'function') {
-                            mermaidInstance = mermaid.default;
-                            initializeFunction = mermaid.default.initialize;
-                            renderFunction = mermaid.default.render;
-                        }
+                        mermaid._initialized = true;
+                    } catch (e) {
+                        console.warn('Mermaid init failed:', e);
+                        // Continue with default config even if init fails
                     }
+                }
+
+                // 批量处理所有mermaid图表
+                for (const match of mermaidMatches) {
+                    const code = decodeURIComponent(match[1]);
+                    const id = 'mermaid-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
                     
-                    // 如果仍然找不到，尝试通过window访问
-                    if (!mermaidInstance && iframeWindow.window && iframeWindow.window.mermaid) {
-                        const winMermaid = iframeWindow.window.mermaid;
-                        if (typeof winMermaid.initialize === 'function' && typeof winMermaid.mermaidAPI?.render === 'function') {
-                            mermaidInstance = winMermaid;
-                            initializeFunction = winMermaid.initialize;
-                            renderFunction = winMermaid.mermaidAPI.render;
-                        } else if (winMermaid.mermaidAPI && typeof winMermaid.mermaidAPI.initialize === 'function' && typeof winMermaid.mermaidAPI.render === 'function') {
-                            mermaidInstance = winMermaid.mermaidAPI;
-                            initializeFunction = winMermaid.mermaidAPI.initialize;
-                            renderFunction = winMermaid.mermaidAPI.render;
-                        } else if (typeof winMermaid.render === 'function') {
-                            mermaidInstance = winMermaid;
-                            initializeFunction = winMermaid.initialize || (() => {});
-                            renderFunction = winMermaid.render;
+                    try {
+                        let renderFunc = mermaid.render;
+                        if (!renderFunc && mermaid.default && mermaid.default.render) {
+                            renderFunc = mermaid.default.render;
                         }
+                        
+                        if (typeof renderFunc === 'function') {
+                            const { svg } = await renderFunc.call(mermaid, id, code);
+                            html = html.replace(match[0], `<div class="mermaid">${svg}</div>`);
+                        } else {
+                            console.warn('mermaid.render is not a function');
+                            html = html.replace(match[0], `<pre class="mermaid-fallback">${code}</pre>`);
+                        }
+                    } catch (renderError) {
+                        console.warn('Mermaid render failed:', renderError);
+                        html = html.replace(match[0], `<pre class="mermaid-fallback">${code}</pre>`);
                     }
-                    
-                    if (mermaidInstance && initializeFunction && renderFunction) {
-                        console.log('Successfully identified Mermaid API structure:', { mermaidInstance, initializeFunction, renderFunction }); // Debugging
-                        // 调用初始化函数
-                        initializeFunction.call(mermaidInstance, { startOnLoad: false });
-                        // 调用渲染函数
-                        const { svg } = await renderFunction.call(mermaidInstance, 'mermaid-' + Date.now(), code);
-                        html = html.replace(match[0], `<div class="mermaid">${svg}</div>`);
-                    } else {
-                        // 如果以上方法都失败，尝试直接调用 mermaid.default (如果它是一个函数)
-                        if (mermaid && typeof mermaid.default === 'function') {
-                            console.log('Attempting to use mermaid.default as a function'); // Debugging
-                            try {
-                                const { svg } = await mermaid.default(code);
-                                html = html.replace(match[0], `<div class="mermaid">${svg}</div>`);
-                                continue; // 成功渲染，继续下一个图表
-                            } catch (directCallError) {
-                                console.error('Direct call to mermaid.default failed:', directCallError);
-                            }
-                        }
-                        // 如果所有方法都失败，抛出一个带有更多信息的错误
-                        const errorMessage = `无法识别Mermaid API结构。已尝试的结构: ${[
-                            'mermaid',
-                            'mermaid.mermaidAPI',
-                            'mermaid.default (object with initialize/render)',
-                            'mermaid.default.mermaidAPI',
-                            'mermaid.default.default',
-                            'mermaid.default (function with initialize/render)',
-                            'mermaid.default() (function call)'
-                        ].join(', ')}.`;
-                        console.error(errorMessage);
-                        throw new Error(errorMessage);
-                    }
-                } catch (apiError) {
-                    console.error('Mermaid API调用失败:', apiError);
-                    // 降级处理：在iframe中动态创建一个<script>标签来执行Mermaid代码
-                    // 这种方式可以确保Mermaid库在正确的上下文中运行
-                    const id = 'mermaid-' + Date.now();
-                    const scriptContent = `
-                        if (typeof mermaid !== 'undefined') {
-                            try {
-                                mermaid.initialize({ startOnLoad: true });
-                                mermaid.run({
-                                    querySelector: '#${id}'
-                                });
-                            } catch (initError) {
-                                console.error('Mermaid初始化失败:', initError);
-                            }
-                        }
-                    `;
-                    
-                    html = html.replace(match[0], `
-                        <div class="mermaid" id="${id}">${code}</div>
-                        <script>${scriptContent}</script>
-                    `);
                 }
             } catch (error) {
-                console.error('Mermaid rendering failed:', error);
-                html = html.replace(match[0], `<pre class="mermaid-error">Mermaid rendering failed: ${error.message}</pre>`);
+                console.error('Mermaid processing failed:', error);
+                for (const match of mermaidMatches) {
+                    const code = decodeURIComponent(match[1]);
+                    html = html.replace(match[0], `<pre class="mermaid-error">Mermaid: ${error.message}</pre>`);
+                }
             }
         }
 
@@ -280,37 +302,41 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
             
             try {
                 // @ts-ignore
-                if (!iframeWindow.MathJax) {
-                    await new Promise((resolve, reject) => {
-                        const script = iframeWindow.document.createElement('script');
-                        script.src = opts.mathjaxPath;
-                        script.onload = resolve;
-                        script.onerror = () => reject(new Error('Failed to load MathJax'));
-                        iframeWindow.document.head.appendChild(script);
-                    });
+                const MathJax = iframeWindow.MathJax;
+                if (!MathJax || !MathJax.tex2svg) {
+                    // 如果MathJax不可用，直接显示原文本
+                    html = html.replace(match[0], `<code>${text}</code>`);
+                    continue;
                 }
-                // @ts-ignore
-                iframeWindow.MathJax.texReset();
-                // @ts-ignore
-                const mjxContainer = iframeWindow.MathJax.tex2svg(text, { display });
-                const svg = mjxContainer.firstChild;
-                const width = svg.style['min-width'] || svg.getAttribute('width');
-                svg.removeAttribute('width');
 
-                svg.style = `max-width: 300vw !important; display: initial; flex-shrink: 0;`;
-                svg.style.width = width;
+                try {
+                    // 兼容CDN版本的MathJax
+                    if (MathJax.texReset) MathJax.texReset();
+                    const mjxContainer = MathJax.tex2svg(text, { display });
+                    const svg = mjxContainer.firstChild || mjxContainer.querySelector('svg');
+                    
+                    if (!svg) {
+                        throw new Error('No SVG element found');
+                    }
+                    
+                    const width = svg.style?.['min-width'] || svg.getAttribute?.('width');
+                    if (svg.removeAttribute) svg.removeAttribute('width');
 
-                let renderedHtml;
-                if (!display) {
-                    renderedHtml = `<span>${svg.outerHTML}</span>`;
-                } else {
-                    renderedHtml = `<section>${svg.outerHTML}</section>`;
+                    svg.style = `max-width: 100%; height: auto;`;
+                    if (width) svg.style.width = width;
+
+                    let renderedHtml = display ? 
+                        `<div class="math-block">${svg.outerHTML || svg.parentNode?.innerHTML}</div>` : 
+                        `<span class="math-inline">${svg.outerHTML || svg.parentNode?.innerHTML}</span>`;
+                    
+                    html = html.replace(match[0], renderedHtml);
+                } catch (renderError) {
+                    console.warn('MathJax render failed, using fallback:', renderError);
+                    html = html.replace(match[0], `<code>${text}</code>`);
                 }
-                
-                html = html.replace(match[0], renderedHtml);
             } catch (error) {
                 console.error('MathJax rendering failed:', error);
-                html = html.replace(match[0], `<pre class="mathjax-error">MathJax rendering failed: ${error.message}</pre>`);
+                html = html.replace(match[0], `<code>${text}</code>`);
             }
         }
         

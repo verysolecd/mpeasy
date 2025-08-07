@@ -63,8 +63,28 @@ export class MPEasyView extends ItemView {
             this.renderComponent(activeFile);
         }
 
+        // 监听编辑器内容变化
         this.registerEvent(
             this.app.workspace.on('editor-change', (editor, info) => this.editorChangeHandler(editor, info.file))
+        );
+        
+        // 监听文件切换事件
+        this.registerEvent(
+            this.app.workspace.on('file-open', (file) => {
+                if (file) {
+                    this.renderComponent(file);
+                }
+            })
+        );
+        
+        // 监听活动文件变化
+        this.registerEvent(
+            this.app.workspace.on('active-leaf-change', () => {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile) {
+                    this.renderComponent(activeFile);
+                }
+            })
         );
     }
 

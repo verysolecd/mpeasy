@@ -40,10 +40,12 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         fonts: `"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "\u5FAE软雅黑", Arial, sans-serif`,
     }));
 
-    // Effect to read file content
+    // Effect to read file content with debouncing
     useEffect(() => {
         if (file) {
-            app.vault.read(file).then(setMarkdownContent);
+            app.vault.read(file).then(content => {
+                setMarkdownContent(content);
+            });
         }
     }, [file, app.vault]);
 
@@ -170,36 +172,57 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         plugin.saveSettings();
     };
 
-    // The renderPreview useEffect will now correctly depend on rendererApi and markdownContent
+    // Cache for highlight.js CSS
+    const hljsCssCache = useRef<Map<string, string>>(new Map());
+    
+    // Debounced rendering effect
     useEffect(() => {
         if (!rendererApi || !iframeRef.current || !markdownContent) return;
 
-        const renderPreview = async () => {
-            const parsedHtml = await rendererApi.parse(markdownContent);
-            const finalHtml = await processLocalImages(parsedHtml, plugin);
-
+        const timeoutId = setTimeout(async () => {
+            const startTime = performance.now();
+            
             try {
-                const hljsThemePath = `${plugin.manifest.dir}/node_modules/highlight.js/styles/${opts.codeBlockTheme}`;
-                const hljsThemeCss = await app.vault.adapter.read(hljsThemePath);
+                // Parse markdown
+                const parsedHtml = await rendererApi.parse(markdownContent);
+                const finalHtml = await processLocalImages(parsedHtml, plugin);
+
+                // Cache highlight.js CSS
+                let hljsThemeCss = hljsCssCache.current.get(opts.codeBlockTheme);
+                if (!hljsThemeCss) {
+                    const hljsThemePath = `${plugin.manifest.dir}/node_modules/highlight.js/styles/${opts.codeBlockTheme}`;
+                    hljsThemeCss = await app.vault.adapter.read(hljsThemePath);
+                    hljsCssCache.current.set(opts.codeBlockTheme, hljsThemeCss);
+                }
 
                 const iframe = iframeRef.current;
-                if (iframe) {
+                if (iframe && iframe.contentDocument) {
                     const doc = iframe.contentDocument;
-                    if (doc) {
+                    const outputElement = doc.getElementById('output');
+                    
+                    if (outputElement) {
+                        // Only update content if it has changed
+                        if (outputElement.innerHTML !== finalHtml) {
+                            outputElement.innerHTML = finalHtml;
+                        }
+                    } else {
+                        // First render or full refresh needed
                         doc.open();
                         doc.write(`<html><head><style>${hljsThemeCss}</style></head><body><section id="output">${finalHtml}</section></body></html>`);
                         doc.close();
                     }
+                    
+                    console.log(`MPEasy: Render completed in ${performance.now() - startTime}ms`);
                 }
             } catch (error) {
                 console.error('Error during rendering:', error);
                 new Notice('渲染预览时发生错误，请检查开发者控制台。');
             }
-        };
+        }, 100); // 100ms debounce
 
-        renderPreview();
+        return () => clearTimeout(timeoutId);
 
-    }, [markdownContent, rendererApi, opts.codeBlockTheme, plugin, app.vault.adapter]); // opts.codeBlockTheme is specific enough
+    }, [markdownContent, rendererApi, opts.codeBlockTheme, plugin, app.vault.adapter]);
 
     return (
         <div className="mpeasy-view-container">
