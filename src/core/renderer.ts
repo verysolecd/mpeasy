@@ -237,7 +237,7 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
                             themeVariables: {
                                 fontSize: '14px'
                             },
-                            flowchart: { useMaxWidth: false, htmlLabels: true },
+                            flowchart: { useMaxWidth: false, htmlLabels: false },
                             sequence: { useMaxWidth: false },
                             gantt: { useMaxWidth: false }
                         };
