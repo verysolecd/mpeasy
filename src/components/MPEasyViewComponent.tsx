@@ -71,21 +71,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     // Effect to update renderer options when opts state changes
     useEffect(() => {
         if (rendererApi) {
-            // Only update options that are part of the opts state
-            const currentOpts: Partial<IOpts> = {
-                theme: opts.theme,
-                size: opts.size,
-                isUseIndent: opts.isUseIndent,
-                legend: opts.legend,
-                citeStatus: opts.citeStatus,
-                countStatus: opts.countStatus,
-                isMacCodeBlock: opts.isMacCodeBlock,
-                codeBlockTheme: opts.codeBlockTheme,
-                primaryColor: opts.primaryColor,
-                fonts: opts.fonts,
-                // customCSS, mermaidPath, mathjaxPath are static for the renderer instance
-            };
-            rendererApi.setOptions(currentOpts);
+            rendererApi.setOptions(opts);
         }
     }, [opts, rendererApi]); // Triggered when opts state or rendererApi changes
 
