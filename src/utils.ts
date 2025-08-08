@@ -154,23 +154,56 @@ export function processClipboardContent(clipboardDiv: HTMLElement, primaryColor:
 import fs from 'fs';
 import path from 'path';
 
+let themeDir = '';
 let styleDir = '';
 
-export function setBasePath(basePath: string) {
-    styleDir = basePath;
+export function setBasePath(themePath: string, stylePath: string) {
+    themeDir = themePath;
+    styleDir = stylePath;
 }
 
-export const getStyles = () => {
+export const getLayoutThemes = () => {
+  try {
+    const files = fs.readdirSync(themeDir);
+    return files
+      .filter(file => file.endsWith('.css'))
+      .map(file => {
+        const name = file.replace('.css', '');
+        return {
+          name,
+          css: fs.readFileSync(path.join(themeDir, file), 'utf-8'),
+        };
+      });
+  } catch (error) {
+    console.error('Failed to read themes directory:', error);
+    return [];
+  }
+};
+
+export const loadLayoutTheme = (name: string) => {
+  if (!name) {
+    console.error('loadLayoutTheme called with undefined name');
+    return '';
+  }
+  try {
+    const themePath = path.join(themeDir, `${name}.css`);
+    return fs.readFileSync(themePath, 'utf-8');
+  } catch (error) {
+    console.error(`Failed to load layout theme ${name}:`, error);
+    return '';
+  }
+};
+
+export const getCodeBlockThemes = () => {
   try {
     const files = fs.readdirSync(styleDir);
     return files
       .filter(file => file.endsWith('.css'))
       .map(file => {
         const name = file.replace('.css', '');
-        const cssContent = fs.readFileSync(path.join(styleDir, file), 'utf-8');
         return {
           name,
-          css: cssContent,
+          css: fs.readFileSync(path.join(styleDir, file), 'utf-8'),
         };
       });
   } catch (error) {
@@ -179,16 +212,16 @@ export const getStyles = () => {
   }
 };
 
-export const loadTheme = (name: string) => {
+export const loadCodeBlockTheme = (name: string) => {
   if (!name) {
-    console.error('loadTheme called with undefined name');
-    return ''; // Return empty string if name is undefined
+    console.error('loadCodeBlockTheme called with undefined name');
+    return '';
   }
   try {
     const themePath = path.join(styleDir, `${name}.css`);
     return fs.readFileSync(themePath, 'utf-8');
   } catch (error) {
-    console.error(`Failed to load theme ${name}:`, error);
-    return ''; // or a default theme
+    console.error(`Failed to load code block theme ${name}:`, error);
+    return '';
   }
 };

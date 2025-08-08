@@ -1,18 +1,7 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import type { IOpts } from '../types';
-import { getStyles } from '../utils';
-
-// Define theme options and other constants, similar to onlyref
-const themeOptions = [
-    { label: '默认', value: 'default' },
-];
-
-const legendOptions = [
-    { label: '图片下方显示 alt', value: 'alt' },
-    { label: '图片下方显示 title', value: 'title' },
-    { label: '不显示', value: 'none' },
-];
+import { getLayoutThemes, getCodeBlockThemes } from '../utils';
 
 interface StylePanelProps {
     opts: Partial<IOpts>;
@@ -20,11 +9,14 @@ interface StylePanelProps {
 }
 
 const StylePanel = ({ opts, onOptsChange }: StylePanelProps) => {
+    const [layoutThemes, setLayoutThemes] = useState<{name: string, css: string}[]>([]);
     const [codeBlockThemes, setCodeBlockThemes] = useState<{name: string, css: string}[]>([]);
 
     useEffect(() => {
-        const themes = getStyles();
-        setCodeBlockThemes(themes);
+        const layout = getLayoutThemes();
+        const code = getCodeBlockThemes();
+        setLayoutThemes(layout);
+        setCodeBlockThemes(code);
     }, []);
 
     const handleValueChange = (key: keyof IOpts, value: any) => {
@@ -38,11 +30,23 @@ const StylePanel = ({ opts, onOptsChange }: StylePanelProps) => {
                 <div className="style-panel-item">
                     <label>排版主题</label>
                     <select
-                        value={opts.themeName || 'default'}
-                        onChange={(e) => handleValueChange('themeName', e.target.value)}
+                        value={opts.layoutThemeName || 'default'}
+                        onChange={(e) => handleValueChange('layoutThemeName', e.target.value)}
                     >
-                        {themeOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        {layoutThemes.map(opt => (
+                            <option key={opt.name} value={opt.name}>{opt.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="style-panel-item">
+                    <label>代码块主题</label>
+                    <select
+                        value={opts.codeThemeName || 'atom-one-dark'}
+                        onChange={(e) => handleValueChange('codeThemeName', e.target.value)}
+                    >
+                        {codeBlockThemes.map(theme => (
+                            <option key={theme.name} value={theme.name}>{theme.name}</option>
                         ))}
                     </select>
                 </div>
@@ -67,26 +71,14 @@ const StylePanel = ({ opts, onOptsChange }: StylePanelProps) => {
                 </div>
 
                 <div className="style-panel-item">
-                    <label>代码块主题</label>
-                    <select
-                        value={opts.codeTheme || 'atom-one-dark'}
-                        onChange={(e) => handleValueChange('codeTheme', e.target.value)}
-                    >
-                        {codeBlockThemes.map(theme => (
-                            <option key={theme.name} value={theme.name}>{theme.name}</option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="style-panel-item">
                     <label>图注显示</label>
                     <select
                         value={opts.legend || 'alt'}
                         onChange={(e) => handleValueChange('legend', e.target.value)}
                     >
-                        {legendOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
+                        <option value="alt">图片下方显示 alt</option>
+                        <option value="title">图片下方显示 title</option>
+                        <option value="none">不显示</option>
                     </select>
                 </div>
 

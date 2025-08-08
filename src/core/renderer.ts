@@ -3,14 +3,13 @@ import frontMatter from 'front-matter';
 import hljs from 'highlight.js';
 import juice from 'juice';
 import type { IOpts, RendererAPI } from '../types';
-import { themeMap } from './theme';
 import markedAlert from './MDAlert';
 import markedFootnotes from './MDFootnotes';
 import { MDKatex } from './MDKatex';
 import markedSlider from './MDSlider';
 import { markedToc } from './MDToc';
 import { katexCSS } from './katex.css';
-import { loadTheme } from '../utils';
+import { loadLayoutTheme, loadCodeBlockTheme } from '../utils';
 
 export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI {
     let opts = options;
@@ -44,18 +43,15 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
     }
 
     async function parse(markdown: string): Promise<string> {
-        const selectedTheme = themeMap[opts.themeName as keyof typeof themeMap] || themeMap.default;
-        const themeCss = selectedTheme.css || '';
-        const customCss = opts.customCSS || '';
-        const highlightCss = loadTheme(opts.codeTheme)
+        const layoutThemeCss = loadLayoutTheme(opts.layoutThemeName);
+        const codeBlockThemeCss = loadCodeBlockTheme(opts.codeThemeName);
 
         // Combine all styles into a single style block
         const fullCss = `
 <style>
-${themeCss}
-${highlightCss}
+${layoutThemeCss}
+${codeBlockThemeCss}
 ${katexCSS}
-${customCss}
 </style>
 `;
 
