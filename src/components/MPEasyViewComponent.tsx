@@ -3,14 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 import { App, Notice, TFile } from 'obsidian';
 import Header from './Header';
 import StylePanel from './StylePanel';
-import { initRenderer } from '../src/core/renderer';
-import { themeMap } from '../src/core/theme';
-import type { RendererAPI, IOpts } from '../src/types';
+import { initRenderer } from '../core/renderer';
+import { themeMap } from '../core/theme';
+import type { RendererAPI, IOpts } from '../types';
 import { UploadModal } from './UploadModal';
-import { wxAddDraft, wxUploadImage } from '../src/core/wechatApi';
-import { processLocalImages } from '../src/core/htmlPostProcessor';
-import type MPEasyPlugin from '../main';
-import { processClipboardContent } from '../src/utils';
+import { wxAddDraft, wxUploadImage } from '../core/wechatApi';
+import { processLocalImages } from '../core/htmlPostProcessor';
+import type MPEasyPlugin from '../../main';
+import { processClipboardContent } from '../utils';
 
 interface MPEasyViewProps {
     file: TFile;
@@ -91,6 +91,15 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         }
     }, [opts, rendererApi]); // Triggered when opts state or rendererApi changes
 
+    const handleRefresh = () => {
+        if (file) {
+            app.vault.read(file).then(content => {
+                setMarkdownContent(content);
+                new Notice('内容已刷新！');
+            });
+        }
+    };
+
     const handleCopy = async () => {
         if (!rendererApi || !iframeRef.current) {
             new Notice('渲染器尚未准备好。');
@@ -102,7 +111,13 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             return;
         }
 
-        processClipboardContent(outputElement, opts.primaryColor || '#000000');
+        const hljsThemeCss = hljsCssCache.current.get(opts.codeBlockTheme);
+        if (!hljsThemeCss) {
+            new Notice('请先等待代码块加载完成。');
+            return;
+        }
+
+        processClipboardContent(outputElement, opts.primaryColor || '#000000', hljsThemeCss);
 
         const blob = new Blob([outputElement.outerHTML], { type: 'text/html' });
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
@@ -190,7 +205,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 // Cache highlight.js CSS
                 let hljsThemeCss = hljsCssCache.current.get(opts.codeBlockTheme);
                 if (!hljsThemeCss) {
-                    const hljsThemePath = `${plugin.manifest.dir}/node_modules/highlight.js/styles/${opts.codeBlockTheme}`;
+                    const hljsThemePath = `${plugin.manifest.dir}/assets/style/${opts.codeBlockTheme}`;
                     hljsThemeCss = await app.vault.adapter.read(hljsThemePath);
                     hljsCssCache.current.set(opts.codeBlockTheme, hljsThemeCss);
                 }
@@ -226,7 +241,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
     return (
         <div className="mpeasy-view-container">
-            <Header onCopy={handleCopy} onUpload={handleUpload} />
+            <Header onRefresh={handleRefresh} onCopy={handleCopy} onUpload={handleUpload} />
             <div className="mpeasy-main-content">
                 <div className="mpeasy-preview-wrapper">
                     <iframe
@@ -236,7 +251,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         sandbox="allow-scripts allow-same-origin"
                     />
                 </div>
-                <StylePanel opts={opts} onOptsChange={handleOptsChange} />
+                <StylePanel opts={opts} onOptsChange={handleOptsChange} app={app} />
             </div>
         </div>
     );

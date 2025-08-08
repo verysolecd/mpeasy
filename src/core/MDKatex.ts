@@ -4,71 +4,88 @@ const blockRule = /^\s{0,3}(\$){1,2}[ \t]*\n([\s\S]+?)\n\s{0,3}\1[ \t]*(?:\n|$)/
 
 function createRenderer(display, inlineStyle, blockStyle, iframeWindow, mathjaxPath) {
   return (token) => {
-    // 使用占位符，实际的异步渲染在 parse 方法后处理中处理
-    const displayClass = display ? 'block-katex' : 'inline-katex';
-    return `<span class="${displayClass}-placeholder" data-katex-text="${encodeURIComponent(token.text)}" data-display="${display}">Loading math...</span>`;
+    if (!iframeWindow || !iframeWindow.MathJax) {
+      // MathJax 未加载，返回占位符
+      const displayClass = display ? 'block-katex' : 'inline-katex';
+      return `<span class="${displayClass}-placeholder" data-katex-text="${encodeURIComponent(token.text)}" data-display="${display}">Loading math...</span>`;
+    }
+
+    iframeWindow.MathJax.texReset();
+    const mjxContainer = iframeWindow.MathJax.tex2svg(token.text, { display });
+    const svg = mjxContainer.firstChild;
+    const width = svg.style['min-width'] || svg.getAttribute('width');
+    svg.removeAttribute('width');
+
+    svg.style = 'max-width: 300vw !important; display: initial; flex-shrink: 0;';
+    svg.style.width = width;
+
+    if (!display) {
+      return `<span ${inlineStyle}>${svg.outerHTML}</span>`;
+    }
+
+    return `<section ${blockStyle}>${svg.outerHTML}</section>`;
   }
 }
 
 function inlineKatex(options, renderer) {
-  const nonStandard = options && options.nonStandard
-  const ruleReg = nonStandard ? inlineRuleNonStandard : inlineRule
+  const nonStandard = options && options.nonStandard;
+  const ruleReg = nonStandard ? inlineRuleNonStandard : inlineRule;
   return {
-    name: `inlineKatex`,
-    level: `inline`,
+    name: 'inlineKatex',
+    level: 'inline',
     start(src) {
-      let index
-      let indexSrc = src
+      let index;
+      let indexSrc = src;
 
       while (indexSrc) {
-        index = indexSrc.indexOf(`$`)
+        index = indexSrc.indexOf('$');
         if (index === -1) {
-          return
+          return;
         }
-        const f = nonStandard ? index > -1 : index === 0 || indexSrc.charAt(index - 1) === ` `
+        const f = nonStandard ? index > -1 : index === 0 || indexSrc.charAt(index - 1) === ' ';
         if (f) {
-          const possibleKatex = indexSrc.substring(index)
+          const possibleKatex = indexSrc.substring(index);
 
           if (possibleKatex.match(ruleReg)) {
-            return index
+            return index;
           }
         }
 
-        indexSrc = indexSrc.substring(index + 1).replace(/^\$+/, ``)
+        indexSrc = indexSrc.substring(index + 1).replace(/^\$+/, '');
       }
     },
     tokenizer(src) {
-      const match = src.match(ruleReg)
+      const match = src.match(ruleReg);
       if (match) {
         return {
-          type: `inlineKatex`,
+          type: 'inlineKatex',
           raw: match[0],
           text: match[2].trim(),
           displayMode: match[1].length === 2,
-        }
+        };
       }
     },
     renderer,
-  }
+  };
 }
 
 function blockKatex(options, renderer) {
   return {
-    name: `blockKatex`,
-    level: `block`,
+    name: 'blockKatex',
+    level: 'block',
     tokenizer(src) {
-      const match = src.match(blockRule)
+      const match = src.match(blockRule);
       if (match) {
         return {
-          type: `blockKatex`,
+          type: 'blockKatex',
           raw: match[0],
           text: match[2].trim(),
           displayMode: match[1].length === 2,
-        }
+        };
       }
     },
     renderer,
-  }
+  };
 }
 
 export function MDKatex(options, inlineStyle, blockStyle, iframeWindow, mathjaxPath) {
@@ -78,5 +95,5 @@ export function MDKatex(options, inlineStyle, blockStyle, iframeWindow, mathjaxP
       inlineKatex(options, createRenderer(false, inlineStyle, blockStyle, iframeWindow, mathjaxPath)),
       blockKatex(options, createRenderer(true, inlineStyle, blockStyle, iframeWindow, mathjaxPath)),
     ],
-  }
+  };
 }

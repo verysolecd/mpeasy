@@ -113,6 +113,29 @@ const buildLibs = () => {
         fs.unlinkSync('mathjax-entry.js');
         process.exit(1)
     });
+    
+    const highlightStylesSrc = './node_modules/highlight.js/styles';
+    const highlightStylesDest = './assets/style';
+
+    fs.readdir(highlightStylesSrc, (err, files) => {
+        if (err) {
+            console.error('Error reading highlight.js styles directory:', err);
+            process.exit(1);
+        }
+
+        files.forEach(file => {
+            if (file.endsWith('.css')) {
+                const srcPath = `${highlightStylesSrc}/${file}`;
+                const destPath = `${highlightStylesDest}/${file}`;
+                fs.copyFile(srcPath, destPath, (err) => {
+                    if (err) {
+                        console.error(`Error copying ${file}:`, err);
+                    }
+                });
+            }
+        });
+        console.log('Highlight.js styles copied successfully.');
+    });
 };
 
 if (buildMode === 'libs') {

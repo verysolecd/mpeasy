@@ -21,5 +21,6 @@ yarn-error.log*
 pnpm-debug.log*
 
 # 参考文件
+/refmd
 /onlyref
 /refAPI

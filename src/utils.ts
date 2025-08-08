@@ -99,8 +99,9 @@ export function css2json(css: string): Partial<Record<Block | Inline, Properties
   return json;
 }
 
-function mergeCss(html: string): string {
+function mergeCss(html: string, extraCss: string): string {
   return juice(html, {
+    extraCss,
     inlinePseudoElements: true,
     preserveImportant: true,
   });
@@ -126,8 +127,8 @@ function createEmptyNode(): HTMLElement {
   return node;
 }
 
-export function processClipboardContent(clipboardDiv: HTMLElement, primaryColor: string) {
-  clipboardDiv.innerHTML = modifyHtmlStructure(mergeCss(clipboardDiv.innerHTML));
+export function processClipboardContent(clipboardDiv: HTMLElement, primaryColor: string, extraCss: string) {
+  clipboardDiv.innerHTML = modifyHtmlStructure(mergeCss(clipboardDiv.innerHTML, extraCss));
 
   clipboardDiv.innerHTML = clipboardDiv.innerHTML
     .replace(/([^-])top:(.*?)em/g, `$1transform: translateY($2em)`)

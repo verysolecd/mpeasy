@@ -1,5 +1,7 @@
 import * as React from 'react';
-import type { IOpts } from '../src/types';
+import { useEffect, useState } from 'react';
+import type { IOpts } from '../types';
+import type MPEasyPlugin from '../../main';
 
 // Define theme options and other constants, similar to onlyref
 const themeOptions = [
@@ -14,25 +16,30 @@ const legendOptions = [
     { label: '不显示', value: 'none' },
 ];
 
-const CODE_BLOCK_THEMES = [
-    'a11y-dark.css',
-    'a11y-light.css',
-    'atom-one-dark.css',
-    'atom-one-light.css',
-    'github-dark.css',
-    'github-light.css',
-    'monokai.css',
-    'nord.css',
-    'obsidian.css',
-    'vs2015.css'
-];
-
 interface StylePanelProps {
     opts: Partial<IOpts>;
     onOptsChange: (newOpts: Partial<IOpts>) => void;
+    plugin: MPEasyPlugin;
 }
 
-const StylePanel = ({ opts, onOptsChange }: StylePanelProps) => {
+const StylePanel = ({ opts, onOptsChange, plugin }: StylePanelProps) => {
+    const [codeBlockThemes, setCodeBlockThemes] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (plugin && plugin.app) {
+            const fetchThemes = async () => {
+                const themePath = `${plugin.app.vault.configDir}/plugins/mpeasy/assets/style`;
+                try {
+                    const files = await plugin.app.vault.adapter.list(themePath);
+                    const cssFiles = files.files.filter(file => file.endsWith('.css')).map(file => file.split('/').pop());
+                    setCodeBlockThemes(cssFiles);
+                } catch (error) {
+                    console.error('Failed to load code block themes:', error);
+                }
+            };
+            fetchThemes();
+        }
+    }, [plugin]);
 
     const handleValueChange = (key: keyof IOpts, value: any) => {
         onOptsChange({ [key]: value });
@@ -79,7 +86,7 @@ const StylePanel = ({ opts, onOptsChange }: StylePanelProps) => {
                         value={opts.codeBlockTheme || 'atom-one-dark.css'}
                         onChange={(e) => handleValueChange('codeBlockTheme', e.target.value)}
                     >
-                        {CODE_BLOCK_THEMES.map(theme => (
+                        {codeBlockThemes.map(theme => (
                             <option key={theme} value={theme}>{theme.replace('.css', '')}</option>
                         ))}
                     </select>

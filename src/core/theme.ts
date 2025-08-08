@@ -82,7 +82,7 @@ const defaultTheme: Theme = {
       'overflow-x': `auto`,
       'border-radius': `8px`,
       'padding': `1em`,
-      'line-height': `1.5`,
+      'line-height': `1.2`,
       'margin': `10px 8px`,
     },
     code: {

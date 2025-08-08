@@ -2,7 +2,7 @@
   "wxAppId": "",
   "wxSecret": "",
   "wxToken": "",
-  "themeName": "grace",
+  "themeName": "simple",
   "fontSize": "16px",
   "isUseIndent": true,
   "primaryColor": "#f70808",
@@ -11,5 +11,6 @@
   "isCiteStatus": true,
   "isCountStatus": true,
   "useCustomCSS": true,
-  "codeBlockTheme": "a11y-light.css"
+  "codeBlockTheme": "a11y-dark.css",
+  "size": "18"
 }
