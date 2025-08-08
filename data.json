@@ -11,6 +11,7 @@
   "isCiteStatus": true,
   "isCountStatus": true,
   "useCustomCSS": true,
+  "codeTheme": "a11y-dark.css",
   "codeBlockTheme": "atom-one-light.css",
   "size": "18"
 }

@@ -31,7 +31,6 @@ export class MPEasyView extends ItemView {
             file: file, 
             app: this.app, 
             plugin: this.plugin,
-            settings: this.plugin.settings,
             customCss: this.plugin.customCss,
             mermaidPath: mermaidPath,
             mathjaxPath: mathjaxPath,
