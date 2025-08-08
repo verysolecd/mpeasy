@@ -122,9 +122,9 @@ export class MPEasySettingTab extends PluginSettingTab {
                 for (const theme of CODE_BLOCK_THEMES) {
                     dropdown.addOption(theme, theme.replace('.css', ''));
                 }
-                dropdown.setValue(this.plugin.settings.codeBlockTheme)
+                dropdown.setValue(this.plugin.settings.codeTheme)
                     .onChange(async (value) => {
-                        this.plugin.settings.codeBlockTheme = value;
+                        this.plugin.settings.codeTheme = value;
                         await this.plugin.saveSettings();
                     });
             });

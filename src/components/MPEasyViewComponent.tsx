@@ -26,19 +26,17 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     const [rendererApi, setRendererApi] = useState<RendererAPI | null>(null);
     const [markdownContent, setMarkdownContent] = useState('');
 
-    // Initialize opts state without static props
-    const [opts, setOpts] = useState<Partial<IOpts>>(() => ({
-        theme: themeMap[plugin.settings.themeName as keyof typeof themeMap] || themeMap.default,
-        size: plugin.settings.fontSize,
-        isUseIndent: plugin.settings.isUseIndent,
-        legend: plugin.settings.legend,
-        citeStatus: plugin.settings.isCiteStatus,
-        countStatus: plugin.settings.isCountStatus,
-        isMacCodeBlock: plugin.settings.isMacCodeBlock,
-        codeBlockTheme: plugin.settings.codeBlockTheme,
-        primaryColor: plugin.settings.primaryColor,
-        fonts: `"Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "\u5FAE软雅黑", Arial, sans-serif`,
-    }));
+    const [opts, setOpts] = useState<Partial<IOpts>>({
+        themeName: settings.themeName,
+        fontSize: settings.fontSize,
+        isUseIndent: settings.isUseIndent,
+        primaryColor: settings.primaryColor,
+        legend: settings.legend,
+        isMacCodeBlock: settings.isMacCodeBlock,
+        isCiteStatus: settings.isCiteStatus,
+        isCountStatus: settings.isCountStatus,
+        codeTheme: settings.codeTheme,
+    });
 
     // Effect to read file content with debouncing
     useEffect(() => {

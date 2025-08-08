@@ -34,5 +34,5 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     isCiteStatus: true,
     isCountStatus: true,
     useCustomCSS: false, // Added this line
-    codeBlockTheme: 'atom-one-dark.css', // A default theme
+    codeTheme: 'atom-one-dark', // A default theme
 }

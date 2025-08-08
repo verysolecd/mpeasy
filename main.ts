@@ -3,6 +3,7 @@ import { MPEasyView, VIEW_TYPE_MPEASY } from './view';
 import { MPEasySettings, DEFAULT_SETTINGS } from './src/settings';
 import { MPEasySettingTab } from './src/setting-tab';
 import STYLES from './styles.css';
+import { setBasePath } from './src/utils';
 
 export default class MPEasyPlugin extends Plugin {
     settings: MPEasySettings;
@@ -13,10 +14,15 @@ export default class MPEasyPlugin extends Plugin {
         console.log('正在加载 MPEasy 插件');
         await this.loadSettings();
 
+        // Set the base path for utils
+        const basePath = (this.app.vault.adapter as any).getBasePath();
+        const stylePath = `${basePath}/${this.manifest.dir}/assets/style`;
+        setBasePath(stylePath);
+
         if (this.settings.useCustomCSS) {
             try {
                 this.customCss = await this.app.vault.adapter.read(
-                    `${this.app.vault.configDir}/plugins/mpeasy/assets/custom.css`
+                    `${this.manifest.dir}/assets/custom.css`
                 );
             } catch (e) {
                 console.error('Failed to load custom.css', e);
@@ -92,7 +98,7 @@ export default class MPEasyPlugin extends Plugin {
         if (this.settings.useCustomCSS) {
             try {
                 this.customCss = await this.app.vault.adapter.read(
-                    `${this.app.vault.configDir}/plugins/mpeasy/assets/custom.css`
+                    `${this.manifest.dir}/assets/custom.css`
                 );
             } catch (e) {
                 console.error('Failed to load custom.css', e);

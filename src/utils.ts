@@ -150,3 +150,45 @@ export function processClipboardContent(clipboardDiv: HTMLElement, primaryColor:
   clipboardDiv.insertBefore(beforeNode, clipboardDiv.firstChild);
   clipboardDiv.appendChild(afterNode);
 }
+
+import fs from 'fs';
+import path from 'path';
+
+let styleDir = '';
+
+export function setBasePath(basePath: string) {
+    styleDir = basePath;
+}
+
+export const getStyles = () => {
+  try {
+    const files = fs.readdirSync(styleDir);
+    return files
+      .filter(file => file.endsWith('.css'))
+      .map(file => {
+        const name = file.replace('.css', '');
+        const cssContent = fs.readFileSync(path.join(styleDir, file), 'utf-8');
+        return {
+          name,
+          css: cssContent,
+        };
+      });
+  } catch (error) {
+    console.error('Failed to read styles directory:', error);
+    return [];
+  }
+};
+
+export const loadTheme = (name: string) => {
+  if (!name) {
+    console.error('loadTheme called with undefined name');
+    return ''; // Return empty string if name is undefined
+  }
+  try {
+    const themePath = path.join(styleDir, `${name}.css`);
+    return fs.readFileSync(themePath, 'utf-8');
+  } catch (error) {
+    console.error(`Failed to load theme ${name}:`, error);
+    return ''; // or a default theme
+  }
+};

@@ -1,13 +1,11 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import type { IOpts } from '../types';
-import type MPEasyPlugin from '../../main';
+import { getStyles } from '../utils';
 
 // Define theme options and other constants, similar to onlyref
 const themeOptions = [
-    { label: '经典', value: 'default' },
-    { label: '优雅', value: 'grace' },
-    { label: '简洁', value: 'simple' },
+    { label: '默认', value: 'default' },
 ];
 
 const legendOptions = [
@@ -19,27 +17,15 @@ const legendOptions = [
 interface StylePanelProps {
     opts: Partial<IOpts>;
     onOptsChange: (newOpts: Partial<IOpts>) => void;
-    plugin: MPEasyPlugin;
 }
 
-const StylePanel = ({ opts, onOptsChange, plugin }: StylePanelProps) => {
-    const [codeBlockThemes, setCodeBlockThemes] = useState<string[]>([]);
+const StylePanel = ({ opts, onOptsChange }: StylePanelProps) => {
+    const [codeBlockThemes, setCodeBlockThemes] = useState<{name: string, css: string}[]>([]);
 
     useEffect(() => {
-        if (plugin && plugin.app) {
-            const fetchThemes = async () => {
-                const themePath = `${plugin.app.vault.configDir}/plugins/mpeasy/assets/style`;
-                try {
-                    const files = await plugin.app.vault.adapter.list(themePath);
-                    const cssFiles = files.files.filter(file => file.endsWith('.css')).map(file => file.split('/').pop());
-                    setCodeBlockThemes(cssFiles);
-                } catch (error) {
-                    console.error('Failed to load code block themes:', error);
-                }
-            };
-            fetchThemes();
-        }
-    }, [plugin]);
+        const themes = getStyles();
+        setCodeBlockThemes(themes);
+    }, []);
 
     const handleValueChange = (key: keyof IOpts, value: any) => {
         onOptsChange({ [key]: value });
@@ -52,8 +38,8 @@ const StylePanel = ({ opts, onOptsChange, plugin }: StylePanelProps) => {
                 <div className="style-panel-item">
                     <label>排版主题</label>
                     <select
-                        value={opts.theme?.name || 'default'}
-                        onChange={(e) => handleValueChange('theme', e.target.value)}
+                        value={opts.themeName || 'default'}
+                        onChange={(e) => handleValueChange('themeName', e.target.value)}
                     >
                         {themeOptions.map(opt => (
                             <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -65,7 +51,7 @@ const StylePanel = ({ opts, onOptsChange, plugin }: StylePanelProps) => {
                     <label>主颜色</label>
                     <input
                         type="color"
-                        value={opts.theme?.base?.['--md-primary-color'] as string || '#000000'}
+                        value={opts.primaryColor || '#000000'}
                         onChange={(e) => handleValueChange('primaryColor', e.target.value)}
                     />
                 </div>
@@ -74,8 +60,8 @@ const StylePanel = ({ opts, onOptsChange, plugin }: StylePanelProps) => {
                     <label>字体大小</label>
                     <input
                         type="text"
-                        value={opts.size || '16px'}
-                        onChange={(e) => handleValueChange('size', e.target.value)}
+                        value={opts.fontSize || '16px'}
+                        onChange={(e) => handleValueChange('fontSize', e.target.value)}
                         placeholder="例如: 16px"
                     />
                 </div>
@@ -83,11 +69,11 @@ const StylePanel = ({ opts, onOptsChange, plugin }: StylePanelProps) => {
                 <div className="style-panel-item">
                     <label>代码块主题</label>
                     <select
-                        value={opts.codeBlockTheme || 'atom-one-dark.css'}
-                        onChange={(e) => handleValueChange('codeBlockTheme', e.target.value)}
+                        value={opts.codeTheme || 'atom-one-dark'}
+                        onChange={(e) => handleValueChange('codeTheme', e.target.value)}
                     >
                         {codeBlockThemes.map(theme => (
-                            <option key={theme} value={theme}>{theme.replace('.css', '')}</option>
+                            <option key={theme.name} value={theme.name}>{theme.name}</option>
                         ))}
                     </select>
                 </div>
@@ -126,8 +112,8 @@ const StylePanel = ({ opts, onOptsChange, plugin }: StylePanelProps) => {
                     <label>文末引用</label>
                     <input
                         type="checkbox"
-                        checked={opts.citeStatus || false}
-                        onChange={(e) => handleValueChange('citeStatus', e.target.checked)}
+                        checked={opts.isCiteStatus || false}
+                        onChange={(e) => handleValueChange('isCiteStatus', e.target.checked)}
                     />
                 </div>
 
@@ -135,8 +121,8 @@ const StylePanel = ({ opts, onOptsChange, plugin }: StylePanelProps) => {
                     <label>字数统计</label>
                     <input
                         type="checkbox"
-                        checked={opts.countStatus || false}
-                        onChange={(e) => handleValueChange('countStatus', e.target.checked)}
+                        checked={opts.isCountStatus || false}
+                        onChange={(e) => handleValueChange('isCountStatus', e.target.checked)}
                     />
                 </div>
             </form>
