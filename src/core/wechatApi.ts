@@ -47,7 +47,7 @@ export async function wxUploadImage(settings: MPEasySettings, imageBlob: Blob, f
     if (!token) {
         throw new Error('请先获取 Access Token');
     }
-    const url = `https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=${token}&type=image`;
+    const url = `https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=${token}`;
 
     const N = 16;
     const randomBoundryString = "djmangoBoundry" + Array(N + 1).join((Math.random().toString(36) + '00000000000000000').slice(2, 18)).slice(0, N);

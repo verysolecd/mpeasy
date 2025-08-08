@@ -111,6 +111,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             return;
         }
 
+        new Notice('正在处理图片，请稍候...');
+        const processedHtml = await processLocalImages(outputElement.innerHTML, plugin);
+        outputElement.innerHTML = processedHtml; // Update the element with new image URLs
+
         const hljsThemeCss = hljsCssCache.current.get(opts.codeBlockTheme);
         if (!hljsThemeCss) {
             new Notice('请先等待代码块加载完成。');

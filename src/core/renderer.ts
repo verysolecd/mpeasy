@@ -5,6 +5,7 @@ import hljs from 'highlight.js';
 import type { IOpts, RendererAPI, Theme, ThemeStyles } from '../types';
 import { customCssWithTemplate, css2json } from '../utils';
 import { cloneDeep, toMerged } from 'es-toolkit';
+import juice from 'juice';
 
 import markedAlert from './MDAlert';
 import markedFootnotes from './MDFootnotes';
@@ -340,7 +341,8 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
             }
         }
         
-        return html;
+        const inlinedHtml = juice(html);
+        return inlinedHtml;
     }
 
     function parseFrontMatterAndContent(content: string) {
