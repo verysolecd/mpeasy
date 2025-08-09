@@ -11,5 +11,8 @@
   "legend": "alt",
   "isMacCodeBlock": true,
   "isCiteStatus": true,
-  "isCountStatus": true
+  "isCountStatus": true,
+  "useCustomCSS": true,
+  "codeBlockTheme": "atom-one-light.css",
+  "size": "18"
 }

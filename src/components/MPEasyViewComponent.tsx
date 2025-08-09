@@ -27,15 +27,15 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     const [markdownContent, setMarkdownContent] = useState('');
 
     const [opts, setOpts] = useState<Partial<IOpts>>({
-        layoutThemeName: plugin.settings.layoutThemeName,
-        codeThemeName: plugin.settings.codeThemeName,
-        fontSize: '16px',
-        isUseIndent: false,
-        primaryColor: '#000000',
-        legend: 'alt',
-        isMacCodeBlock: false,
-        isCiteStatus: false,
-        isCountStatus: false,
+        themeName: settings.themeName,
+        fontSize: settings.fontSize,
+        isUseIndent: settings.isUseIndent,
+        primaryColor: settings.primaryColor,
+        legend: settings.legend,
+        isMacCodeBlock: settings.isMacCodeBlock,
+        isCiteStatus: settings.isCiteStatus,
+        isCountStatus: settings.isCountStatus,
+        codeTheme: settings.codeTheme,
     });
 
     // Effect to read file content with debouncing

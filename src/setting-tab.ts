@@ -1,7 +1,20 @@
 import { App, PluginSettingTab, Setting, Notice } from "obsidian";
-import MPEasyPlugin from "../../main";
+import MPEasyPlugin from "./main";
 import { wxGetToken } from "./core/wechatApi";
-import { getLayoutThemes, getCodeBlockThemes } from "./utils";
+import { themeOptions } from "./core/theme";
+
+const CODE_BLOCK_THEMES = [
+    'a11y-dark.css',
+    'a11y-light.css',
+    'atom-one-dark.css',
+    'atom-one-light.css',
+    'github-dark.css',
+    'github-light.css',
+    'monokai.css',
+    'nord.css',
+    'obsidian.css',
+    'vs2015.css'
+];
 
 export class MPEasySettingTab extends PluginSettingTab {
 	plugin: MPEasyPlugin;
@@ -59,45 +72,7 @@ export class MPEasySettingTab extends PluginSettingTab {
                     }
                 }));
 
-        containerEl.createEl('h2', {text: '样式设置'});
-
-        new Setting(containerEl)
-            .setName('布局主题')
-            .setDesc('选择一个布局主题。')
-            .addDropdown(dropdown => {
-                const themes = getLayoutThemes();
-                const options = themes.reduce((acc, theme) => {
-                    acc[theme.name] = theme.name;
-                    return acc;
-                }, {} as Record<string, string>);
-
-                dropdown
-                    .addOptions(options)
-                    .setValue(this.plugin.settings.layoutThemeName)
-                    .onChange(async (value) => {
-                        this.plugin.settings.layoutThemeName = value;
-                        await this.plugin.saveSettings();
-                    });
-            });
-
-        new Setting(containerEl)
-            .setName('代码块主题')
-            .setDesc('选择一个代码块主题。')
-            .addDropdown(dropdown => {
-                const themes = getCodeBlockThemes();
-                const options = themes.reduce((acc, theme) => {
-                    acc[theme.name] = theme.name;
-                    return acc;
-                }, {} as Record<string, string>);
-
-                dropdown
-                    .addOptions(options)
-                    .setValue(this.plugin.settings.codeThemeName)
-                    .onChange(async (value) => {
-                        this.plugin.settings.codeThemeName = value;
-                        await this.plugin.saveSettings();
-                    });
-            });
+        containerEl.createEl('h2', {text: '排版与功能设置'});
 
         new Setting(containerEl)
             .setName('启用自定义 CSS')
@@ -106,6 +81,89 @@ export class MPEasySettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.useCustomCSS)
                 .onChange(async (value) => {
                     this.plugin.settings.useCustomCSS = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('主题选择')
+            .addDropdown(dropdown => {
+                for (const option of themeOptions) {
+                    dropdown.addOption(option.value, option.label);
+                }
+                dropdown.setValue(this.plugin.settings.themeName)
+                    .onChange(async (value) => {
+                        this.plugin.settings.themeName = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName('主颜色')
+            .addColorPicker(color => color
+                .setValue(this.plugin.settings.primaryColor)
+                .onChange(async (value) => {
+                    this.plugin.settings.primaryColor = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('字体大小')
+            .addText(text => text
+                .setPlaceholder('例如: 16px')
+                .setValue(this.plugin.settings.fontSize)
+                .onChange(async (value) => {
+                    this.plugin.settings.fontSize = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('代码块主题')
+            .addDropdown(dropdown => {
+                for (const theme of CODE_BLOCK_THEMES) {
+                    dropdown.addOption(theme, theme.replace('.css', ''));
+                }
+                dropdown.setValue(this.plugin.settings.codeTheme)
+                    .onChange(async (value) => {
+                        this.plugin.settings.codeTheme = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName('首行缩进')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.isUseIndent)
+                .onChange(async (value) => {
+                    this.plugin.settings.isUseIndent = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('Mac 风格代码块')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.isMacCodeBlock)
+                .onChange(async (value) => {
+                    this.plugin.settings.isMacCodeBlock = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('文末引用链接')
+            .setDesc('在文章末尾追加引用的外部链接')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.isCiteStatus)
+                .onChange(async (value) => {
+                    this.plugin.settings.isCiteStatus = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(containerEl)
+            .setName('统计网站字数')
+            .setDesc('在文章末尾显示字数和阅读时间')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.isCountStatus)
+                .onChange(async (value) => {
+                    this.plugin.settings.isCountStatus = value;
                     await this.plugin.saveSettings();
                 }));
 	}
