@@ -19,6 +19,8 @@ export default class MPEasyPlugin extends Plugin {
         const stylePath = `${basePath}/${this.manifest.dir}/assets/style`;
         setBasePath(themePath, stylePath);
 
+        
+
         this.addSettingTab(new MPEasySettingTab(this.app, this));
 
         this.styleEl = document.createElement('style');
@@ -77,7 +79,22 @@ export default class MPEasyPlugin extends Plugin {
     }
 
     async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        const loadedData = await this.loadData();
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
+        
+        // 向后兼容：迁移旧设置
+        if (loadedData) {
+            if (loadedData.themeName && !loadedData.layoutThemeName) {
+                this.settings.layoutThemeName = loadedData.themeName;
+            }
+            if (loadedData.codeBlockTheme && !loadedData.codeThemeName) {
+                this.settings.codeThemeName = loadedData.codeBlockTheme;
+            }
+            
+            // 清理旧属性（可选）
+            delete this.settings.themeName;
+            delete this.settings.codeBlockTheme;
+        }
     }
 
     async saveSettings() {

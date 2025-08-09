@@ -5,7 +5,7 @@ export interface MPEasySettings {
     wxToken: string;
 
     // Typography Settings
-    themeName: string;
+    layoutThemeName: string;
     fontSize: string;
     isUseIndent: boolean;
     primaryColor: string;
@@ -15,17 +15,21 @@ export interface MPEasySettings {
     isMacCodeBlock: boolean;
     isCiteStatus: boolean;
     isCountStatus: boolean;
-    useCustomCSS: boolean; // Added this line
+    useCustomCSS: boolean;
 
     // Code Block Settings
-    codeBlockTheme: string;
+    codeThemeName: string;
+
+    // 向后兼容的旧属性名
+    themeName?: string;
+    codeBlockTheme?: string;
 }
 
 export const DEFAULT_SETTINGS: MPEasySettings = {
     wxAppId: '',
     wxSecret: '',
     wxToken: '',
-    themeName: 'default',
+    layoutThemeName: 'default',
     fontSize: '16px',
     isUseIndent: true,
     primaryColor: '#000000',
@@ -33,6 +37,6 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     isMacCodeBlock: true,
     isCiteStatus: true,
     isCountStatus: true,
-    useCustomCSS: false, // Added this line
-    codeTheme: 'atom-one-dark', // A default theme
-}
+    useCustomCSS: false,
+    codeThemeName: 'default',
+};

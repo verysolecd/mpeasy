@@ -27,15 +27,15 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     const [markdownContent, setMarkdownContent] = useState('');
 
     const [opts, setOpts] = useState<Partial<IOpts>>({
-        themeName: settings.themeName,
-        fontSize: settings.fontSize,
-        isUseIndent: settings.isUseIndent,
-        primaryColor: settings.primaryColor,
-        legend: settings.legend,
-        isMacCodeBlock: settings.isMacCodeBlock,
-        isCiteStatus: settings.isCiteStatus,
-        isCountStatus: settings.isCountStatus,
-        codeTheme: settings.codeTheme,
+        layoutThemeName: plugin.settings.layoutThemeName,
+        fontSize: plugin.settings.fontSize,
+        isUseIndent: plugin.settings.isUseIndent,
+        primaryColor: plugin.settings.primaryColor,
+        legend: plugin.settings.legend,
+        isMacCodeBlock: plugin.settings.isMacCodeBlock,
+        isCiteStatus: plugin.settings.isCiteStatus,
+        isCountStatus: plugin.settings.isCountStatus,
+        codeThemeName: plugin.settings.codeThemeName,
     });
 
     // Effect to read file content with debouncing
@@ -191,24 +191,49 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 }
 
                 const iframe = iframeRef.current;
-                if (iframe && iframe.contentDocument) {
-                    const doc = iframe.contentDocument;
-                    const outputElement = doc.getElementById('output');
-                    
-                    if (outputElement) {
-                        // Only update content if it has changed
-                        if (outputElement.innerHTML !== finalHtml) {
-                            outputElement.innerHTML = finalHtml;
+                    if (iframe && iframe.contentDocument) {
+                        const doc = iframe.contentDocument;
+                        const outputElement = doc.getElementById('output');
+                        
+                        if (outputElement) {
+                            // Only update content if it has changed
+                            if (outputElement.innerHTML !== finalHtml) {
+                                outputElement.innerHTML = finalHtml;
+                            }
+                        } else {
+                            // First render or full refresh needed
+                            doc.open();
+                            doc.write(`
+                                <html>
+                                <head>
+                                    <style>${hljsThemeCss}</style>
+                                </head>
+                                <body>
+                                    <section id="output">${finalHtml}</section>
+                                    <script src="${mermaidPath}"></script>
+                                    <script>
+                                        if (typeof mermaid !== 'undefined') {
+                                            mermaid.initialize({ startOnLoad: true });
+                                            setTimeout(() => {
+                                                mermaid.run();
+                                            }, 0);
+                                        }
+                                    </script>
+                                </body>
+                                </html>
+                            `);
+                            doc.close();
                         }
-                    } else {
-                        // First render or full refresh needed
-                        doc.open();
-                        doc.write(`<html><head><style>${hljsThemeCss}</style></head><body><section id="output">${finalHtml}</section></body></html>`);
-                        doc.close();
+                        
+                        // Initialize Mermaid for existing content - match onlyref behavior
+                        if (iframe.contentWindow && typeof iframe.contentWindow.mermaid !== 'undefined') {
+                            setTimeout(() => {
+                                iframe.contentWindow.mermaid.run();
+                            }, 0);
+                        }
+                        
+                        console.log(`MPEasy: Render completed in ${performance.now() - startTime}ms`);
                     }
-                    
-                    console.log(`MPEasy: Render completed in ${performance.now() - startTime}ms`);
-                }
             } catch (error) {
                 console.error('Error during rendering:', error);
                 new Notice('渲染预览时发生错误，请检查开发者控制台。');

@@ -2,9 +2,7 @@
   "wxAppId": "wxea4ea52f8a48fa3d",
   "wxSecret": "ad6f76f8bac2c01664be4b2359a62ca0",
   "wxToken": "94_Dq_i35CyFjQtBqcFxeg8tMxy6VgGqMd7lh4xk_mB9GEQasNBVMoKu7z6M6zCG3Y2Z293O7NqUEposJicJHY8KrRAytVk-S8UCH90V6D8gFfg4sSNS5QXQcQezfkRWXiAFAEJK",
-  "useCustomCSS": true,
   "layoutThemeName": "default",
-  "codeThemeName": "1c-light",
   "fontSize": "16px",
   "isUseIndent": true,
   "primaryColor": "#000000",
@@ -13,6 +11,7 @@
   "isCiteStatus": true,
   "isCountStatus": true,
   "useCustomCSS": true,
-  "codeBlockTheme": "atom-one-light.css",
+  "codeThemeName": "atom-one-dark.min",
+  "codeTheme": "a11y-light.css",
   "size": "18"
 }

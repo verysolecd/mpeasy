@@ -2,19 +2,7 @@ import { App, PluginSettingTab, Setting, Notice } from "obsidian";
 import MPEasyPlugin from "./main";
 import { wxGetToken } from "./core/wechatApi";
 import { themeOptions } from "./core/theme";
-
-const CODE_BLOCK_THEMES = [
-    'a11y-dark.css',
-    'a11y-light.css',
-    'atom-one-dark.css',
-    'atom-one-light.css',
-    'github-dark.css',
-    'github-light.css',
-    'monokai.css',
-    'nord.css',
-    'obsidian.css',
-    'vs2015.css'
-];
+import { getLayoutThemes, getCodeBlockThemes } from "./utils";
 
 export class MPEasySettingTab extends PluginSettingTab {
 	plugin: MPEasyPlugin;
@@ -85,14 +73,19 @@ export class MPEasySettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName('主题选择')
+            .setName('排版主题')
+            .setDesc('选择文章的排版主题样式')
             .addDropdown(dropdown => {
-                for (const option of themeOptions) {
-                    dropdown.addOption(option.value, option.label);
+                const themes = getLayoutThemes();
+                for (const theme of themes) {
+                    dropdown.addOption(theme.name, theme.name);
                 }
-                dropdown.setValue(this.plugin.settings.themeName)
+                if (themes.length > 0 && !dropdown.getValue()) {
+                    dropdown.setValue(themes[0].name);
+                }
+                dropdown.setValue(this.plugin.settings.layoutThemeName || 'default')
                     .onChange(async (value) => {
-                        this.plugin.settings.themeName = value;
+                        this.plugin.settings.layoutThemeName = value;
                         await this.plugin.saveSettings();
                     });
             });
@@ -118,13 +111,18 @@ export class MPEasySettingTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('代码块主题')
+            .setDesc('选择代码块的语法高亮主题')
             .addDropdown(dropdown => {
-                for (const theme of CODE_BLOCK_THEMES) {
-                    dropdown.addOption(theme, theme.replace('.css', ''));
+                const themes = getCodeBlockThemes();
+                for (const theme of themes) {
+                    dropdown.addOption(theme.name, theme.name);
                 }
-                dropdown.setValue(this.plugin.settings.codeTheme)
+                if (themes.length > 0 && !dropdown.getValue()) {
+                    dropdown.setValue(themes[0].name);
+                }
+                dropdown.setValue(this.plugin.settings.codeThemeName || 'default')
                     .onChange(async (value) => {
-                        this.plugin.settings.codeTheme = value;
+                        this.plugin.settings.codeThemeName = value;
                         await this.plugin.saveSettings();
                     });
             });
