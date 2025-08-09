@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import type { IOpts } from '../types';
 import { getLayoutThemes, getCodeBlockThemes } from '../utils';
+import Combobox from './Combobox'; // Import the new Combobox component
 
 interface StylePanelProps {
     opts: Partial<IOpts>;
@@ -62,10 +63,10 @@ const StylePanel = ({ opts, onOptsChange }: StylePanelProps) => {
 
                 <div className="style-panel-item">
                     <label>字体大小</label>
-                    <input
-                        type="text"
+                    <Combobox
+                        options={['13px', '14px', '15px', '16px', '17px', '18px', '20px', '22px', '24px']}
                         value={opts.fontSize || '16px'}
-                        onChange={(e) => handleValueChange('fontSize', e.target.value)}
+                        onChange={(newValue) => handleValueChange('fontSize', newValue)}
                         placeholder="例如: 16px"
                     />
                 </div>

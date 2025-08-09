@@ -21,14 +21,24 @@
 
 .mpeasy-main-content {
     display: flex;
+    flex-direction: row; /* Ensure horizontal layout */
     flex-grow: 1;
     height: calc(100% - 50px); /* Adjust based on header height */
+    overflow: hidden; /* Prevent double scrollbars */
 }
 
 .mpeasy-preview-wrapper {
     flex-grow: 1;
-    padding: 15px;
+    height: 100%;
+    overflow-y: hidden; /* The iframe will handle its own scrolling */
+}
+
+.mpeasy-right-panel {
+    flex-shrink: 0;
+    width: 300px; /* Adjust width as needed */
+    height: 100%;
     overflow-y: auto;
+    border-left: 1px solid var(--background-modifier-border);
 }
 
 .mpeasy-preview-placeholder {
@@ -92,4 +102,68 @@
 .style-panel-form select,
 .style-panel-form input {
     max-width: 60%;
+}
+
+/* Combobox Styles */
+.mpeasy-combobox-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 60%; /* Match the input width */
+}
+
+.mpeasy-combobox-input {
+    width: calc(100% - 30px); /* Account for toggle button */
+    padding: 5px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.mpeasy-combobox-toggle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 30px;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-normal);
+}
+
+.mpeasy-combobox-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    z-index: 100; /* Ensure it's above other content */
+}
+
+.mpeasy-combobox-dropdown li {
+    padding: 8px 10px;
+    cursor: pointer;
+    color: var(--text-normal);
+}
+
+.mpeasy-combobox-dropdown li:hover {
+    background: var(--background-modifier-hover);
+}
+
+.mpeasy-combobox-no-results {
+    padding: 8px 10px;
+    color: var(--text-muted);
+    font-style: italic;
 }

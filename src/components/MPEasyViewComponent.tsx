@@ -1,16 +1,16 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { App, Notice, TFile } from 'obsidian';
+import { App, Notice, TFile, MarkdownView } from 'obsidian';
 import Header from './Header';
 import StylePanel from './StylePanel';
 import { initRenderer } from '../core/renderer';
-import { themeMap } from '../core/theme';
-import type { RendererAPI, IOpts } from '../types';
+import type { RendererAPI, IOpts, Theme } from '../types';
 import { UploadModal } from './UploadModal';
 import { wxAddDraft, wxUploadImage } from '../core/wechatApi';
 import { processLocalImages } from '../core/htmlPostProcessor';
 import type MPEasyPlugin from '../../main';
 import { processClipboardContent } from '../utils';
+import CssEditor from './CssEditor'; // Import the new component
 
 interface MPEasyViewProps {
     file: TFile;
@@ -25,6 +25,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [rendererApi, setRendererApi] = useState<RendererAPI | null>(null);
     const [markdownContent, setMarkdownContent] = useState('');
+    const [liveCss, setLiveCss] = useState(''); // State for the live CSS editor
+    const scrollListenersRef = useRef<{ cleanUp: () => void } | null>(null); // Ref to hold cleanup function for scroll listeners
 
     const [opts, setOpts] = useState<Partial<IOpts>>({
         layoutThemeName: plugin.settings.layoutThemeName,
@@ -53,8 +55,55 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         const iframeWindow = iframeRef.current.contentWindow;
         if (!iframeWindow) return;
 
-        const initialOpts = {
+        const defaultTheme: Theme = {
+            name: 'default',
+            base: {
+                'font-family': 'sans-serif',
+                'font-size': '16px',
+                'line-height': '1.6',
+                'color': '#333',
+            },
+            inline: {
+                codespan: {
+                    'font-family': 'monospace',
+                    'background-color': '#f5f5f5',
+                    'padding': '2px 4px',
+                    'border-radius': '3px',
+                },
+                link: {
+                    'color': '#007bff',
+                    'text-decoration': 'none',
+                },
+                strong: {
+                    'font-weight': 'bold',
+                }
+            },
+            block: {
+                p: {
+                    'margin-top': '0',
+                    'margin-bottom': '1em',
+                },
+                h1: { 'font-size': '2em', 'margin-bottom': '0.5em', 'font-weight': 'bold' },
+                h2: { 'font-size': '1.5em', 'margin-bottom': '0.5em', 'font-weight': 'bold' },
+                h3: { 'font-size': '1.25em', 'margin-bottom': '0.5em', 'font-weight': 'bold' },
+                blockquote: {
+                    'margin': '1em 0',
+                    'padding': '0 1em',
+                    'color': '#6a737d',
+                    'border-left': '0.25em solid #dfe2e5',
+                },
+                code_pre: {
+                    'padding': '1em',
+                    'overflow': 'auto',
+                    'border-radius': '3px',
+                }
+            },
+            styles: {} as any, // This will be populated by buildTheme
+        };
+
+        const initialOpts: Partial<IOpts> = {
             ...opts,
+            theme: defaultTheme, // Pass the structured theme object
             layoutThemeName: plugin.settings.layoutThemeName,
             codeThemeName: plugin.settings.codeThemeName,
             customCSS: customCss,
@@ -65,7 +114,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         const api = initRenderer(initialOpts as IOpts, iframeWindow);
         setRendererApi(api);
 
-    }, [plugin.settings.layoutThemeName, plugin.settings.codeThemeName]);
+    }, [plugin.settings.layoutThemeName, plugin.settings.codeThemeName, customCss, mermaidPath, mathjaxPath]);
 
     // Effect to update renderer options when opts state changes
     useEffect(() => {
@@ -174,15 +223,15 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     useEffect(() => {
         if (!rendererApi || !iframeRef.current || !markdownContent) return;
 
-        const timeoutId = setTimeout(async () => {
-            const startTime = performance.now();
-            
+        const debounceTimeout = setTimeout(async () => {
             try {
-                // Parse markdown
-                const parsedHtml = await rendererApi.parse(markdownContent);
-                const finalHtml = await processLocalImages(parsedHtml, plugin);
+                const startTime = performance.now();
 
-                // Cache highlight.js CSS
+                // 1. Parse markdown to HTML using the renderer
+                const parsedHtml = await rendererApi.parse(markdownContent);
+                const processedHtml = await processLocalImages(parsedHtml, plugin);
+
+                // 2. Get theme CSS for code blocks
                 let hljsThemeCss = hljsCssCache.current.get(opts.codeThemeName);
                 if (!hljsThemeCss) {
                     const hljsThemePath = `${plugin.manifest.dir}/assets/style/${opts.codeThemeName}.css`;
@@ -191,58 +240,103 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 }
 
                 const iframe = iframeRef.current;
-                    if (iframe && iframe.contentDocument) {
-                        const doc = iframe.contentDocument;
-                        const outputElement = doc.getElementById('output');
-                        
-                        if (outputElement) {
-                            // Only update content if it has changed
-                            if (outputElement.innerHTML !== finalHtml) {
-                                outputElement.innerHTML = finalHtml;
+                if (!iframe) return;
+
+                // 3. Construct the full HTML for the iframe
+                const fullHtml = `
+                    <html>
+                    <head>
+                        <meta charset="UTF-8">
+                        <style>${hljsThemeCss}</style>
+                        <style>${customCss}</style>
+                        <style>${liveCss}</style> 
+                    </head>
+                    <body style="font-size: ${opts.fontSize || '16px'};">
+                        <section id="output">${processedHtml}</section>
+                        <script src="${mermaidPath}"></script>
+                        <script>
+                            if (typeof mermaid !== 'undefined') {
+                                mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
                             }
-                        } else {
-                            // First render or full refresh needed
-                            doc.open();
-                            doc.write(`
-                                <html>
-                                <head>
-                                    <style>${hljsThemeCss}</style>
-                                </head>
-                                <body>
-                                    <section id="output">${finalHtml}</section>
-                                    <script src="${mermaidPath}"></script>
-                                    <script>
-                                        if (typeof mermaid !== 'undefined') {
-                                            mermaid.initialize({ startOnLoad: true });
-                                            setTimeout(() => {
-                                                mermaid.run();
-                                            }, 0);
-                                        }
-                                    </script>
-                                </body>
-                                </html>
-                            `);
-                            doc.close();
-                        }
-                        
-                        // Initialize Mermaid for existing content - match onlyref behavior
-                        if (iframe.contentWindow && typeof iframe.contentWindow.mermaid !== 'undefined') {
-                            setTimeout(() => {
-                                iframe.contentWindow.mermaid.run();
-                            }, 0);
-                        }
-                        
-                        console.log(`MPEasy: Render completed in ${performance.now() - startTime}ms`);
+                        </script>
+                    </body>
+                    </html>
+                `;
+
+                // 4. Use srcdoc to update iframe content
+                iframe.srcdoc = fullHtml;
+                
+                console.log(`MPEasy: Render prepared in ${performance.now() - startTime}ms`);
+
+                // 5. After the iframe has loaded, run scripts and set up scroll sync
+                iframe.onload = () => {
+                    // Run Mermaid
+                    if (iframe.contentWindow && typeof iframe.contentWindow.mermaid !== 'undefined') {
+                        iframe.contentWindow.mermaid.run({
+                            nodes: iframe.contentDocument.querySelectorAll('.mermaid')
+                        });
                     }
+
+                    // Setup Scroll Sync
+                    if (scrollListenersRef.current) {
+                        scrollListenersRef.current.cleanUp();
+                    }
+
+                    const previewWindow = iframe.contentWindow;
+                    const previewEl = iframe.contentDocument.documentElement;
+                    const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
+                    if (!markdownView || !previewWindow || !previewEl) return;
+
+                    const editorEl = markdownView.containerEl.querySelector('.cm-scroller') as HTMLElement;
+                    if (!editorEl) return;
+
+                    let isSyncing = false;
+
+                    const handleEditorScroll = () => {
+                        if (isSyncing) return;
+                        isSyncing = true;
+                        requestAnimationFrame(() => {
+                            const percentage = editorEl.scrollTop / (editorEl.scrollHeight - editorEl.clientHeight);
+                            previewEl.scrollTop = percentage * (previewEl.scrollHeight - previewEl.clientHeight);
+                            isSyncing = false;
+                        });
+                    };
+
+                    const handlePreviewScroll = () => {
+                        if (isSyncing) return;
+                        isSyncing = true;
+                        requestAnimationFrame(() => {
+                            const percentage = previewEl.scrollTop / (previewEl.scrollHeight - previewEl.clientHeight);
+                            editorEl.scrollTop = percentage * (editorEl.scrollHeight - editorEl.clientHeight);
+                            isSyncing = false;
+                        });
+                    };
+
+                    editorEl.addEventListener('scroll', handleEditorScroll);
+                    previewWindow.addEventListener('scroll', handlePreviewScroll);
+                    
+                    scrollListenersRef.current = { 
+                        cleanUp: () => {
+                            editorEl.removeEventListener('scroll', handleEditorScroll);
+                            previewWindow.removeEventListener('scroll', handlePreviewScroll);
+                        }
+                    };
+                };
+
             } catch (error) {
                 console.error('Error during rendering:', error);
                 new Notice('渲染预览时发生错误，请检查开发者控制台。');
             }
-        }, 100); // 100ms debounce
+        }, 250); // 250ms debounce
 
-        return () => clearTimeout(timeoutId);
+        return () => {
+            clearTimeout(debounceTimeout);
+            if (scrollListenersRef.current) {
+                scrollListenersRef.current.cleanUp();
+            }
+        };
 
-    }, [markdownContent, rendererApi, opts.codeThemeName, plugin, app.vault.adapter]);
+    }, [markdownContent, rendererApi, opts, plugin, customCss, liveCss, mermaidPath, app.workspace]); // Updated dependencies
 
     return (
         <div className="mpeasy-view-container">
@@ -256,7 +350,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         sandbox="allow-scripts allow-same-origin"
                     />
                 </div>
-                <StylePanel opts={opts} onOptsChange={handleOptsChange} app={app} />
+                <div className="mpeasy-right-panel">
+                    <StylePanel opts={opts} onOptsChange={handleOptsChange} app={app} />
+                    <CssEditor value={liveCss} onChange={setLiveCss} />
+                </div>
             </div>
         </div>
     );

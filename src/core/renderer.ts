@@ -244,10 +244,6 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
     code({ text, lang = `` }: Tokens.Code): string {
       if (lang.startsWith(`mermaid`)) {
-        clearTimeout(codeIndex)
-        codeIndex = setTimeout(() => {
-          mermaid.run()
-        }, 0) as any as number
         return `<pre class="mermaid">${text}</pre>`
       }
       const langText = lang.split(` `)[0]
@@ -391,6 +387,10 @@ export function initRenderer(opts: IOpts): RendererAPI {
   )
   marked.use(markedFootnotes())
 
+  function createContainer(content: string) {
+    return styledContent(`container`, content, `section`)
+  }
+
   async function parse(markdown: string): Promise<string> {
     const { markdownContent, readingTime: readingTimeResult } = parseFrontMatterAndContent(markdown);
     let html = marked.parse(markdownContent) as string;
@@ -433,9 +433,6 @@ export function initRenderer(opts: IOpts): RendererAPI {
     reset,
     parseFrontMatterAndContent,
     buildReadingTime,
-    createContainer(content: string) {
-      return styledContent(`container`, content, `section`)
-    },
     getOpts,
     parse,
   }
