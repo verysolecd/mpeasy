@@ -181,16 +181,23 @@ export const getLayoutThemes = () => {
 };
 
 export const loadLayoutTheme = (name: string) => {
-  if (!name) {
-    console.error('loadLayoutTheme called with undefined name');
-    return '';
+  if (!name || name === 'undefined' || name === '') {
+    console.warn('loadLayoutTheme called with invalid name, using default');
+    name = 'default';
   }
   try {
     const themePath = path.join(themeDir, `${name}.css`);
     return fs.readFileSync(themePath, 'utf-8');
   } catch (error) {
     console.error(`Failed to load layout theme ${name}:`, error);
-    return '';
+    // 回退到默认主题
+    try {
+      const defaultPath = path.join(themeDir, 'default.css');
+      return fs.readFileSync(defaultPath, 'utf-8');
+    } catch (fallbackError) {
+      console.error('Failed to load default theme:', fallbackError);
+      return '';
+    }
   }
 };
 
@@ -213,15 +220,22 @@ export const getCodeBlockThemes = () => {
 };
 
 export const loadCodeBlockTheme = (name: string) => {
-  if (!name) {
-    console.error('loadCodeBlockTheme called with undefined name');
-    return '';
+  if (!name || name === 'undefined' || name === '') {
+    console.warn('loadCodeBlockTheme called with invalid name, using default');
+    name = 'default';
   }
   try {
     const themePath = path.join(styleDir, `${name}.css`);
     return fs.readFileSync(themePath, 'utf-8');
   } catch (error) {
     console.error(`Failed to load code block theme ${name}:`, error);
-    return '';
+    // 回退到默认主题
+    try {
+      const defaultPath = path.join(styleDir, 'default.css');
+      return fs.readFileSync(defaultPath, 'utf-8');
+    } catch (fallbackError) {
+      console.error('Failed to load default code block theme:', fallbackError);
+      return '';
+    }
   }
 };

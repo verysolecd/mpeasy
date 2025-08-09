@@ -1,17 +1,15 @@
 {
   "wxAppId": "wxea4ea52f8a48fa3d",
-  "wxSecret": "ad6f76f8bac2c01664be4b2359a62ca0 ",
+  "wxSecret": "ad6f76f8bac2c01664be4b2359a62ca0",
   "wxToken": "94_Dq_i35CyFjQtBqcFxeg8tMxy6VgGqMd7lh4xk_mB9GEQasNBVMoKu7z6M6zCG3Y2Z293O7NqUEposJicJHY8KrRAytVk-S8UCH90V6D8gFfg4sSNS5QXQcQezfkRWXiAFAEJK",
-  "themeName": "default",
+  "useCustomCSS": true,
+  "layoutThemeName": "default",
+  "codeThemeName": "1c-light",
   "fontSize": "16px",
   "isUseIndent": true,
-  "primaryColor": "#f70808",
-  "legend": "title",
+  "primaryColor": "#000000",
+  "legend": "alt",
   "isMacCodeBlock": true,
   "isCiteStatus": true,
-  "isCountStatus": true,
-  "useCustomCSS": true,
-  "codeTheme": "a11y-dark.css",
-  "codeBlockTheme": "atom-one-light.css",
-  "size": "18"
+  "isCountStatus": true
 }

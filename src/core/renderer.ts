@@ -18,8 +18,9 @@ export function initRenderer(options: IOpts, iframeWindow: Window): RendererAPI 
     const createMarkedInstance = (currentOpts: IOpts) => {
         const renderer = {
             code(code: string, language: string) {
+                const codeString = typeof code === 'string' ? code : '';
                 const validLanguage = hljs.getLanguage(language) ? language : 'plaintext';
-                const highlightedCode = hljs.highlight(code, { language: validLanguage }).value;
+                const highlightedCode = hljs.highlight(codeString, { language: validLanguage }).value;
                 return `<pre><code class="hljs ${validLanguage}">${highlightedCode}</code></pre>`;
             },
         };

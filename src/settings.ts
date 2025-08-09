@@ -6,6 +6,8 @@ export interface MPEasySettings {
 
     // Feature Toggles
     useCustomCSS: boolean;
+    layoutThemeName: string;
+    codeThemeName: string;
 }
 
 export const DEFAULT_SETTINGS: MPEasySettings = {
@@ -13,4 +15,6 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     wxSecret: '',
     wxToken: '',
     useCustomCSS: false,
+    layoutThemeName: 'default',
+    codeThemeName: 'default',
 }

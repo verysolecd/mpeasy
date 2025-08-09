@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, Setting, Notice } from "obsidian";
 import MPEasyPlugin from "../../main";
 import { wxGetToken } from "./core/wechatApi";
+import { getLayoutThemes, getCodeBlockThemes } from "./utils";
 
 export class MPEasySettingTab extends PluginSettingTab {
 	plugin: MPEasyPlugin;
@@ -59,6 +60,44 @@ export class MPEasySettingTab extends PluginSettingTab {
                 }));
 
         containerEl.createEl('h2', {text: '样式设置'});
+
+        new Setting(containerEl)
+            .setName('布局主题')
+            .setDesc('选择一个布局主题。')
+            .addDropdown(dropdown => {
+                const themes = getLayoutThemes();
+                const options = themes.reduce((acc, theme) => {
+                    acc[theme.name] = theme.name;
+                    return acc;
+                }, {} as Record<string, string>);
+
+                dropdown
+                    .addOptions(options)
+                    .setValue(this.plugin.settings.layoutThemeName)
+                    .onChange(async (value) => {
+                        this.plugin.settings.layoutThemeName = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(containerEl)
+            .setName('代码块主题')
+            .setDesc('选择一个代码块主题。')
+            .addDropdown(dropdown => {
+                const themes = getCodeBlockThemes();
+                const options = themes.reduce((acc, theme) => {
+                    acc[theme.name] = theme.name;
+                    return acc;
+                }, {} as Record<string, string>);
+
+                dropdown
+                    .addOptions(options)
+                    .setValue(this.plugin.settings.codeThemeName)
+                    .onChange(async (value) => {
+                        this.plugin.settings.codeThemeName = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
 
         new Setting(containerEl)
             .setName('启用自定义 CSS')

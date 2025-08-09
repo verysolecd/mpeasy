@@ -27,7 +27,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     const [markdownContent, setMarkdownContent] = useState('');
 
     const [opts, setOpts] = useState<Partial<IOpts>>({
-        themeName: 'default',
+        layoutThemeName: plugin.settings.layoutThemeName,
+        codeThemeName: plugin.settings.codeThemeName,
         fontSize: '16px',
         isUseIndent: false,
         primaryColor: '#000000',
@@ -35,7 +36,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         isMacCodeBlock: false,
         isCiteStatus: false,
         isCountStatus: false,
-        codeTheme: 'atom-one-dark',
     });
 
     // Effect to read file content with debouncing
@@ -47,33 +47,32 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         }
     }, [file, app.vault]);
 
-    // Effect to initialize renderer (runs only once on mount)
+    // Effect to initialize renderer
     useEffect(() => {
         if (!iframeRef.current) return;
         const iframeWindow = iframeRef.current.contentWindow;
         if (!iframeWindow) return;
 
-        // Pass all necessary options, including static props
-        const initialOpts: IOpts = {
-            ...opts as IOpts, // Cast to IOpts, assuming all required fields are present or optional
+        const initialOpts = {
+            ...opts,
+            layoutThemeName: plugin.settings.layoutThemeName,
+            codeThemeName: plugin.settings.codeThemeName,
             customCSS: customCss,
             mermaidPath,
             mathjaxPath,
         };
 
-        const api = initRenderer(initialOpts, iframeWindow);
+        const api = initRenderer(initialOpts as IOpts, iframeWindow);
         setRendererApi(api);
 
-        // Cleanup function if needed (e.g., unmount renderer)
-        // return () => { /* cleanup */ };
-    }, []); // Empty dependency array ensures this runs only once
+    }, [plugin.settings.layoutThemeName, plugin.settings.codeThemeName]);
 
     // Effect to update renderer options when opts state changes
     useEffect(() => {
         if (rendererApi) {
             rendererApi.setOptions(opts);
         }
-    }, [opts, rendererApi]); // Triggered when opts state or rendererApi changes
+    }, [opts, rendererApi]);
 
     const handleRefresh = () => {
         if (file) {
@@ -99,7 +98,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         const processedHtml = await processLocalImages(outputElement.innerHTML, plugin);
         outputElement.innerHTML = processedHtml; // Update the element with new image URLs
 
-        const hljsThemeCss = hljsCssCache.current.get(opts.codeBlockTheme);
+        const hljsThemeCss = hljsCssCache.current.get(opts.codeThemeName);
         if (!hljsThemeCss) {
             new Notice('请先等待代码块加载完成。');
             return;
@@ -163,15 +162,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
     const handleOptsChange = (newOpts: Partial<IOpts>) => {
         const updatedOpts = { ...opts, ...newOpts };
-
-        if (newOpts.theme && typeof newOpts.theme === 'string') {
-            plugin.settings.themeName = newOpts.theme;
-            updatedOpts.theme = themeMap[newOpts.theme as keyof typeof themeMap] || opts.theme;
-        } else {
-            Object.assign(plugin.settings, newOpts);
-        }
-
         setOpts(updatedOpts);
+        Object.assign(plugin.settings, updatedOpts);
         plugin.saveSettings();
     };
 
@@ -191,11 +183,11 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 const finalHtml = await processLocalImages(parsedHtml, plugin);
 
                 // Cache highlight.js CSS
-                let hljsThemeCss = hljsCssCache.current.get(opts.codeBlockTheme);
+                let hljsThemeCss = hljsCssCache.current.get(opts.codeThemeName);
                 if (!hljsThemeCss) {
-                    const hljsThemePath = `${plugin.manifest.dir}/assets/style/${opts.codeBlockTheme}`;
+                    const hljsThemePath = `${plugin.manifest.dir}/assets/style/${opts.codeThemeName}.css`;
                     hljsThemeCss = await app.vault.adapter.read(hljsThemePath);
-                    hljsCssCache.current.set(opts.codeBlockTheme, hljsThemeCss);
+                    hljsCssCache.current.set(opts.codeThemeName, hljsThemeCss);
                 }
 
                 const iframe = iframeRef.current;
@@ -225,7 +217,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
         return () => clearTimeout(timeoutId);
 
-    }, [markdownContent, rendererApi, opts.codeBlockTheme, plugin, app.vault.adapter]);
+    }, [markdownContent, rendererApi, opts.codeThemeName, plugin, app.vault.adapter]);
 
     return (
         <div className="mpeasy-view-container">
