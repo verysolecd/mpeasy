@@ -4,7 +4,8 @@
 # Build output
 /main.js
 /mathjax.js
-# /mermaid.js
+/data.json
+/mermaid.js
 
 # IDE config
 .vscode/
@@ -24,9 +25,6 @@ pnpm-debug.log*
 /refmd/
 /onlyref/
 /refAPI/
-
-
-
 
 
 # build
