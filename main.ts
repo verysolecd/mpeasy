@@ -85,5 +85,17 @@ export default class MPEasyPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+        this.refreshViews();
+    }
+
+    refreshViews() {
+        this.app.workspace.getLeavesOfType(VIEW_TYPE_MPEASY).forEach(leaf => {
+            if (leaf.view instanceof MPEasyView) {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile) {
+                    leaf.view.renderComponent(activeFile);
+                }
+            }
+        });
     }
 }

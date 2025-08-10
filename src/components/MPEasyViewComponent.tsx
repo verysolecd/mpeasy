@@ -41,6 +41,32 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         codeThemeName: plugin.settings.codeThemeName,
     });
 
+    // Effect to synchronize opts state with plugin.settings when plugin.settings change externally
+    useEffect(() => {
+        setOpts(prevOpts => ({
+            ...prevOpts,
+            layoutThemeName: plugin.settings.layoutThemeName,
+            codeThemeName: plugin.settings.codeThemeName,
+            fontSize: plugin.settings.fontSize,
+            primaryColor: plugin.settings.primaryColor,
+            isUseIndent: plugin.settings.isUseIndent,
+            legend: plugin.settings.legend,
+            isMacCodeBlock: plugin.settings.isMacCodeBlock,
+            isCiteStatus: plugin.settings.isCiteStatus,
+            isCountStatus: plugin.settings.isCountStatus,
+        }));
+    }, [
+        plugin.settings.layoutThemeName,
+        plugin.settings.codeThemeName,
+        plugin.settings.fontSize,
+        plugin.settings.primaryColor,
+        plugin.settings.isUseIndent,
+        plugin.settings.legend,
+        plugin.settings.isMacCodeBlock,
+        plugin.settings.isCiteStatus,
+        plugin.settings.isCountStatus,
+    ]);
+
     useEffect(() => {
         const getTheme = () => document.body.classList.contains('theme-dark') ? 'dark' : 'light';
         setObsidianTheme(getTheme());
