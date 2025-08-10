@@ -41,6 +41,7 @@ export interface IOpts {
     customCSS?: string;
     mermaidPath?: string;
     mathjaxPath?: string;
+    obsidianTheme?: 'light' | 'dark';
 }
 
 // Flattened theme styles

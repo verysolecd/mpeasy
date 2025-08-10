@@ -388,7 +388,8 @@ export function initRenderer(opts: IOpts): RendererAPI {
   marked.use(markedFootnotes())
 
   function createContainer(content: string) {
-    return styledContent(`container`, content, `section`)
+    const themeClass = opts.obsidianTheme ? `theme-${opts.obsidianTheme}` : '';
+    return `<section class="mpeasy-container ${themeClass}" ${styles('container')}>${content}</section>`;
   }
 
   async function parse(markdown: string): Promise<string> {
@@ -421,6 +422,7 @@ export function initRenderer(opts: IOpts): RendererAPI {
       h2 strong {
         color: inherit !important;
       }
+      
     </style>
   `
     return createContainer(html);

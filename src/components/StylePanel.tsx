@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import type { IOpts } from '../types';
 import { getLayoutThemes, getCodeBlockThemes } from '../utils';
-import Combobox from './Combobox'; // Import the new Combobox component
+import Combobox from './Combobox.tsx'; // Import the new Combobox component
 
 interface StylePanelProps {
     opts: Partial<IOpts>;

@@ -46,35 +46,7 @@
     color: var(--text-muted);
 }
 
-/* TOC Styles */
-.markdown-toc {
-    background-color: var(--background-secondary-alt);
-    border-radius: 6px;
-    padding: 12px;
-    margin-bottom: 1em;
-}
 
-.toc-ul {
-    list-style: none;
-    padding-left: 1rem; /* pl-4 */
-    border-left: 1px solid var(--background-modifier-border); /* border-l */
-    margin-left: 0.5rem; /* ml-2 */
-}
-
-.toc-li {
-    margin-bottom: 0.25rem; /* mb-1 */
-}
-
-.toc-li a {
-    color: var(--text-normal); /* text-gray-700 */
-    text-decoration: none; /* no underline by default */
-    transition: color 0.2s ease-in-out; /* transition-colors */
-}
-
-.toc-li a:hover {
-    color: var(--interactive-accent); /* hover:text-blue-600 */
-    text-decoration: underline; /* underline on hover */
-}
 
 /* Style Panel Styles */
 .style-panel-container {
@@ -167,3 +139,4 @@
     color: var(--text-muted);
     font-style: italic;
 }
+

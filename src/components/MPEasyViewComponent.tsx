@@ -26,6 +26,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     const [rendererApi, setRendererApi] = useState<RendererAPI | null>(null);
     const [markdownContent, setMarkdownContent] = useState('');
     const [liveCss, setLiveCss] = useState(''); // State for the live CSS editor
+    const [obsidianTheme, setObsidianTheme] = useState<'light' | 'dark'>('light');
     const scrollListenersRef = useRef<{ cleanUp: () => void } | null>(null); // Ref to hold cleanup function for scroll listeners
 
     const [opts, setOpts] = useState<Partial<IOpts>>({
@@ -39,6 +40,16 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         isCountStatus: plugin.settings.isCountStatus,
         codeThemeName: plugin.settings.codeThemeName,
     });
+
+    useEffect(() => {
+        const getTheme = () => document.body.classList.contains('theme-dark') ? 'dark' : 'light';
+        setObsidianTheme(getTheme());
+        const observer = new MutationObserver(() => {
+            setObsidianTheme(getTheme());
+        });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }, []);
 
     // Effect to read file content with debouncing
     useEffect(() => {
@@ -109,19 +120,20 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             customCSS: customCss,
             mermaidPath,
             mathjaxPath,
+            obsidianTheme: obsidianTheme,
         };
 
-        const api = initRenderer(initialOpts as IOpts, iframeWindow);
+        const api = initRenderer(initialOpts as IOpts);
         setRendererApi(api);
 
-    }, [plugin.settings.layoutThemeName, plugin.settings.codeThemeName, customCss, mermaidPath, mathjaxPath]);
+    }, [plugin.settings.layoutThemeName, plugin.settings.codeThemeName, customCss, mermaidPath, mathjaxPath, obsidianTheme]);
 
     // Effect to update renderer options when opts state changes
     useEffect(() => {
         if (rendererApi) {
-            rendererApi.setOptions(opts);
+            rendererApi.setOptions({ ...opts, obsidianTheme: obsidianTheme });
         }
-    }, [opts, rendererApi]);
+    }, [opts, rendererApi, obsidianTheme]);
 
     const handleRefresh = () => {
         if (file) {
@@ -336,7 +348,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             }
         };
 
-    }, [markdownContent, rendererApi, opts, plugin, customCss, liveCss, mermaidPath, app.workspace]); // Updated dependencies
+    }, [markdownContent, rendererApi, opts, plugin, customCss, liveCss, mermaidPath, app.workspace, obsidianTheme]); // Updated dependencies
 
     return (
         <div className="mpeasy-view-container">
