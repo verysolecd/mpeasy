@@ -140,3 +140,11 @@
     font-style: italic;
 }
 
+/* Default code color for readability */
+.mpeasy-container.theme-light .hljs code {
+    color: #333333; /* Dark grey for light backgrounds */
+}
+
+.mpeasy-container.theme-dark .hljs code {
+    color: #dddddd; /* Light grey for dark backgrounds */
+}

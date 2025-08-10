@@ -72,7 +72,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 'font-family': 'sans-serif',
                 'font-size': '16px',
                 'line-height': '1.6',
-                'color': '#333',
             },
             inline: {
                 codespan: {
