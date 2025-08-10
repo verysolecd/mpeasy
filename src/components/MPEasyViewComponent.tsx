@@ -267,7 +267,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         <script src="${mermaidPath}"></script>
                         <script>
                             if (typeof mermaid !== 'undefined') {
-                                mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+                                mermaid.initialize({ startOnLoad: false, theme: 'default' });
                             }
                         </script>
                     </body>
