@@ -4,7 +4,6 @@
 # Build output
 /main.js
 /mathjax.js
-/data.json
 /mermaid.js
 
 # IDE config
@@ -26,7 +25,9 @@ pnpm-debug.log*
 /onlyref/
 /refAPI/
 
-
 # build
 /dist/
 /assets/
+
+# 数据文件
+/data.json
