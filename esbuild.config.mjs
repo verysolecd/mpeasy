@@ -124,7 +124,7 @@ const buildLibs = () => {
         }
 
         files.forEach(file => {
-            if (file.endsWith('.css')) {
+            if (file.endsWith('.css') && !file.endsWith('.min.css')) {
                 const srcPath = `${highlightStylesSrc}/${file}`;
                 const destPath = `${highlightStylesDest}/${file}`;
                 fs.copyFile(srcPath, destPath, (err) => {

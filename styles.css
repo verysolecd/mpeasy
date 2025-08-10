@@ -67,6 +67,18 @@
     margin-bottom: 10px;
 }
 
+.style-panel-form .style-panel-item-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.style-panel-form .style-panel-item-column label {
+    margin-bottom: 8px;
+}
+
 .style-panel-form label {
     font-size: 0.9em;
 }
@@ -140,11 +152,76 @@
     font-style: italic;
 }
 
-/* Default code color for readability */
-.mpeasy-container.theme-light .hljs code {
-    color: #333333; /* Dark grey for light backgrounds */
+/* Color Picker Styles */
+.color-preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 12px;
 }
 
-.mpeasy-container.theme-dark .hljs code {
-    color: #dddddd; /* Light grey for dark backgrounds */
+.color-preset-item {
+    display: flex;
+    align-items: center;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+.color-preset-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.color-preset-item.selected {
+    border-color: var(--text-accent);
+    background-color: var(--background-modifier-hover);
+}
+
+.color-preset-item .color-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.color-preset-item span {
+    font-size: 0.85em;
+}
+
+.custom-color-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.custom-color-picker {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    cursor: pointer;
+}
+
+.custom-color-picker::-webkit-color-swatch {
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.custom-color-input {
+    flex-grow: 1;
+    margin: 0 8px;
+    max-width: none !important; /* Override general input style */
+}
+
+.custom-color-apply-btn {
+    /* Standard button styles will apply */
 }

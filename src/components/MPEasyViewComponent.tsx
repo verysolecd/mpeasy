@@ -4,7 +4,7 @@ import { App, Notice, TFile, MarkdownView } from 'obsidian';
 import Header from './Header';
 import StylePanel from './StylePanel';
 import { initRenderer } from '../core/renderer';
-import type { RendererAPI, IOpts, Theme } from '../types';
+import type { RendererAPI, IOpts } from '../types';
 import { UploadModal } from './UploadModal';
 import { wxAddDraft, wxUploadImage } from '../core/wechatApi';
 import { processLocalImages } from '../core/htmlPostProcessor';
@@ -63,57 +63,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     // Effect to initialize renderer
     useEffect(() => {
         if (!iframeRef.current) return;
-        const iframeWindow = iframeRef.current.contentWindow;
-        if (!iframeWindow) return;
-
-        const defaultTheme: Theme = {
-            name: 'default',
-            base: {
-                'font-family': 'sans-serif',
-                'font-size': '16px',
-                'line-height': '1.6',
-            },
-            inline: {
-                codespan: {
-                    'font-family': 'monospace',
-                    'background-color': '#f5f5f5',
-                    'padding': '2px 4px',
-                    'border-radius': '3px',
-                },
-                link: {
-                    'color': '#007bff',
-                    'text-decoration': 'none',
-                },
-                strong: {
-                    'font-weight': 'bold',
-                }
-            },
-            block: {
-                p: {
-                    'margin-top': '0',
-                    'margin-bottom': '1em',
-                },
-                h1: { 'font-size': '2em', 'margin-bottom': '0.5em', 'font-weight': 'bold' },
-                h2: { 'font-size': '1.5em', 'margin-bottom': '0.5em', 'font-weight': 'bold' },
-                h3: { 'font-size': '1.25em', 'margin-bottom': '0.5em', 'font-weight': 'bold' },
-                blockquote: {
-                    'margin': '1em 0',
-                    'padding': '0 1em',
-                    'color': '#6a737d',
-                    'border-left': '0.25em solid #dfe2e5',
-                },
-                code_pre: {
-                    'padding': '1em',
-                    'overflow': 'auto',
-                    'border-radius': '3px',
-                }
-            },
-            styles: {} as any, // This will be populated by buildTheme
-        };
 
         const initialOpts: Partial<IOpts> = {
             ...opts,
-            theme: defaultTheme, // Pass the structured theme object
+            // The theme object is no longer needed here, it will be loaded as CSS
             layoutThemeName: plugin.settings.layoutThemeName,
             codeThemeName: plugin.settings.codeThemeName,
             customCSS: customCss,
@@ -155,18 +108,27 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         }
 
         new Notice('正在处理图片，请稍候...');
-        const processedHtml = await processLocalImages(outputElement.innerHTML, plugin);
-        outputElement.innerHTML = processedHtml; // Update the element with new image URLs
+        // Process local images first
+        const htmlWithProcessedImages = await processLocalImages(outputElement.innerHTML, plugin);
 
-        const hljsThemeCss = hljsCssCache.current.get(opts.codeThemeName);
-        if (!hljsThemeCss) {
-            new Notice('请先等待代码块加载完成。');
+        const hljsThemeCss = cssCache.current.get(opts.codeThemeName || 'default');
+        const layoutThemeCss = cssCache.current.get(opts.layoutThemeName || 'default');
+
+        if (!hljsThemeCss || !layoutThemeCss) {
+            new Notice('请先等待主题和代码块样式加载完成。');
             return;
         }
 
-        processClipboardContent(outputElement, opts.primaryColor || '#000000', hljsThemeCss);
+        const allCss = `${layoutThemeCss}\n${hljsThemeCss}\n${customCss}\n${liveCss}`;
 
-        const blob = new Blob([outputElement.outerHTML], { type: 'text/html' });
+        // Process clipboard content, which now includes CSS inlining
+        const finalHtmlForClipboard = processClipboardContent(
+            htmlWithProcessedImages,
+            opts.primaryColor || '#000000',
+            allCss
+        );
+
+        const blob = new Blob([finalHtmlForClipboard], { type: 'text/html' });
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
 
         navigator.clipboard.write([clipboardItem]).then(() => {
@@ -227,8 +189,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         plugin.saveSettings();
     };
 
-    // Cache for highlight.js CSS
-    const hljsCssCache = useRef<Map<string, string>>(new Map());
+    // Cache for CSS files
+    const cssCache = useRef<Map<string, string>>(new Map());
     
     // Debounced rendering effect
     useEffect(() => {
@@ -243,26 +205,52 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 const processedHtml = await processLocalImages(parsedHtml, plugin);
 
                 // 2. Get theme CSS for code blocks
-                let hljsThemeCss = hljsCssCache.current.get(opts.codeThemeName);
+                const codeThemeName = opts.codeThemeName || 'default';
+                let hljsThemeCss = cssCache.current.get(codeThemeName);
                 if (!hljsThemeCss) {
-                    const hljsThemePath = `${plugin.manifest.dir}/assets/style/${opts.codeThemeName}.css`;
-                    hljsThemeCss = await app.vault.adapter.read(hljsThemePath);
-                    hljsCssCache.current.set(opts.codeThemeName, hljsThemeCss);
+                    const hljsThemePath = `${plugin.manifest.dir}/assets/style/${codeThemeName}.css`;
+                    try {
+                        hljsThemeCss = await app.vault.adapter.read(hljsThemePath);
+                        cssCache.current.set(codeThemeName, hljsThemeCss);
+                    } catch (e) {
+                        console.error(`Could not load code theme: ${hljsThemePath}`, e);
+                        hljsThemeCss = ''; // Fallback to empty
+                    }
+                }
+
+                // 3. Get layout theme CSS
+                const layoutThemeName = opts.layoutThemeName || 'default';
+                let layoutThemeCss = cssCache.current.get(layoutThemeName);
+                if (!layoutThemeCss) {
+                    const layoutThemePath = `${plugin.manifest.dir}/assets/theme/${layoutThemeName}.css`;
+                    try {
+                        layoutThemeCss = await app.vault.adapter.read(layoutThemePath);
+                        cssCache.current.set(layoutThemeName, layoutThemeCss);
+                    } catch (e) {
+                        console.error(`Could not load layout theme: ${layoutThemePath}, falling back to default.`, e);
+                        // Fallback to default if custom theme fails
+                        if (layoutThemeName !== 'default') {
+                            const defaultThemePath = `${plugin.manifest.dir}/assets/theme/default.css`;
+                            layoutThemeCss = await app.vault.adapter.read(defaultThemePath);
+                            cssCache.current.set('default', layoutThemeCss);
+                        }
+                    }
                 }
 
                 const iframe = iframeRef.current;
                 if (!iframe) return;
 
-                // 3. Construct the full HTML for the iframe
+                // 4. Construct the full HTML for the iframe
                 const fullHtml = `
                     <html>
                     <head>
                         <meta charset="UTF-8">
-                        <style>${hljsThemeCss}</style>
-                        <style>${customCss}</style>
-                        <style>${liveCss}</style> 
+                        <style id="mpe-layout-theme">${layoutThemeCss || ''}</style>
+                        <style id="mpe-code-theme">${hljsThemeCss}</style>
+                        <style id="mpe-custom-css">${customCss}</style>
+                        <style id="mpe-live-css">${liveCss}</style> 
                     </head>
-                    <body style="font-size: ${opts.fontSize || '16px'};">
+                    <body style="font-size: ${opts.fontSize || '16px'}; --mpe-primary-color: ${opts.primaryColor || '#007bff'};">
                         <section id="output">${processedHtml}</section>
                         <script src="${mermaidPath}"></script>
                         <script>
@@ -274,12 +262,12 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     </html>
                 `;
 
-                // 4. Use srcdoc to update iframe content
+                // 5. Use srcdoc to update iframe content
                 iframe.srcdoc = fullHtml;
                 
                 console.log(`MPEasy: Render prepared in ${performance.now() - startTime}ms`);
 
-                // 5. After the iframe has loaded, run scripts and set up scroll sync
+                // 6. After the iframe has loaded, run scripts and set up scroll sync
                 iframe.onload = () => {
                     // Run Mermaid
                     if (iframe.contentWindow && typeof iframe.contentWindow.mermaid !== 'undefined') {

@@ -29,14 +29,14 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     wxAppId: '',
     wxSecret: '',
     wxToken: '',
-    layoutThemeName: 'default',
+    layoutThemeName: 'minimal', // Use the new minimal theme as default
     fontSize: '16px',
     isUseIndent: true,
-    primaryColor: '#000000',
+    primaryColor: '#007bff', // A nice default blue
     legend: 'alt',
     isMacCodeBlock: true,
     isCiteStatus: true,
     isCountStatus: true,
     useCustomCSS: false,
-    codeThemeName: 'default',
+    codeThemeName: 'atom-one-dark', // A popular default code theme
 };

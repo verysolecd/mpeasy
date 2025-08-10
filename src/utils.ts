@@ -1,241 +1,162 @@
-import type { PropertiesHyphen } from 'csstype';
-import type { Theme, Block, Inline } from './types';
+import { App } from 'obsidian';
 import juice from 'juice';
 
-// This is a direct port of the essential styling utilities from the onlyref project.
+// Note: Much of the original content of this file was related to a legacy
+// inline-style generation system and has been removed as part of a major
+// refactoring to a CSS class-based, file-driven theme system.
 
-export function customizeTheme(theme: Theme, options: {
-  fontSize?: number;
-  color?: string;
-}) {
-  const newTheme = JSON.parse(JSON.stringify(theme));
-  const { fontSize, color } = options;
-  if (fontSize) {
-    for (let i = 1; i <= 6; i++) {
-      const v = newTheme.block[`h${i}`][`font-size`];
-      newTheme.block[`h${i}`][`font-size`] = `${fontSize * Number.parseFloat(v)}px`;
+async function getThemes(app: App, themeFolder: 'theme' | 'style'): Promise<{ name: string; path: string }[]> {
+    const themeDir = `${app.vault.configDir}/plugins/mpeasy/assets/${themeFolder}`;
+    try {
+        const files = await app.vault.adapter.list(themeDir);
+        const themePromises = files.files
+            .filter(file => file.endsWith('.css') && !file.endsWith('.min.css'))
+            .map(async (filePath) => {
+                const fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
+                const themePath = fileName.replace('.css', '');
+                const fileContent = await app.vault.adapter.read(filePath);
+                const match = fileContent.match(/\/\*\s*#theme name:\s*(.*?)\s*\*\//);
+                const themeName = match ? match[1] : themePath;
+                return { name: themeName, path: themePath };
+            });
+
+        const themes = await Promise.all(themePromises);
+        // Add a default option
+        if (themeFolder === 'theme') {
+            themes.unshift({ name: '默认', path: 'default' });
+        }
+        return themes;
+    } catch (error) {
+        console.error(`Failed to read themes from assets/${themeFolder}:`, error);
+        return [{ name: '默认', path: 'default' }]; // Fallback
     }
-  }
-  if (color) {
-    newTheme.base[`--md-primary-color`] = color;
-  }
-  return newTheme as Theme;
 }
 
-export function customCssWithTemplate(jsonString: Partial<Record<Block | Inline, PropertiesHyphen>>, color: string, theme: Theme) {
-  const newTheme = customizeTheme(theme, { color });
 
-  const mergeProperties = <T extends Block | Inline = Block>(target: Record<T, PropertiesHyphen>, source: Partial<Record<Block | Inline, PropertiesHyphen>>, keys: T[]) => {
-    keys.forEach((key) => {
-      if (source[key]) {
-        target[key] = Object.assign(target[key] || {}, source[key]);
-      }
+/**
+ * Dynamically reads the available layout themes from the assets/theme directory.
+ * @param app - The Obsidian App instance, used to access the vault.
+ * @returns A promise that resolves to an array of theme objects.
+ */
+export async function getLayoutThemes(app: App): Promise<{ name: string; path: string }[]> {
+    return getThemes(app, 'theme');
+}
+
+/**
+ * Dynamically reads the available code block themes from the assets/style directory.
+ * @param app - The Obsidian App instance, used to access the vault.
+ * @returns A promise that resolves to an array of theme objects.
+ */
+export async function getCodeBlockThemes(app: App): Promise<{ name: string; path: string }[]> {
+    return getThemes(app, 'style');
+}
+
+
+function solveWeChatImage(clipboardDiv: HTMLElement) {
+    const images = clipboardDiv.getElementsByTagName('img');
+
+    Array.from(images).forEach((image) => {
+        const width = image.getAttribute('width')!;
+        const height = image.getAttribute('height')!;
+        image.removeAttribute('width');
+        image.removeAttribute('height');
+        image.style.width = width;
+        image.style.height = height;
     });
-  };
-
-  const blockKeys: Block[] = [
-    `container`,
-    `h1`,
-    `h2`,
-    `h3`,
-    `h4`,
-    `h5`,
-    `h6`,
-    `code`,
-    `code_pre`,
-    `p`,
-    `hr`,
-    `blockquote`,
-    `blockquote_p`,
-    `blockquote_title`,
-    `image`,
-    `ul`,
-    `ol`,
-    `block_katex`,
-  ];
-  const inlineKeys: Inline[] = [`listitem`, `codespan`, `link`, `wx_link`, `strong`, `table`, `thead`, `td`, `footnote`, `figcaption`, `em`, `inline_katex`];
-
-  mergeProperties(newTheme.block, jsonString, blockKeys);
-  mergeProperties(newTheme.inline, jsonString, inlineKeys);
-  return newTheme;
 }
 
-export function css2json(css: string): Partial<Record<Block | Inline, PropertiesHyphen>> {
-  css = css.replace(/\/\*[\s\S]*?\*\//g, ``);
-
-  const json: Partial<Record<Block | Inline, PropertiesHyphen>> = {};
-
-  const toObject = (array: any[]) =>
-    array.reduce<{ [k: string]: string }>((obj, item) => {
-      const [property, ...value] = item.split(`:`).map((part: string) => part.trim());
-      if (property) {
-        obj[property] = value.join(`:`);
-      }
-      return obj;
-    }, {});
-
-  while (css.includes(`{`) && css.includes(`}`)) {
-    const lbracket = css.indexOf(`{`);
-    const rbracket = css.indexOf(`}`);
-
-    const declarations = css.substring(lbracket + 1, rbracket)
-      .split(`;`)
-      .map(e => e.trim())
-      .filter(Boolean);
-
-    const selectors = css.substring(0, lbracket)
-      .split(`,`)
-      .map(selector => selector.trim()) as (Block | Inline)[];
-
-    const declarationObj = toObject(declarations);
-
-    selectors.forEach((selector) => {
-      json[selector] = { ...(json[selector] || {}), ...declarationObj };
-    });
-
-    css = css.slice(rbracket + 1).trim();
-  }
-
-  return json;
-}
-
-function mergeCss(html: string, extraCss: string): string {
-  return juice(html, {
-    extraCss,
-    inlinePseudoElements: true,
-    preserveImportant: true,
-  });
+function mergeCss(html: string, allCss: string): string {
+    return juice(
+        `<style>${allCss}</style>${html}`, 
+        {
+            inlinePseudoElements: true,
+            preserveImportant: true,
+        }
+    );
 }
 
 function modifyHtmlStructure(htmlString: string): string {
-  const tempDiv = document.createElement(`div`);
-  tempDiv.innerHTML = htmlString;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlString;
 
-  tempDiv.querySelectorAll(`li > ul, li > ol`).forEach((originalItem) => {
-    originalItem.parentElement!.insertAdjacentElement(`afterend`, originalItem);
-  });
+    // 移动 `li > ul` 和 `li > ol` 到 `li` 后面
+    tempDiv.querySelectorAll('li > ul, li > ol').forEach((originalItem) => {
+        originalItem.parentElement!.insertAdjacentElement('afterend', originalItem);
+    });
 
-  return tempDiv.innerHTML;
+    return tempDiv.innerHTML;
 }
 
 function createEmptyNode(): HTMLElement {
-  const node = document.createElement(`p`);
-  node.style.fontSize = `0`;
-  node.style.lineHeight = `0`;
-  node.style.margin = `0`;
-  node.innerHTML = `&nbsp;`;
-  return node;
+    const node = document.createElement('p');
+    node.style.fontSize = '0';
+    node.style.lineHeight = '0';
+    node.style.margin = '0';
+    node.innerHTML = '&nbsp;';
+    return node;
 }
 
-export function processClipboardContent(clipboardDiv: HTMLElement, primaryColor: string, extraCss: string) {
-  clipboardDiv.innerHTML = modifyHtmlStructure(mergeCss(clipboardDiv.innerHTML, extraCss));
+export function processClipboardContent(
+    originalHtml: string, 
+    primaryColor: string, 
+    allCss: string
+): string {
+    
+    // Use a temporary div to process the HTML
+    const clipboardDiv = document.createElement('div');
+    clipboardDiv.innerHTML = originalHtml;
 
-  clipboardDiv.innerHTML = clipboardDiv.innerHTML
-    .replace(/([^-])top:(.*?)em/g, `$1transform: translateY($2em)`)
-    .replace(/hsl\(var\(--foreground\)\)/g, `#3f3f3f`)
-    .replace(/var\(--blockquote-background\)/g, `#f7f7f7`)
-    .replace(/var\(--md-primary-color\)/g, primaryColor)
-    .replace(/--md-primary-color:.+?;/g, ``)
-    .replace(
-      /<span class="nodeLabel"([^>]*)><p[^>]*>(.*?)<\/p><\/span>/g,
-      `<span class="nodeLabel"$1>$2</span>`,
-    )
-    .replace(
-      /<span class="edgeLabel"([^>]*)><p[^>]*>(.*?)<\/p><\/span>/g,
-      `<span class="edgeLabel"$1>$2</span>`,
-    );
+    // First, inline the CSS
+    let html = mergeCss(clipboardDiv.innerHTML, allCss);
+    
+    // Then, modify the structure
+    html = modifyHtmlStructure(html);
 
-  const beforeNode = createEmptyNode();
-  const afterNode = createEmptyNode();
-  clipboardDiv.insertBefore(beforeNode, clipboardDiv.firstChild);
-  clipboardDiv.appendChild(afterNode);
+    // Update the div with the modified HTML to perform DOM operations
+    clipboardDiv.innerHTML = html;
+
+    // Post-processing steps from onlyref
+    clipboardDiv.innerHTML = clipboardDiv.innerHTML
+        .replace(/([^-])top:(.*?)em/g, '$1transform: translateY($2em)')
+        .replace(/hsl\(var\(--foreground\)\)/g, '#3f3f3f')
+        .replace(/var\(--blockquote-background\)/g, '#f7f7f7')
+        .replace(/var\(--md-primary-color\)/g, primaryColor)
+        .replace(/--md-primary-color:.+?;/g, '')
+        .replace(
+            /<span class="nodeLabel"([^>]*)><p[^>]*>(.*?)<\/p><\/span>/g,
+            '<span class="nodeLabel"$1>$2</span>',
+        )
+        .replace(
+            /<span class="edgeLabel"([^>]*)><p[^>]*>(.*?)<\/p><\/span>/g,
+            '<span class="edgeLabel"$1>$2</span>',
+        );
+
+    solveWeChatImage(clipboardDiv);
+
+    const beforeNode = createEmptyNode();
+    const afterNode = createEmptyNode();
+    clipboardDiv.insertBefore(beforeNode, clipboardDiv.firstChild);
+    clipboardDiv.appendChild(afterNode);
+
+    // Mermaid compatibility
+    const nodes = clipboardDiv.querySelectorAll('.nodeLabel');
+    nodes.forEach((node) => {
+        const parent = node.parentElement!;
+        if (parent) {
+            const xmlns = parent.getAttribute('xmlns')!;
+            const style = parent.getAttribute('style')!;
+            const section = document.createElement('section');
+            if (xmlns) section.setAttribute('xmlns', xmlns);
+            if (style) section.setAttribute('style', style);
+            section.innerHTML = parent.innerHTML;
+
+            const grand = parent.parentElement!;
+            if (grand) {
+                grand.innerHTML = '';
+                grand.appendChild(section);
+            }
+        }
+    });
+
+    return clipboardDiv.outerHTML;
 }
-
-import fs from 'fs';
-import path from 'path';
-
-let themeDir = '';
-let styleDir = '';
-
-export function setBasePath(themePath: string, stylePath: string) {
-    themeDir = themePath;
-    styleDir = stylePath;
-}
-
-export const getLayoutThemes = () => {
-  try {
-    const files = fs.readdirSync(themeDir);
-    return files
-      .filter(file => file.endsWith('.css'))
-      .map(file => {
-        const name = file.replace('.css', '');
-        return {
-          name,
-          css: fs.readFileSync(path.join(themeDir, file), 'utf-8'),
-        };
-      });
-  } catch (error) {
-    console.error('Failed to read themes directory:', error);
-    return [];
-  }
-};
-
-export const loadLayoutTheme = (name: string) => {
-  if (!name || name === 'undefined' || name === '') {
-    console.warn('loadLayoutTheme called with invalid name, using default');
-    name = 'default';
-  }
-  try {
-    const themePath = path.join(themeDir, `${name}.css`);
-    return fs.readFileSync(themePath, 'utf-8');
-  } catch (error) {
-    console.error(`Failed to load layout theme ${name}:`, error);
-    // 回退到默认主题
-    try {
-      const defaultPath = path.join(themeDir, 'default.css');
-      return fs.readFileSync(defaultPath, 'utf-8');
-    } catch (fallbackError) {
-      console.error('Failed to load default theme:', fallbackError);
-      return '';
-    }
-  }
-};
-
-export const getCodeBlockThemes = () => {
-  try {
-    const files = fs.readdirSync(styleDir);
-    return files
-      .filter(file => file.endsWith('.css'))
-      .map(file => {
-        const name = file.replace('.css', '');
-        return {
-          name,
-          css: fs.readFileSync(path.join(styleDir, file), 'utf-8'),
-        };
-      });
-  } catch (error) {
-    console.error('Failed to read styles directory:', error);
-    return [];
-  }
-};
-
-export const loadCodeBlockTheme = (name: string) => {
-  if (!name || name === 'undefined' || name === '') {
-    console.warn('loadCodeBlockTheme called with invalid name, using default');
-    name = 'default';
-  }
-  try {
-    const themePath = path.join(styleDir, `${name}.css`);
-    return fs.readFileSync(themePath, 'utf-8');
-  } catch (error) {
-    console.error(`Failed to load code block theme ${name}:`, error);
-    // 回退到默认主题
-    try {
-      const defaultPath = path.join(styleDir, 'default.css');
-      return fs.readFileSync(defaultPath, 'utf-8');
-    } catch (fallbackError) {
-      console.error('Failed to load default code block theme:', fallbackError);
-      return '';
-    }
-  }
-};

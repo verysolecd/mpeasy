@@ -1,16 +1,13 @@
-import type { PropertiesHyphen } from 'csstype';
 import type { RendererObject, Tokens } from 'marked';
 import type { ReadTimeResults } from 'reading-time';
-import type { ExtendedProperties, IOpts, ThemeStyles } from '../types';
+import type { IOpts } from '../types';
 import type { RendererAPI } from '../types';
 import gdscript from '@exercism/highlightjs-gdscript';
-import { cloneDeep, toMerged } from 'es-toolkit';
 import frontMatter from 'front-matter';
 import hljs from 'highlight.js';
 import { marked } from 'marked';
 import mermaid from 'mermaid';
 import readingTime from 'reading-time';
-import { getStyleString } from './style';
 import markedAlert from './MDAlert';
 import markedFootnotes from './MDFootnotes';
 import { MDKatex } from './MDKatex';
@@ -23,30 +20,6 @@ marked.setOptions({
   breaks: true,
 })
 marked.use(markedSlider())
-
-function buildTheme({ theme: _theme, fonts, size, isUseIndent }: IOpts): ThemeStyles {
-  const theme = cloneDeep(_theme)
-  const base = toMerged(theme.base, {
-    'font-family': fonts,
-    'font-size': size,
-  })
-
-  if (isUseIndent) {
-    theme.block.p = {
-      'text-indent': `2em`,
-      ...theme.block.p,
-    }
-  }
-
-  const mergeStyles = (styles: Record<string, PropertiesHyphen>): Record<string, ExtendedProperties> =>
-    Object.fromEntries(
-      Object.entries(styles).map(([ele, style]) => [ele, toMerged(base, style)]),
-    )
-  return {
-    ...mergeStyles(theme.inline),
-    ...mergeStyles(theme.block),
-  } as ThemeStyles
-}
 
 function escapeHtml(text: string): string {
   return text
@@ -77,21 +50,12 @@ function buildAddition(): string {
   `
 }
 
-function getStyles(styleMapping: ThemeStyles, tokenName: string, addition: string = ``): string {
-  const dict = styleMapping[tokenName as keyof ThemeStyles]
-  if (!dict) {
-    return ``
-  }
-  const styles = getStyleString(dict)
-  return `style="${styles}${addition}"`
-}
-
 function buildFootnoteArray(footnotes: [number, string, string][]): string {
   return footnotes
     .map(([index, title, link]) =>
       link === title
-        ? `<code style="font-size: 90%; opacity: 0.6;">[${index}]</code>: <i style="word-break: break-all">${title}</i><br/>`
-        : `<code style="font-size: 90%; opacity: 0.6;">[${index}]</code> ${title}: <i style="word-break: break-all">${link}</i><br/>`,
+        ? `<code class="mpe-codespan">[${index}]</code>: <i style="word-break: break-all">${title}</i><br/>`
+        : `<code class="mpe-codespan">[${index}]</code> ${title}: <i style="word-break: break-all">${link}</i><br/>`,
     )
     .join(`\n`)
 }
@@ -150,23 +114,11 @@ function parseFrontMatterAndContent(markdownText: string): ParseResult {
 export function initRenderer(opts: IOpts): RendererAPI {
   const footnotes: [number, string, string][] = []
   let footnoteIndex: number = 0
-  let styleMapping: ThemeStyles = buildTheme(opts)
-  let codeIndex: number = 0
   const listOrderedStack: boolean[] = []
   const listCounters: number[] = []
 
   function getOpts(): IOpts {
     return opts
-  }
-
-  function styles(tag: string, addition: string = ``): string {
-    return getStyles(styleMapping, tag, addition)
-  }
-
-  function styledContent(styleLabel: string, content: string, tagName?: string): string {
-    const tag = tagName ?? styleLabel
-
-    return `<${tag} ${/^h\d$/.test(tag) ? `data-heading="true"` : ``} ${styles(styleLabel)}>${content}</${tag}>`
   }
 
   function addFootnote(title: string, link: string): number {
@@ -182,16 +134,12 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
   function setOptions(newOpts: Partial<IOpts>): void {
     opts = { ...opts, ...newOpts }
-    const oldStyle = JSON.stringify(styleMapping)
-    styleMapping = buildTheme(opts)
-    const newStyle = JSON.stringify(styleMapping)
-    if (oldStyle !== newStyle) {
-      marked.use(markedAlert({ styles: styleMapping }))
-      marked.use(
-        MDKatex({ nonStandard: true }, styles(`inline_katex`, `;vertical-align: middle; line-height: 1;`), styles(`block_katex`, `;text-align: center;`),
-        ),
-      )
-    }
+    // Style-related updates are now handled by CSS files
+    // We might still need to trigger a re-render if some options change
+    marked.use(markedAlert({})) // Pass empty styles
+    marked.use(
+      MDKatex({ nonStandard: true }, ``, ``),
+    )
   }
 
   function buildReadingTime(readingTime: ReadTimeResults): string {
@@ -202,8 +150,8 @@ export function initRenderer(opts: IOpts): RendererAPI {
       return ``
     }
     return `
-      <blockquote ${styles(`blockquote`)}>
-        <p ${styles(`blockquote_p`)}>字数 ${readingTime?.words}，阅读大约需 ${Math.ceil(readingTime?.minutes)} 分钟</p>
+      <blockquote class="mpe-blockquote">
+        <p class="mpe-paragraph mpe-blockquote-paragraph">字数 ${readingTime?.words}，阅读大约需 ${Math.ceil(readingTime?.minutes)} 分钟</p>
       </blockquote>
     `
   }
@@ -214,16 +162,15 @@ export function initRenderer(opts: IOpts): RendererAPI {
     }
 
     return (
-      styledContent(`h4`, `引用链接`)
-      + styledContent(`footnotes`, buildFootnoteArray(footnotes), `p`)
+      `<h4 class="mpe-heading mpe-heading-4">引用链接</h4>`
+      + `<p class="mpe-paragraph mpe-footnotes">${buildFootnoteArray(footnotes)}</p>`
     )
   }
 
   const renderer: RendererObject = {
     heading({ tokens, depth }: Tokens.Heading) {
       const text = this.parser.parseInline(tokens)
-      const tag = `h${depth}`
-      return styledContent(tag, text)
+      return `<h${depth} class="mpe-heading mpe-heading-${depth}" data-heading="true">${text}</h${depth}>`
     },
 
     paragraph({ tokens }: Tokens.Paragraph): string {
@@ -233,13 +180,13 @@ export function initRenderer(opts: IOpts): RendererAPI {
       if (isFigureImage || isEmpty) {
         return text
       }
-      return styledContent(`p`, text)
+      return `<p class="mpe-paragraph">${text}</p>`
     },
 
     blockquote({ tokens }: Tokens.Blockquote): string {
       let text = this.parser.parse(tokens)
-      text = text.replace(/<p .*?>/g, `<p ${styles(`blockquote_p`)}>`)
-      return styledContent(`blockquote`, text)
+      text = text.replace(/<p class="mpe-paragraph">/g, `<p class="mpe-paragraph mpe-blockquote-paragraph">`)
+      return `<blockquote class="mpe-blockquote">${text}</blockquote>`
     },
 
     code({ text, lang = `` }: Tokens.Code): string {
@@ -249,20 +196,19 @@ export function initRenderer(opts: IOpts): RendererAPI {
       const langText = lang.split(` `)[0]
       const language = hljs.getLanguage(langText) ? langText : `plaintext`
       let highlighted = hljs.highlight(text, { language }).value
-      // tab to 4 spaces
       highlighted = highlighted.replace(/\t/g, `    `)
       highlighted = highlighted
         .replace(/\r\n/g, `<br/>`)
         .replace(/\n/g, `<br/>`)
         .replace(/(>[^<]+)|(^[^<]+)/g, str => str.replace(/\s/g, `&nbsp;`))
       const span = `<span class="mac-sign" style="padding: 10px 14px 0;" hidden>${macCodeSvg}</span>`
-      const code = `<code class="language-${lang}" ${styles(`code`)}>${highlighted}</code>`
-      return `<pre class="hljs code__pre" ${styles(`code_pre`)}>${span}${code}</pre>`
+      const code = `<code class="language-${lang}">${highlighted}</code>`
+      return `<pre class="hljs mpe-code-pre">${span}${code}</pre>`
     },
 
     codespan({ text }: Tokens.Codespan): string {
       const escapedText = escapeHtml(text)
-      return styledContent(`codespan`, escapedText, `code`)
+      return `<code class="mpe-codespan">${escapedText}</code>`
     },
 
     list({ ordered, items, start = 1 }: Tokens.List) {
@@ -276,25 +222,21 @@ export function initRenderer(opts: IOpts): RendererAPI {
       listOrderedStack.pop()
       listCounters.pop()
 
-      return styledContent(
-        ordered ? `ol` : `ul`,
-        html,
-      )
+      const listClass = ordered ? `mpe-list mpe-list-ordered` : `mpe-list mpe-list-unordered`;
+      const tag = ordered ? `ol` : `ul`;
+      return `<${tag} class="${listClass}">${html}</${tag}>`
     },
 
-    // 2. listitem：从栈顶取 ordered + counter，计算 prefix 并自增
     listitem(token: Tokens.ListItem) {
       const ordered = listOrderedStack[listOrderedStack.length - 1]
       const idx = listCounters[listCounters.length - 1]!
 
-      // 准备下一个
       listCounters[listCounters.length - 1] = idx + 1
 
       const prefix = ordered
         ? `${idx}. `
         : `• `
 
-      // 渲染内容：优先 inline，fallback 去掉 <p> 包裹
       let content: string
       try {
         content = this.parser.parseInline(token.tokens)
@@ -305,48 +247,42 @@ export function initRenderer(opts: IOpts): RendererAPI {
           .replace(/^<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/, `$1`)
       }
 
-      return styledContent(
-        `listitem`,
-        `${prefix}${content}`,
-        `li`,
-      )
+      return `<li class="mpe-list-item">${prefix}${content}</li>`
     },
 
     image({ href, title, text }: Tokens.Image): string {
-      const subText = styledContent(`figcaption`, transform(opts.legend!, text, title))
-      const figureStyles = styles(`figure`)
-      const imgStyles = styles(`image`)
-      return `<figure ${figureStyles}><img ${imgStyles} src="${href}" title="${title}" alt="${text}"/>${subText}</figure>`
+      const subText = `<figcaption class="mpe-figcaption">${transform(opts.legend!, text, title)}</figcaption>`
+      return `<figure class="mpe-figure"><img class="mpe-image" src="${href}" title="${title}" alt="${text}"/>${subText}</figure>`
     },
 
     link({ href, title, text, tokens }: Tokens.Link): string {
       const parsedText = this.parser.parseInline(tokens)
       if (/^https?:\/\/mp\.weixin\.qq\.com/.test(href)) {
-        return `<a href="${href}" title="${title || text}" ${styles(`wx_link`)}>${parsedText}</a>`
+        return `<a class="mpe-link mpe-link-wx" href="${href}" title="${title || text}">${parsedText}</a>`
       }
       if (href === text) {
         return parsedText
       }
       if (opts.citeStatus) {
         const ref = addFootnote(title || text, href)
-        return `<span ${styles(`link`)}>${parsedText}<sup>[${ref}]</sup></span>`
+        return `<span class="mpe-link mpe-link-cite">${parsedText}<sup>[${ref}]</sup></span>`
       }
-      return styledContent(`link`, parsedText, `span`)
+      return `<span class="mpe-link">${parsedText}</span>`
     },
 
     strong({ tokens }: Tokens.Strong): string {
-      return styledContent(`strong`, this.parser.parseInline(tokens))
+      return `<strong class="mpe-strong">${this.parser.parseInline(tokens)}</strong>`
     },
 
     em({ tokens }: Tokens.Em): string {
-      return styledContent(`em`, this.parser.parseInline(tokens), `span`)
+      return `<em class="mpe-em">${this.parser.parseInline(tokens)}</em>`
     },
 
     table({ header, rows }: Tokens.Table): string {
       const headerRow = header
         .map((cell) => {
           const text = this.parser.parseInline(cell.tokens)
-          return styledContent(`th`, text)
+          return `<th class="mpe-table-header-cell">${text}</th>`
         })
         .join(``)
       const body = rows
@@ -354,14 +290,14 @@ export function initRenderer(opts: IOpts): RendererAPI {
           const rowContent = row
             .map(cell => this.tablecell(cell))
             .join(``)
-          return styledContent(`tr`, rowContent)
+          return `<tr class="mpe-table-row">${rowContent}</tr>`
         })
         .join(``)
       return `
-        <section style="padding:0 8px; max-width: 100%; overflow: auto">
-          <table class="preview-table">
-            <thead ${styles(`thead`)}>${headerRow}</thead>
-            <tbody>${body}</tbody>
+        <section class="mpe-table-wrapper">
+          <table class="mpe-table">
+            <thead class="mpe-table-header">${headerRow}</thead>
+            <tbody class="mpe-table-body">${body}</tbody>
           </table>
         </section>
       `
@@ -369,27 +305,27 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
     tablecell(token: Tokens.TableCell): string {
       const text = this.parser.parseInline(token.tokens)
-      return styledContent(`td`, text)
+      return `<td class="mpe-table-cell">${text}</td>`
     },
 
     hr(_: Tokens.Hr): string {
-      return styledContent(`hr`, ``)
+      return `<hr class="mpe-hr"/>`
     },
   }
 
   marked.use({ renderer })
   marked.use(markedToc())
-  marked.use(markedSlider({ styles: styleMapping }))
-  marked.use(markedAlert({ styles: styleMapping }))
+  marked.use(markedSlider({})) // Pass empty styles
+  marked.use(markedAlert({})) // Pass empty styles
   marked.use(
-    MDKatex({ nonStandard: true }, styles(`inline_katex`, `;vertical-align: middle; line-height: 1;`), styles(`block_katex`, `;text-align: center;`),
-    ),
+    MDKatex({ nonStandard: true }, ``, ``),
   )
   marked.use(markedFootnotes())
 
   function createContainer(content: string) {
     const themeClass = opts.obsidianTheme ? `theme-${opts.obsidianTheme}` : '';
-    return `<section class="mpeasy-container ${themeClass}" ${styles('container')}>${content}</section>`;
+    const indentClass = opts.isUseIndent ? 'mpe-use-indent' : '';
+    return `<section class="mpeasy-container ${themeClass} ${indentClass}">${content}</section>`;
   }
 
   async function parse(markdown: string): Promise<string> {
@@ -401,7 +337,7 @@ export function initRenderer(opts: IOpts): RendererAPI {
     if (getOpts().isMacCodeBlock) {
         html += `
         <style>
-          .hljs.code__pre > .mac-sign {
+          .hljs.mpe-code-pre > .mac-sign {
             display: flex;
           }
         </style>
@@ -409,17 +345,17 @@ export function initRenderer(opts: IOpts): RendererAPI {
     }
     html += `
     <style>
-      .code__pre {
+      .mpe-code-pre {
         padding: 0 !important;
       }
 
-      .hljs.code__pre code {
+      .hljs.mpe-code-pre code {
         display: -webkit-box;
         padding: 0.5em 1em 1em;
         overflow-x: auto;
         text-indent: 0;
       }
-      h2 strong {
+      h2.mpe-heading strong.mpe-strong {
         color: inherit !important;
       }
       
