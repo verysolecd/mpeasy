@@ -57,7 +57,8 @@ function buildFootnoteArray(footnotes: [number, string, string][]): string {
         ? `<code class="mpe-codespan">[${index}]</code>: <i style="word-break: break-all">${title}</i><br/>`
         : `<code class="mpe-codespan">[${index}]</code> ${title}: <i style="word-break: break-all">${link}</i><br/>`,
     )
-    .join(`\n`)
+    .join(`
+`)
 }
 
 function transform(legend: string, text: string | null, title: string | null): string {
@@ -252,7 +253,7 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
     image({ href, title, text }: Tokens.Image): string {
       const subText = `<figcaption class="mpe-figcaption">${transform(opts.legend!, text, title)}</figcaption>`
-      return `<figure class="mpe-figure"><img class="mpe-image" src="${href}" title="${title}" alt="${text}"/>${subText}</figure>`
+      return `<figure class="mpe-figure"><img class="mpe-image" src="${href}" title="${title}" alt="${text}"/></figure>`
     },
 
     link({ href, title, text, tokens }: Tokens.Link): string {

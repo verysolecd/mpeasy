@@ -5,6 +5,12 @@ import juice from 'juice';
 // inline-style generation system and has been removed as part of a major
 // refactoring to a CSS class-based, file-driven theme system.
 
+export function preprocessMarkdown(markdown: string): string {
+    // This regex finds all occurrences of ![[...]]
+    const wikilinkImageRegex = /!\[\[(.*?)\]\]/g;
+    return markdown.replace(wikilinkImageRegex, '[]($1)');
+}
+
 async function getThemes(app: App, themeFolder: 'theme' | 'codestyle'): Promise<{ name: string; path: string }[]> {
     const themeDir = `${app.vault.configDir}/plugins/mpeasy/assets/${themeFolder}`;
     try {

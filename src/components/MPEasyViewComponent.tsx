@@ -9,7 +9,7 @@ import { UploadModal } from './UploadModal';
 import { wxAddDraft, wxUploadImage } from '../core/wechatApi';
 import { processLocalImages } from '../core/htmlPostProcessor';
 import type MPEasyPlugin from '../../main';
-import { processClipboardContent } from '../utils';
+import { processClipboardContent, preprocessMarkdown } from '../utils';
 import CssEditor from './CssEditor'; // Import the new component
 
 interface MPEasyViewProps {
@@ -130,15 +130,9 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             new Notice('渲染器尚未准备好。');
             return;
         }
-        const outputElement = iframeRef.current.contentDocument.getElementById('output');
-        if (!outputElement) {
-            new Notice('无法找到渲染内容。');
-            return;
-        }
-
-        new Notice('正在处理图片，请稍候...');
-        // Process local images first
-        const htmlWithProcessedImages = await processLocalImages(outputElement.innerHTML, plugin);
+        const preprocessedMarkdown = preprocessMarkdown(markdownContent);
+        const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
+        const htmlWithProcessedImages = await processLocalImages(parsedHtml, plugin, false);
 
         const hljsThemeCss = cssCache.current.get(opts.codeThemeName || 'default');
         const layoutThemeCss = cssCache.current.get(opts.layoutThemeName || 'default');
@@ -190,9 +184,9 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             }
 
             new Notice('正在上传草稿...');
-            const { markdownContent: body } = rendererApi.parseFrontMatterAndContent(markdownContent);
-            const rawHtml = await rendererApi.parse(body);
-            const finalHtml = await processLocalImages(rawHtml, plugin);
+            const preprocessedMarkdown = preprocessMarkdown(markdownContent);
+            const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
+            const finalHtml = await processLocalImages(parsedHtml, plugin, false);
 
             try {
                 const result = await wxAddDraft(plugin.settings, {
@@ -230,8 +224,9 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 const startTime = performance.now();
 
                 // 1. Parse markdown to HTML using the renderer
-                const parsedHtml = await rendererApi.parse(markdownContent);
-                const processedHtml = await processLocalImages(parsedHtml, plugin);
+                const preprocessedMarkdown = preprocessMarkdown(markdownContent);
+                const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
+                const previewHtml = await processLocalImages(parsedHtml, plugin, true);
 
                 // 2. Get theme CSS for code blocks
                 const codeThemeName = opts.codeThemeName || 'default';
@@ -296,7 +291,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         <style id="mpe-live-css">${liveCss}</style> 
                     </head>
                     <body class="theme-${layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};">
-                        <section id="output">${processedHtml}</section>
+                        <section id="output">${previewHtml}</section>
                         <script src="${mermaidPath}"></script>
                         <script>
                             if (typeof mermaid !== 'undefined') {
