@@ -1,0 +1,31 @@
+/* #theme name: 极简 */
+/* MPEasy Minimal Layout Theme */
+
+/* This theme provides a very basic layout with no special formatting for headings. */
+
+:root {
+    /* Define variables for the minimal theme */
+    --mpe-heading-font-weight: bold;
+    --mpe-heading-border-style: none;
+    --mpe-heading-padding-left: 0;
+    --mpe-primary-color: #007bff; /* Default primary color */
+}
+
+.mpeasy-container .mpe-heading {
+    font-weight: var(--mpe-heading-font-weight);
+    border-left: var(--mpe-heading-border-style);
+    padding-left: var(--mpe-heading-padding-left);
+    color: var(--mpe-primary-color);
+}
+
+.mpeasy-container .mpe-blockquote {
+    border-left-color: var(--mpe-primary-color);
+}
+
+.mpeasy-container .mpe-link {
+    color: var(--mpe-primary-color);
+    text-decoration: none;
+}
+.mpeasy-container .mpe-link:hover {
+    text-decoration: underline;
+}

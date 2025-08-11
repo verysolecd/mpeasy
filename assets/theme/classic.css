@@ -1,0 +1,28 @@
+/* #theme name: 经典 */
+/* MPEasy Classic Layout Theme */
+
+:root {
+    --mpe-heading-font-family: 'Georgia', serif;
+    --mpe-heading-font-weight: 600;
+    --mpe-heading-border-style: 3px solid;
+    --mpe-heading-padding-left: 10px;
+    --mpe-primary-color: #d9534f; /* A classic red */
+}
+
+.mpeasy-container .mpe-heading {
+    font-family: var(--mpe-heading-font-family);
+    font-weight: var(--mpe-heading-font-weight);
+    border-left: var(--mpe-heading-border-style);
+    padding-left: var(--mpe-heading-padding-left);
+    border-color: var(--mpe-primary-color);
+    color: var(--mpe-primary-color);
+}
+
+.mpeasy-container .mpe-blockquote {
+    border-color: var(--mpe-primary-color);
+}
+
+.mpeasy-container .mpe-link {
+    color: var(--mpe-primary-color);
+    text-decoration: underline;
+}
