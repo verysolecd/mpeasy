@@ -312,7 +312,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
                     if (!markdownView || !previewWindow || !previewEl) return;
 
-                    const editorEl = markdownView.containerEl.querySelector('.cm-scroller') as HTMLElement;
+                    const editorEl = (markdownView.getMode() === 'preview')
+                        ? markdownView.containerEl.querySelector('.markdown-preview-view')
+                        : (markdownView.editor.cm as any).scrollDOM;
+
                     if (!editorEl) return;
 
                     let isSyncing = false;
@@ -323,7 +326,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         requestAnimationFrame(() => {
                             const percentage = editorEl.scrollTop / (editorEl.scrollHeight - editorEl.clientHeight);
                             previewEl.scrollTop = percentage * (previewEl.scrollHeight - previewEl.clientHeight);
-                            isSyncing = false;
+                            setTimeout(() => isSyncing = false, 50); // Reset flag after a short delay
                         });
                     };
 
@@ -333,7 +336,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         requestAnimationFrame(() => {
                             const percentage = previewEl.scrollTop / (previewEl.scrollHeight - previewEl.clientHeight);
                             editorEl.scrollTop = percentage * (editorEl.scrollHeight - editorEl.clientHeight);
-                            isSyncing = false;
+                            setTimeout(() => isSyncing = false, 50); // Reset flag after a short delay
                         });
                     };
 

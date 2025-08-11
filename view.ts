@@ -87,6 +87,16 @@ export class MPEasyView extends ItemView {
                 }
             })
         );
+
+        // 监听布局变化 (包括视图模式切换)
+        this.registerEvent(
+            this.app.workspace.on('layout-change', () => {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile && this.linkedFile && activeFile.path === this.linkedFile.path) {
+                    this.renderComponent(activeFile);
+                }
+            })
+        );
     }
 
     async onClose() {
