@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import type { IOpts, MPEasySettings } from '../types';
-import { getLayoutThemes, getCodeBlockThemes } from '../utils';
+import { getLayoutThemes, getCodeBlockThemes, getCustomStyles } from '../utils';
 import Combobox from './Combobox';
 import { App } from 'obsidian';
 
@@ -28,12 +28,14 @@ const PRESET_COLORS = [
 const StylePanel = ({ opts, onOptsChange, app }: StylePanelProps) => {
     const [layoutThemes, setLayoutThemes] = useState<{ name: string; path: string }[]>([]);
     const [codeBlockThemes, setCodeBlockThemes] = useState<{ name: string; path: string }[]>([]);
+    const [customStyles, setCustomStyles] = useState<{ name: string; path: string }[]>([]);
     const [customColor, setCustomColor] = useState(opts.primaryColor || '#007bff');
 
     useEffect(() => {
         if (app) {
             getLayoutThemes(app).then(themes => setLayoutThemes(themes));
             getCodeBlockThemes(app).then(themes => setCodeBlockThemes(themes));
+            getCustomStyles(app).then(styles => setCustomStyles(styles));
         }
         setCustomColor(opts.primaryColor || '#007bff');
     }, [opts.primaryColor, app]);
@@ -70,6 +72,18 @@ const StylePanel = ({ opts, onOptsChange, app }: StylePanelProps) => {
                     >
                         {codeBlockThemes.map(theme => (
                             <option key={theme.name} value={theme.path}>{theme.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div className="style-panel-item">
+                    <label>自定义样式</label>
+                    <select
+                        value={opts.customStyleName || 'none'}
+                        onChange={(e) => handleValueChange('customStyleName', e.target.value)}
+                    >
+                        {customStyles.map(style => (
+                            <option key={style.name} value={style.path}>{style.name}</option>
                         ))}
                     </select>
                 </div>

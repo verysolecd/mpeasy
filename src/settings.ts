@@ -19,6 +19,7 @@ export interface MPEasySettings {
 
     // Code Block Settings
     codeThemeName: string;
+    customStyleName: string;
 
     // 向后兼容的旧属性名
     themeName?: string;
@@ -39,4 +40,5 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     isCountStatus: true,
     useCustomCSS: false,
     codeThemeName: 'atom-one-dark', // A popular default code theme
+    customStyleName: 'none',
 };

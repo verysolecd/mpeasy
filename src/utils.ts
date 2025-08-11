@@ -5,7 +5,7 @@ import juice from 'juice';
 // inline-style generation system and has been removed as part of a major
 // refactoring to a CSS class-based, file-driven theme system.
 
-async function getThemes(app: App, themeFolder: 'theme' | 'style'): Promise<{ name: string; path: string }[]> {
+async function getThemes(app: App, themeFolder: 'theme' | 'codestyle'): Promise<{ name: string; path: string }[]> {
     const themeDir = `${app.vault.configDir}/plugins/mpeasy/assets/${themeFolder}`;
     try {
         const files = await app.vault.adapter.list(themeDir);
@@ -43,12 +43,41 @@ export async function getLayoutThemes(app: App): Promise<{ name: string; path: s
 }
 
 /**
- * Dynamically reads the available code block themes from the assets/style directory.
+ * Dynamically reads the available code block themes from the assets/codestyle directory.
  * @param app - The Obsidian App instance, used to access the vault.
  * @returns A promise that resolves to an array of theme objects.
  */
 export async function getCodeBlockThemes(app: App): Promise<{ name: string; path: string }[]> {
-    return getThemes(app, 'style');
+    return getThemes(app, 'codestyle');
+}
+
+/**
+ * Dynamically reads the available custom styles from the assets/style directory.
+ * @param app - The Obsidian App instance, used to access the vault.
+ * @returns A promise that resolves to an array of style objects.
+ */
+export async function getCustomStyles(app: App): Promise<{ name: string; path: string }[]> {
+    const styleDir = `${app.vault.configDir}/plugins/mpeasy/assets/style`;
+    try {
+        const files = await app.vault.adapter.list(styleDir);
+        const stylePromises = files.files
+            .filter(file => file.endsWith('.css') && !file.endsWith('.min.css'))
+            .map(async (filePath) => {
+                const fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
+                const stylePath = fileName.replace('.css', '');
+                const fileContent = await app.vault.adapter.read(filePath);
+                const match = fileContent.match(/\/\*\s*#name:\s*(.*?)\s*\*\//);
+                const styleName = match ? match[1] : stylePath;
+                return { name: styleName, path: stylePath };
+            });
+
+        const styles = await Promise.all(stylePromises);
+        styles.unshift({ name: '无', path: 'none' });
+        return styles;
+    } catch (error) {
+        console.error(`Failed to read styles from assets/style:`, error);
+        return [{ name: '无', path: 'none' }]; // Fallback
+    }
 }
 
 

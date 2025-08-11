@@ -37,6 +37,7 @@ export interface IOpts {
     isMacCodeBlock?: boolean;
     codeThemeName?: string;
     layoutThemeName?: string;
+    customStyleName?: string;
     primaryColor?: string;
     customCSS?: string;
     mermaidPath?: string;

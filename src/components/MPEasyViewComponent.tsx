@@ -39,6 +39,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         isCiteStatus: plugin.settings.isCiteStatus,
         isCountStatus: plugin.settings.isCountStatus,
         codeThemeName: plugin.settings.codeThemeName,
+        customStyleName: plugin.settings.customStyleName,
     });
 
     // Effect to synchronize opts state with plugin.settings when plugin.settings change externally
@@ -47,6 +48,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             ...prevOpts,
             layoutThemeName: plugin.settings.layoutThemeName,
             codeThemeName: plugin.settings.codeThemeName,
+            customStyleName: plugin.settings.customStyleName,
             fontSize: plugin.settings.fontSize,
             primaryColor: plugin.settings.primaryColor,
             isUseIndent: plugin.settings.isUseIndent,
@@ -58,6 +60,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     }, [
         plugin.settings.layoutThemeName,
         plugin.settings.codeThemeName,
+        plugin.settings.customStyleName,
         plugin.settings.fontSize,
         plugin.settings.primaryColor,
         plugin.settings.isUseIndent,
@@ -234,7 +237,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 const codeThemeName = opts.codeThemeName || 'default';
                 let hljsThemeCss = cssCache.current.get(codeThemeName);
                 if (!hljsThemeCss) {
-                    const hljsThemePath = `${plugin.manifest.dir}/assets/style/${codeThemeName}.css`;
+                    const hljsThemePath = `${plugin.manifest.dir}/assets/codestyle/${codeThemeName}.css`;
                     try {
                         hljsThemeCss = await app.vault.adapter.read(hljsThemePath);
                         cssCache.current.set(codeThemeName, hljsThemeCss);
@@ -263,20 +266,36 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     }
                 }
 
+                // 4. Get custom style CSS
+                const customStyleName = opts.customStyleName || 'none';
+                let customStyleCss = cssCache.current.get(customStyleName);
+                if (!customStyleCss && customStyleName !== 'none') {
+                    const customStylePath = `${plugin.manifest.dir}/assets/style/${customStyleName}.css`;
+                    try {
+                        customStyleCss = await app.vault.adapter.read(customStylePath);
+                        cssCache.current.set(customStyleName, customStyleCss);
+                    } catch (e) {
+                        console.error(`Could not load custom style: ${customStylePath}`, e);
+                        customStyleCss = ''; // Fallback to empty
+                    }
+                }
+
                 const iframe = iframeRef.current;
                 if (!iframe) return;
 
-                // 4. Construct the full HTML for the iframe
+                // 5. Construct the full HTML for the iframe
                 const fullHtml = `
                     <html>
                     <head>
                         <meta charset="UTF-8">
+                        <style>:root { --mpe-primary-color: ${opts.primaryColor || '#007bff'}; }</style>
                         <style id="mpe-layout-theme">${layoutThemeCss || ''}</style>
                         <style id="mpe-code-theme">${hljsThemeCss}</style>
+                        <style id="mpe-custom-style">${customStyleCss || ''}</style>
                         <style id="mpe-custom-css">${customCss}</style>
                         <style id="mpe-live-css">${liveCss}</style> 
                     </head>
-                    <body style="font-size: ${opts.fontSize || '16px'}; --mpe-primary-color: ${opts.primaryColor || '#007bff'};">
+                    <body class="theme-${layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};">
                         <section id="output">${processedHtml}</section>
                         <script src="${mermaidPath}"></script>
                         <script>

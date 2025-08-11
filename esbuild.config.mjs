@@ -115,7 +115,7 @@ const buildLibs = () => {
     });
     
     const highlightStylesSrc = './node_modules/highlight.js/styles';
-    const highlightStylesDest = './assets/style';
+    const highlightStylesDest = './assets/codestyle';
 
     fs.readdir(highlightStylesSrc, (err, files) => {
         if (err) {

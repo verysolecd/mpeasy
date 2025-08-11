@@ -12,6 +12,7 @@
   "isCountStatus": true,
   "useCustomCSS": true,
   "codeThemeName": "a11y-dark",
+  "customStyleName": "ref-elegant-custom",
   "codeTheme": "a11y-light.css",
   "size": "18"
 }
