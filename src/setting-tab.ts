@@ -58,6 +58,17 @@ export class MPEasySettingTab extends PluginSettingTab {
                     }
                 }));
 
-        
+        containerEl.createEl('h2', {text: '安全设置'});
+
+        new Setting(containerEl)
+            .setName('加密密码')
+            .setDesc('设置一个密码来加密您的密钥。如果设置，密钥将被加密后存储。警告：如果忘记密码，密钥将无法恢复。')
+            .addText(text => text
+                .setPlaceholder('请输入加密密码')
+                .setValue(this.plugin.settings.encryptionPassword)
+                .onChange(async (value) => {
+                    this.plugin.settings.encryptionPassword = value;
+                    await this.plugin.saveSettings();
+                }));
 	}
 }

@@ -1,9 +1,8 @@
 import {getBlobArrayBuffer, requestUrl, RequestUrlParam} from "obsidian";
-import {NMPSettings	} from "./settings";
+import { MPEasySettings } from "../settings";
 
 // 获取token
-export async function wxGetToken() {
-const settings = NMPSettings.getInstance();
+export async function wxGetToken(settings: MPEasySettings) {
 const appid = settings.wxAppId;
 const secret = settings.wxSecret;
 
@@ -92,8 +91,7 @@ try {
 // }
 
 // 上传图片
-export async function wxUploadImage(data: Blob, filename: string, type?: string) {
-	const settings = NMPSettings.getInstance();
+export async function wxUploadImage(settings: MPEasySettings, data: Blob, filename: string, type?: string) {
 	const token = settings.wxToken;
 	let url = '';
 	if (type == null || type === '') {
@@ -149,8 +147,7 @@ export interface DraftArticle {
 	pic_crop_1_1?: string;
 }
 
-export async function wxAddDraft(data: DraftArticle) {
-  const settings = NMPSettings.getInstance();
+export async function wxAddDraft(settings: MPEasySettings, data: DraftArticle) {
   const token = settings.wxToken;
 	const url = 'https://api.weixin.qq.com/cgi-bin/draft/add?access_token=' + token;
 	const body = {

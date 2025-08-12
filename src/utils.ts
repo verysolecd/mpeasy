@@ -194,3 +194,33 @@ export function processClipboardContent(
 
     return clipboardDiv.outerHTML;
 }
+
+// Simple XOR encryption
+function xor(text: string, key: string): string {
+    let result = '';
+    for (let i = 0; i < text.length; i++) {
+        result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return result;
+}
+
+export function encrypt(text: string, key: string): string {
+    if (!text || !key) {
+        return text;
+    }
+    const xor_encrypted = xor(text, key);
+    return btoa(xor_encrypted);
+}
+
+export function decrypt(encryptedText: string, key: string): string {
+    if (!encryptedText || !key) {
+        return encryptedText;
+    }
+    try {
+        const decoded_text = atob(encryptedText);
+        return xor(decoded_text, key);
+    } catch (e) {
+        // If the text is not valid base64, it's probably not encrypted
+        return encryptedText;
+    }
+}

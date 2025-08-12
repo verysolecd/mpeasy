@@ -3,6 +3,7 @@ import { MPEasyView, VIEW_TYPE_MPEASY } from './view';
 import { MPEasySettings, DEFAULT_SETTINGS } from './src/settings';
 import { MPEasySettingTab } from './src/setting-tab';
 import STYLES from './styles.css';
+import { encrypt, decrypt } from './src/utils';
 
 export default class MPEasyPlugin extends Plugin {
     settings: MPEasySettings;
@@ -70,6 +71,12 @@ export default class MPEasyPlugin extends Plugin {
         const loadedData = await this.loadData();
         this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
         
+        if (this.settings.encryptionPassword) {
+            this.settings.wxAppId = decrypt(this.settings.wxAppId, this.settings.encryptionPassword);
+            this.settings.wxSecret = decrypt(this.settings.wxSecret, this.settings.encryptionPassword);
+            this.settings.wxToken = decrypt(this.settings.wxToken, this.settings.encryptionPassword);
+        }
+        
         if (loadedData) {
             if (loadedData.themeName && !loadedData.layoutThemeName) {
                 this.settings.layoutThemeName = loadedData.themeName;
@@ -84,7 +91,13 @@ export default class MPEasyPlugin extends Plugin {
     }
 
     async saveSettings() {
-        await this.saveData(this.settings);
+        const settingsToSave = { ...this.settings };
+        if (settingsToSave.encryptionPassword) {
+            settingsToSave.wxAppId = encrypt(settingsToSave.wxAppId, settingsToSave.encryptionPassword);
+            settingsToSave.wxSecret = encrypt(settingsToSave.wxSecret, settingsToSave.encryptionPassword);
+            settingsToSave.wxToken = encrypt(settingsToSave.wxToken, settingsToSave.encryptionPassword);
+        }
+        await this.saveData(settingsToSave);
         this.refreshViews();
     }
 

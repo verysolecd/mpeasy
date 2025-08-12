@@ -1,8 +1,8 @@
 {
-  "wxAppId": "wxea4ea52f8a48fa3d",
-  "wxSecret": "ad6f76f8bac2c01664be4b2359a62ca0",
-  "wxToken": "95_q9PyXwDVZdXmXNT7YTrLc5llI1si838o3UMzjaqf-4KLoRcPTns9F3wOueil3VI23aEF0CKhZSsOs8RL_aTcJ6My11Ui0qU4S8Wd_3DIVlLOT7JoKi5JLf-Nbm8IGKbACADBF",
-  "layoutThemeName": "ref-simple",
+  "wxAppId": "RkpWUAZWUAcBVwpSBQpVUAFX",
+  "wxSecret": "UFYFVwUFVwpRUFEBUgICBwQHU1cHUwAABAtSBwBQUAI=",
+  "wxToken": "CAdsVkELeEBpe3sCRmALAVdXYkhiWmdfZwBhV2sCAh9BQn1lf1VCe1lqBmF+V3BySR9hUwdEU1B9CWJeYXNSWmJqa2Z+YEFpWnFZVwQERgUDWFR4UENACFNXRUVlRmNSZh9ZaAZBQkFgRn1SRWdqemV4fHcCVnlXYAAHaXpEcnF2UnNxcH5/fw==",
+  "layoutThemeName": "default",
   "fontSize": "14px",
   "isUseIndent": true,
   "primaryColor": "#009874",
@@ -12,7 +12,8 @@
   "isCountStatus": true,
   "useCustomCSS": true,
   "codeThemeName": "agate",
-  "customStyleName": "none",
+  "customStyleName": "ref-elegant-custom",
+  "encryptionPassword": "123",
   "codeTheme": "a11y-light.css",
   "size": "18"
 }
