@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { App, Notice, TFile, MarkdownView } from 'obsidian';
 import Header from './Header';
 import StylePanel from './StylePanel';
-import { initRenderer } from '../core/renderer';
+import { initRenderer, parseFrontMatterAndContent } from '../core/renderer';
 import type { RendererAPI, IOpts } from '../types';
 import { UploadModal } from './UploadModal';
 import { wxAddDraft, wxUploadImage } from '../core/wechatApi';
@@ -163,12 +163,25 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     };
 
     const handleUpload = () => {
-        new UploadModal(app, async (title, coverUrl) => {
+        // Parse front matter to get title and coverUrl
+        const { yamlData } = parseFrontMatterAndContent(markdownContent);
+        const title = (yamlData.title as string) || file.basename; // Use file basename as fallback title
+        let coverUrl = (yamlData.cover as string) || ''; // Use empty string as fallback coverUrl
+
+        // If coverUrl is still empty, try to find the first image in the markdown content
+        if (!coverUrl) {
+            const firstImageMatch = markdownContent.match(/!\[.*?\]\((.*?)\)/);
+            if (firstImageMatch && firstImageMatch[1]) {
+                coverUrl = firstImageMatch[1];
+            }
+        }
+
+        new UploadModal(app, async (data) => { // Changed signature to accept data object
             if (!rendererApi) return;
 
             new Notice('正在上传封面图...');
             let thumb_media_id = '';
-            if (coverUrl) {
+            if (coverUrl) { // Use coverUrl from front matter
                 try {
                     const imageRes = await app.requestUrl({ url: coverUrl, method: 'GET', throw: false });
                     if (imageRes.status !== 200) throw new Error('封面图下载失败');

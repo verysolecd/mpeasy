@@ -88,7 +88,7 @@ interface ParseResult {
   readingTime: ReadTimeResults
 }
 
-function parseFrontMatterAndContent(markdownText: string): ParseResult {
+export function parseFrontMatterAndContent(markdownText: string): ParseResult {
   try {
     const parsed = frontMatter(markdownText)
     const yamlData = parsed.attributes
