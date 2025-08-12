@@ -31,4 +31,4 @@ pnpm-debug.log*
 
 
 # 数据文件
-/data.json
+data.json\"data.json\" 

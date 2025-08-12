@@ -1,18 +1,18 @@
 {
   "wxAppId": "wxea4ea52f8a48fa3d",
   "wxSecret": "ad6f76f8bac2c01664be4b2359a62ca0",
-  "wxToken": "94_Dq_i35CyFjQtBqcFxeg8tMxy6VgGqMd7lh4xk_mB9GEQasNBVMoKu7z6M6zCG3Y2Z293O7NqUEposJicJHY8KrRAytVk-S8UCH90V6D8gFfg4sSNS5QXQcQezfkRWXiAFAEJK",
-  "layoutThemeName": "ref-elegant",
+  "wxToken": "95_q9PyXwDVZdXmXNT7YTrLc5llI1si838o3UMzjaqf-4KLoRcPTns9F3wOueil3VI23aEF0CKhZSsOs8RL_aTcJ6My11Ui0qU4S8Wd_3DIVlLOT7JoKi5JLf-Nbm8IGKbACADBF",
+  "layoutThemeName": "ref-simple",
   "fontSize": "14px",
   "isUseIndent": true,
   "primaryColor": "#009874",
-  "legend": "title",
+  "legend": "alt",
   "isMacCodeBlock": true,
   "isCiteStatus": true,
   "isCountStatus": true,
   "useCustomCSS": true,
-  "codeThemeName": "arduino-light",
-  "customStyleName": "ref-elegant-custom",
+  "codeThemeName": "agate",
+  "customStyleName": "none",
   "codeTheme": "a11y-light.css",
   "size": "18"
 }

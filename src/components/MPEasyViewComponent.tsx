@@ -142,7 +142,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             return;
         }
 
-        const allCss = `${layoutThemeCss}\n${hljsThemeCss}\n${customCss}\n${liveCss}`;
+        const customStyleCss = cssCache.current.get(opts.customStyleName || 'none');
+        const allCss = `${layoutThemeCss}\n${hljsThemeCss}\n${customStyleCss || ''}\n${customCss}\n${liveCss}`;
 
         // Process clipboard content, which now includes CSS inlining
         const finalHtmlForClipboard = processClipboardContent(
