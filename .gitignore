@@ -5,7 +5,7 @@
 /main.js
 /mathjax.js
 /mermaid.js
-/assets/codestyle
+/assets/codestyle/
 
 # IDE config
 .vscode/
