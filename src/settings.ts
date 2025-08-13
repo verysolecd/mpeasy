@@ -3,6 +3,7 @@ export interface MPEasySettings {
     wxAppId: string;
     wxSecret: string;
     wxToken: string;
+    wxTokenTimestamp: number;
 
     // Typography Settings
     layoutThemeName: string;
@@ -33,6 +34,7 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     wxAppId: '',
     wxSecret: '',
     wxToken: '',
+    wxTokenTimestamp: 0,
     layoutThemeName: 'minimal', // Use the new minimal theme as default
     fontSize: '16px',
     isUseIndent: true,

@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting, Notice } from "obsidian";
 import MPEasyPlugin from "./main";
-import { wxGetToken } from "./core/wechatApi";
+import { wxGetToken } from "./sets/weixin-api";
 
 export class MPEasySettingTab extends PluginSettingTab {
 	plugin: MPEasyPlugin;
@@ -46,12 +46,21 @@ export class MPEasySettingTab extends PluginSettingTab {
                 .onClick(async () => {
                     try {
                         const result = await wxGetToken(this.plugin.settings);
-                        if (result.access_token) {
-                            this.plugin.settings.wxToken = result.access_token;
+
+                        if ("error" in result) {
+                            new Notice(result.error);
+                            return;
+                        }
+
+                        const data = await result.json;
+
+                        if (data.access_token) {
+                            this.plugin.settings.wxToken = data.access_token;
+                            this.plugin.settings.wxTokenTimestamp = Date.now();
                             await this.plugin.saveSettings();
                             new Notice('Access Token 获取成功!');
                         } else {
-                            new Notice(`获取失败: ${result.errmsg}`);
+                            new Notice(`获取失败: ${data.errmsg || 'Unknown error'}`);
                         }
                     } catch (e) {
                         new Notice('获取 Access Token 时发生错误。');

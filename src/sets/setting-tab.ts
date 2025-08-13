@@ -317,6 +317,7 @@ export class OmniContentSettingTab extends PluginSettingTab {
                     
                     if (data.access_token) {
                         this.plugin.settings.wxToken = data.access_token;
+                        this.plugin.settings.wxTokenTimestamp = Date.now();
                         await this.plugin.saveSettings();
 
                         // 更新Token输入框

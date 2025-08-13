@@ -1,6 +1,6 @@
 import { App, TFile, Notice } from 'obsidian';
 import type MPEasyPlugin from '../../main';
-import { wxUploadImage } from './wechatApi';
+import { wxUploadImage } from '../sets/weixin-api';
 
 // Function to convert ArrayBuffer to Base64
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -81,7 +81,7 @@ export async function processLocalImages(html: string, plugin: MPEasyPlugin, for
                 const binary = await plugin.app.vault.readBinary(file);
                 const imageBlob = new Blob([binary], { type: `image/${file.extension}` });
 
-                const uploadResult = await wxUploadImage(plugin.settings, imageBlob, file.name);
+                const uploadResult = await wxUploadImage(plugin, imageBlob, file.name);
 
                 if (uploadResult && uploadResult.url) {
                     img.src = uploadResult.url;

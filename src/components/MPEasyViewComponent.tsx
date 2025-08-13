@@ -1,13 +1,13 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { App, Notice, TFile, MarkdownView, normalizePath } from 'obsidian';
+import { App, Notice, TFile, MarkdownView, normalizePath, requestUrl } from 'obsidian';
 import juice from 'juice';
 import Header from './Header';
 import StylePanel from './StylePanel';
 import { initRenderer, parseFrontMatterAndContent } from '../core/renderer';
 import type { RendererAPI, IOpts } from '../types';
 import { UploadModal } from './UploadModal';
-import { wxAddDraft, wxUploadImage } from '../core/wechatApi';
+import { wxAddDraft, wxUploadImage } from '../sets/weixin-api';
 import { processLocalImages } from '../core/htmlPostProcessor';
 import type MPEasyPlugin from '../../main';
 import { preprocessMarkdown, resolveCssVariables } from '../utils';
@@ -240,7 +240,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     let imageBlob: Blob;
                     if (coverUrl.startsWith('http')) {
                         console.log("app object:", app);
-                        const imageRes = await app.requestUrl({ url: coverUrl, method: 'GET', throw: false });
+                        const imageRes = await requestUrl({ url: coverUrl, method: 'GET', throw: false });
                         if (imageRes.status !== 200) throw new Error('封面图下载失败');
                         imageBlob = new Blob([imageRes.arrayBuffer], { type: imageRes.headers['content-type'] });
                     } else {
@@ -248,7 +248,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         const imageBuffer = await app.vault.adapter.readBinary(imagePath);
                         imageBlob = new Blob([imageBuffer]);
                     }
-                    const uploadRes = await wxUploadImage(plugin.settings, imageBlob, 'cover.jpg');
+                    const uploadRes = await wxUploadImage(plugin, imageBlob, 'cover.jpg');
                     if (!uploadRes.media_id) throw new Error(`封面图上传失败: ${uploadRes.errmsg}`);
                     thumb_media_id = uploadRes.media_id;
                     new Notice('封面图上传成功!');
@@ -260,7 +260,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
             new Notice('正在上传草稿...');
             try {
-                const result = await wxAddDraft(plugin.settings, {
+                const result = await wxAddDraft(plugin, {
                     title,
                     content: finalHtml,
                     thumb_media_id,
@@ -353,7 +353,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         <script src="${mermaidPath}"></script>
                         <script src="${mathjaxPath}"></script>
                         <script>
-                            <script>
                             document.addEventListener('DOMContentLoaded', () => {
                                 if (typeof mermaid !== 'undefined') {
                                     mermaid.initialize({ startOnLoad: false, theme: 'default' });
@@ -365,7 +364,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                                     });
                                 }
                             });
-                        </script>
                         </script>
                     </body>
                     </html>
