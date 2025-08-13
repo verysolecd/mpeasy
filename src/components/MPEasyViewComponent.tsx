@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { App, Notice, TFile, MarkdownView } from 'obsidian';
+import { App, Notice, TFile, MarkdownView, normalizePath } from 'obsidian';
 import juice from 'juice';
 import Header from './Header';
 import StylePanel from './StylePanel';
@@ -149,8 +149,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     <meta charset="UTF-8">
                     <style>${allCss}</style>
                 </head>
-                <body class="theme-${opts.layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};
-">                    <section id="output">${htmlWithImages}</section>
+                <body class="theme-${opts.layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};">
+                    <section id="output">${htmlWithImages}</section>
                     <script src="${mermaidPath}"></script>
                     <script src="${mathjaxPath}"></script>
                     <script>
@@ -241,9 +241,16 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             if (coverUrl) {
                 new Notice('正在上传封面图...');
                 try {
-                    const imageRes = await app.requestUrl({ url: coverUrl, method: 'GET', throw: false });
-                    if (imageRes.status !== 200) throw new Error('封面图下载失败');
-                    const imageBlob = new Blob([imageRes.arrayBuffer], { type: imageRes.headers['content-type'] });
+                    let imageBlob: Blob;
+                    if (coverUrl.startsWith('http')) {
+                        const imageRes = await app.requestUrl({ url: coverUrl, method: 'GET', throw: false });
+                        if (imageRes.status !== 200) throw new Error('封面图下载失败');
+                        imageBlob = new Blob([imageRes.arrayBuffer], { type: imageRes.headers['content-type'] });
+                    } else {
+                        const imagePath = normalizePath(coverUrl);
+                        const imageBuffer = await app.vault.adapter.readBinary(imagePath);
+                        imageBlob = new Blob([imageBuffer]);
+                    }
                     const uploadRes = await wxUploadImage(plugin.settings, imageBlob, 'cover.jpg');
                     if (!uploadRes.media_id) throw new Error(`封面图上传失败: ${uploadRes.errmsg}`);
                     thumb_media_id = uploadRes.media_id;
