@@ -10,7 +10,7 @@ import { UploadModal } from './UploadModal';
 import { wxAddDraft, wxUploadImage } from '../core/wechatApi';
 import { processLocalImages } from '../core/htmlPostProcessor';
 import type MPEasyPlugin from '../../main';
-import { preprocessMarkdown, resolveCssVariables } from '../utils'; // Import the resolver
+import { preprocessMarkdown, resolveCssVariables } from '../utils';
 import CssEditor from './CssEditor';
 
 interface MPEasyViewProps {
@@ -43,7 +43,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         customStyleName: plugin.settings.customStyleName,
     });
 
-    // ... (useEffect hooks for opts, theme, file reading, renderer init) ...
     useEffect(() => {
         setOpts(prevOpts => ({
             ...prevOpts,
@@ -134,7 +133,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             const layoutThemeCss = cssCache.current.get(opts.layoutThemeName || 'default') || '';
             const customStyleCss = cssCache.current.get(opts.customStyleName || 'none') || '';
 
-            // Pre-resolve CSS variables for better compatibility
             const allCss = resolveCssVariables(`${layoutThemeCss}\n${hljsThemeCss}\n${customStyleCss}\n${customCss}\n${liveCss}`, opts);
 
             const sandbox = document.createElement('iframe');
@@ -151,16 +149,20 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     <meta charset="UTF-8">
                     <style>${allCss}</style>
                 </head>
-                <body class="theme-${opts.layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};
-">                    <section id="output">${htmlWithImages}</section>
+                <body class="theme-${opts.layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};">
+                    <section id="output">${htmlWithImages}</section>
                     <script src="${mermaidPath}"></script>
+                    <script src="${mathjaxPath}"></script>
                     <script>
-                        if (typeof mermaid !== 'undefined') {
-                            mermaid.initialize({ startOnLoad: false, theme: 'default' });
-                            mermaid.run({
-                                nodes: document.querySelectorAll('.mermaid')
-                            });
-                        }
+                        document.addEventListener('DOMContentLoaded', () => {
+                            if (typeof mermaid !== 'undefined') {
+                                mermaid.initialize({ startOnLoad: false, theme: 'default' });
+                                mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
+                            }
+                            if (typeof MathJax !== 'undefined') {
+                                MathJax.typesetPromise(document.querySelectorAll('#output'));
+                            }
+                        });
                     </script>
                 </body>
                 </html>
@@ -185,7 +187,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     const outputSection = tempDiv.querySelector('#output');
                     let finalHtml = outputSection ? outputSection.innerHTML : '';
 
-                    // Final cleanup
                     const finalDiv = document.createElement('div');
                     finalDiv.innerHTML = finalHtml;
                     const images = finalDiv.getElementsByTagName('img');
@@ -198,7 +199,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
                     document.body.removeChild(sandbox);
                     resolve(finalDiv.innerHTML);
-                }, 500);
+                }, 1000); // Increased delay for MathJax
             };
         });
     };
@@ -343,13 +344,17 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     <body class="theme-${layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};">
                         <section id="output">${previewHtml}</section>
                         <script src="${mermaidPath}"></script>
+                        <script src="${mathjaxPath}"></script>
                         <script>
-                            if (typeof mermaid !== 'undefined') {
-                                mermaid.initialize({ startOnLoad: false, theme: 'default' });
-                                mermaid.run({
-                                    nodes: document.querySelectorAll('.mermaid')
-                                });
-                            }
+                            document.addEventListener('DOMContentLoaded', () => {
+                                if (typeof mermaid !== 'undefined') {
+                                    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+                                    mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
+                                }
+                                if (typeof MathJax !== 'undefined') {
+                                    MathJax.typesetPromise(document.querySelectorAll('#output'));
+                                }
+                            });
                         </script>
                     </body>
                     </html>

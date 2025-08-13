@@ -11,7 +11,9 @@ function createRenderer(display, inlineStyle, blockStyle, iframeWindow, mathjaxP
     }
 
     iframeWindow.MathJax.texReset();
-    const mjxContainer = iframeWindow.MathJax.tex2svg(token.text, { display });
+    // Replace newlines with LaTeX newlines before rendering
+    const processedText = token.text.replace(/\n/g, '\\');
+    const mjxContainer = iframeWindow.MathJax.tex2svg(processedText, { display });
     const svg = mjxContainer.firstChild;
     const width = svg.style['min-width'] || svg.getAttribute('width');
     svg.removeAttribute('width');

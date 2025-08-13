@@ -1,0 +1,82 @@
+<section class="mpeasy-container theme-[主题] [是否缩进]">
+  <!-- 阅读时间统计 -->
+  <div class="mpe-reading-time">阅读时间: X分钟</div>
+  
+  <!-- 主要内容区域 -->
+  <h1 class="mpe-heading mpe-heading-1">标题</h1>
+  <p class="mpe-paragraph">段落内容</p>
+  
+  <!-- 引用块 -->
+  <blockquote class="mpe-blockquote">
+    <p class="mpe-paragraph mpe-blockquote-paragraph">引用内容</p>
+  </blockquote>
+  
+  <!-- 代码块 -->
+  <pre class="hljs mpe-code-pre">
+    <span class="mac-sign">...</span>
+    <code class="language-[语言]">高亮代码</code>
+  </pre>
+  
+  <!-- 内联代码 -->
+  <code class="mpe-codespan">内联代码</code>
+  
+  <!-- 列表 -->
+  <ul class="mpe-list mpe-list-unordered">
+    <li class="mpe-list-item">• 列表项</li>
+  </ul>
+  
+  <ol class="mpe-list mpe-list-ordered">
+    <li class="mpe-list-item">1. 有序列表项</li>
+  </ol>
+  
+  <!-- 图片 -->
+  <figure class="mpe-figure">
+    <img class="mpe-image" src="图片地址" title="标题" alt="描述"/>
+    <figcaption class="mpe-figcaption">图注</figcaption>
+  </figure>
+  
+  <!-- 链接 -->
+  <a class="mpe-link mpe-link-wx" href="链接地址">链接文本</a>
+  <span class="mpe-link">普通链接</span>
+  
+  <!-- 强调文本 -->
+  <strong class="mpe-strong">加粗文本</strong>
+  <em class="mpe-em">斜体文本</em>
+  
+  <!-- 表格 -->
+  <section class="mpe-table-wrapper">
+    <table class="mpe-table">
+      <thead class="mpe-table-header">
+        <tr class="mpe-table-row">
+          <th class="mpe-table-header-cell">表头</th>
+        </tr>
+      </thead>
+      <tbody class="mpe-table-body">
+        <tr class="mpe-table-row">
+          <td class="mpe-table-cell">单元格</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+  
+  <!-- 水平分割线 -->
+  <hr class="mpe-hr"/>
+  
+  <!-- 脚注区域 -->
+  <div class="mpe-footnotes">
+    <h3 class="mpe-footnotes-title">脚注</h3>
+    <ol class="mpe-footnotes-list">
+      <li class="mpe-footnotes-item" id="fn-[编号]">脚注内容</li>
+    </ol>
+  </div>
+  
+  <!-- 附加样式 -->
+  <style>
+    /* 代码块样式 */
+    .mpe-code-pre { padding: 0 !important; }
+    .hljs.mpe-code-pre code { display: -webkit-box; padding: 0.5em 1em 1em; }
+    
+    /* 标题样式覆盖 */
+    h2.mpe-heading strong.mpe-strong { color: inherit !important; }
+  </style>
+</section>
