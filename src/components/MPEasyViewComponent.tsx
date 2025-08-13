@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { App, Notice, TFile, MarkdownView } from 'obsidian';
+import juice from 'juice';
 import Header from './Header';
 import StylePanel from './StylePanel';
 import { initRenderer, parseFrontMatterAndContent } from '../core/renderer';
@@ -9,8 +10,8 @@ import { UploadModal } from './UploadModal';
 import { wxAddDraft, wxUploadImage } from '../core/wechatApi';
 import { processLocalImages } from '../core/htmlPostProcessor';
 import type MPEasyPlugin from '../../main';
-import { processClipboardContent, preprocessMarkdown } from '../utils';
-import CssEditor from './CssEditor'; // Import the new component
+import { preprocessMarkdown } from '../utils';
+import CssEditor from './CssEditor';
 
 interface MPEasyViewProps {
     file: TFile;
@@ -25,9 +26,9 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [rendererApi, setRendererApi] = useState<RendererAPI | null>(null);
     const [markdownContent, setMarkdownContent] = useState('');
-    const [liveCss, setLiveCss] = useState(''); // State for the live CSS editor
+    const [liveCss, setLiveCss] = useState('');
     const [obsidianTheme, setObsidianTheme] = useState<'light' | 'dark'>('light');
-    const scrollListenersRef = useRef<{ cleanUp: () => void } | null>(null); // Ref to hold cleanup function for scroll listeners
+    const scrollListenersRef = useRef<{ cleanUp: () => void } | null>(null);
 
     const [opts, setOpts] = useState<Partial<IOpts>>({
         layoutThemeName: plugin.settings.layoutThemeName,
@@ -42,7 +43,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         customStyleName: plugin.settings.customStyleName,
     });
 
-    // Effect to synchronize opts state with plugin.settings when plugin.settings change externally
     useEffect(() => {
         setOpts(prevOpts => ({
             ...prevOpts,
@@ -80,7 +80,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         return () => observer.disconnect();
     }, []);
 
-    // Effect to read file content with debouncing
     useEffect(() => {
         if (file) {
             app.vault.read(file).then(content => {
@@ -89,13 +88,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         }
     }, [file, app.vault]);
 
-    // Effect to initialize renderer
     useEffect(() => {
         if (!iframeRef.current) return;
-
         const initialOpts: Partial<IOpts> = {
             ...opts,
-            // The theme object is no longer needed here, it will be loaded as CSS
             layoutThemeName: plugin.settings.layoutThemeName,
             codeThemeName: plugin.settings.codeThemeName,
             customCSS: customCss,
@@ -103,13 +99,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             mathjaxPath,
             obsidianTheme: obsidianTheme,
         };
-
         const api = initRenderer(initialOpts as IOpts);
         setRendererApi(api);
-
     }, [plugin.settings.layoutThemeName, plugin.settings.codeThemeName, customCss, mermaidPath, mathjaxPath, obsidianTheme]);
 
-    // Effect to update renderer options when opts state changes
     useEffect(() => {
         if (rendererApi) {
             rendererApi.setOptions({ ...opts, obsidianTheme: obsidianTheme });
@@ -125,34 +118,83 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         }
     };
 
-    const handleCopy = async () => {
-        if (!rendererApi || !iframeRef.current) {
+    const getStyledHtml = async (): Promise<string | null> => {
+        if (!rendererApi) {
             new Notice('渲染器尚未准备好。');
-            return;
+            return null;
         }
+
+        // 1. Get the basic rendered HTML
         const preprocessedMarkdown = preprocessMarkdown(markdownContent);
         const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
         const htmlWithProcessedImages = await processLocalImages(parsedHtml, plugin, false);
 
+        // 2. Get all necessary CSS from the cache
         const hljsThemeCss = cssCache.current.get(opts.codeThemeName || 'default');
         const layoutThemeCss = cssCache.current.get(opts.layoutThemeName || 'default');
-
         if (!hljsThemeCss || !layoutThemeCss) {
-            new Notice('请先等待主题和代码块样式加载完成。');
-            return;
+            new Notice('主题样式尚未加载完成，请稍候。');
+            return null;
+        }
+        const customStyleCss = cssCache.current.get(opts.customStyleName || 'none');
+
+        // 3. Construct the full HTML document string, just like for the preview iframe
+        const fullHtml = `
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>:root { --mpe-primary-color: ${opts.primaryColor || '#007bff'}; }</style>
+                <style id="mpe-layout-theme">${layoutThemeCss || ''}</style>
+                <style id="mpe-code-theme">${hljsThemeCss}</style>
+                <style id="mpe-custom-style">${customStyleCss || ''}</style>
+                <style id="mpe-custom-css">${customCss}</style>
+                <style id="mpe-live-css">${liveCss}</style> 
+            </head>
+            <body class="theme-${opts.layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};">
+                <section id="output">${htmlWithProcessedImages}</section>
+            </body>
+            </html>
+        `;
+
+        // 4. Use juice to inline all styles from the <style> tags
+        const juicedHtml = juice(fullHtml, {
+            inlinePseudoElements: true,
+            preserveImportant: true,
+        });
+
+        // 5. Parse the inlined HTML and extract the styled content
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = juicedHtml;
+        const outputSection = tempDiv.querySelector('#output');
+        if (!outputSection) {
+            new Notice('无法找到渲染内容进行复制。');
+            return null;
         }
 
-        const customStyleCss = cssCache.current.get(opts.customStyleName || 'none');
-        const allCss = `${layoutThemeCss}\n${hljsThemeCss}\n${customStyleCss || ''}\n${customCss}\n${liveCss}`;
+        // 6. Perform final post-processing for WeChat compatibility
+        // This is a simplified version of the old processClipboardContent
+        const finalDiv = document.createElement('div');
+        finalDiv.innerHTML = outputSection.innerHTML;
 
-        // Process clipboard content, which now includes CSS inlining
-        const finalHtmlForClipboard = processClipboardContent(
-            htmlWithProcessedImages,
-            opts.primaryColor || '#000000',
-            allCss
-        );
+        // Fix image styles
+        const images = finalDiv.getElementsByTagName('img');
+        Array.from(images).forEach((image) => {
+            const width = image.getAttribute('width')!;
+            const height = image.getAttribute('height')!;
+            if (width) image.style.width = width;
+            if (height) image.style.height = height;
+            image.removeAttribute('width');
+            image.removeAttribute('height');
+        });
 
-        const blob = new Blob([finalHtmlForClipboard], { type: 'text/html' });
+        return finalDiv.innerHTML;
+    };
+
+    const handleCopy = async () => {
+        const finalHtml = await getStyledHtml();
+        if (finalHtml === null) return;
+
+        const blob = new Blob([finalHtml], { type: 'text/html' });
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
 
         navigator.clipboard.write([clipboardItem]).then(() => {
@@ -162,13 +204,11 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         });
     };
 
-    const handleUpload = () => {
-        // Parse front matter to get title and coverUrl
+    const handleUpload = async () => {
         const { yamlData } = parseFrontMatterAndContent(markdownContent);
-        const title = (yamlData.title as string) || file.basename; // Use file basename as fallback title
-        let coverUrl = (yamlData.cover as string) || ''; // Use empty string as fallback coverUrl
+        const title = (yamlData.title as string) || file.basename;
+        let coverUrl = (yamlData.cover as string) || '';
 
-        // If coverUrl is still empty, try to find the first image in the markdown content
         if (!coverUrl) {
             const firstImageMatch = markdownContent.match(/!\[.*?\]\((.*?)\)/);
             if (firstImageMatch && firstImageMatch[1]) {
@@ -176,17 +216,21 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             }
         }
 
-        new UploadModal(app, async (data) => { // Changed signature to accept data object
-            if (!rendererApi) return;
+        new UploadModal(app, async () => {
+            new Notice('正在处理内容...');
+            const finalHtml = await getStyledHtml();
+            if (finalHtml === null) {
+                new Notice('内容处理失败，请重试。');
+                return;
+            }
 
-            new Notice('正在上传封面图...');
             let thumb_media_id = '';
-            if (coverUrl) { // Use coverUrl from front matter
+            if (coverUrl) {
+                new Notice('正在上传封面图...');
                 try {
                     const imageRes = await app.requestUrl({ url: coverUrl, method: 'GET', throw: false });
                     if (imageRes.status !== 200) throw new Error('封面图下载失败');
                     const imageBlob = new Blob([imageRes.arrayBuffer], { type: imageRes.headers['content-type'] });
-
                     const uploadRes = await wxUploadImage(plugin.settings, imageBlob, 'cover.jpg');
                     if (!uploadRes.media_id) throw new Error(`封面图上传失败: ${uploadRes.errmsg}`);
                     thumb_media_id = uploadRes.media_id;
@@ -198,10 +242,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             }
 
             new Notice('正在上传草稿...');
-            const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-            const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
-            const finalHtml = await processLocalImages(parsedHtml, plugin, false);
-
             try {
                 const result = await wxAddDraft(plugin.settings, {
                     title,
@@ -226,10 +266,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         plugin.saveSettings();
     };
 
-    // Cache for CSS files
     const cssCache = useRef<Map<string, string>>(new Map());
     
-    // Debounced rendering effect
     useEffect(() => {
         if (!rendererApi || !iframeRef.current || !markdownContent) return;
 
@@ -237,12 +275,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             try {
                 const startTime = performance.now();
 
-                // 1. Parse markdown to HTML using the renderer
                 const preprocessedMarkdown = preprocessMarkdown(markdownContent);
                 const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
                 const previewHtml = await processLocalImages(parsedHtml, plugin, true);
 
-                // 2. Get theme CSS for code blocks
                 const codeThemeName = opts.codeThemeName || 'default';
                 let hljsThemeCss = cssCache.current.get(codeThemeName);
                 if (!hljsThemeCss) {
@@ -252,11 +288,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         cssCache.current.set(codeThemeName, hljsThemeCss);
                     } catch (e) {
                         console.error(`Could not load code theme: ${hljsThemePath}`, e);
-                        hljsThemeCss = ''; // Fallback to empty
+                        hljsThemeCss = '';
                     }
                 }
 
-                // 3. Get layout theme CSS
                 const layoutThemeName = opts.layoutThemeName || 'default';
                 let layoutThemeCss = cssCache.current.get(layoutThemeName);
                 if (!layoutThemeCss) {
@@ -266,7 +301,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         cssCache.current.set(layoutThemeName, layoutThemeCss);
                     } catch (e) {
                         console.error(`Could not load layout theme: ${layoutThemePath}, falling back to default.`, e);
-                        // Fallback to default if custom theme fails
                         if (layoutThemeName !== 'default') {
                             const defaultThemePath = `${plugin.manifest.dir}/assets/theme/default.css`;
                             layoutThemeCss = await app.vault.adapter.read(defaultThemePath);
@@ -275,7 +309,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     }
                 }
 
-                // 4. Get custom style CSS
                 const customStyleName = opts.customStyleName || 'none';
                 let customStyleCss = cssCache.current.get(customStyleName);
                 if (!customStyleCss && customStyleName !== 'none') {
@@ -285,14 +318,13 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         cssCache.current.set(customStyleName, customStyleCss);
                     } catch (e) {
                         console.error(`Could not load custom style: ${customStylePath}`, e);
-                        customStyleCss = ''; // Fallback to empty
+                        customStyleCss = '';
                     }
                 }
 
                 const iframe = iframeRef.current;
                 if (!iframe) return;
 
-                // 5. Construct the full HTML for the iframe
                 const fullHtml = `
                     <html>
                     <head>
@@ -316,21 +348,17 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     </html>
                 `;
 
-                // 5. Use srcdoc to update iframe content
                 iframe.srcdoc = fullHtml;
                 
                 console.log(`MPEasy: Render prepared in ${performance.now() - startTime}ms`);
 
-                // 6. After the iframe has loaded, run scripts and set up scroll sync
                 iframe.onload = () => {
-                    // Run Mermaid
                     if (iframe.contentWindow && typeof iframe.contentWindow.mermaid !== 'undefined') {
                         iframe.contentWindow.mermaid.run({
                             nodes: iframe.contentDocument.querySelectorAll('.mermaid')
                         });
                     }
 
-                    // Setup Scroll Sync
                     if (scrollListenersRef.current) {
                         scrollListenersRef.current.cleanUp();
                     }
@@ -354,7 +382,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         requestAnimationFrame(() => {
                             const percentage = editorEl.scrollTop / (editorEl.scrollHeight - editorEl.clientHeight);
                             previewEl.scrollTop = percentage * (previewEl.scrollHeight - previewEl.clientHeight);
-                            setTimeout(() => isSyncing = false, 50); // Reset flag after a short delay
+                            setTimeout(() => isSyncing = false, 50);
                         });
                     };
 
@@ -364,7 +392,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         requestAnimationFrame(() => {
                             const percentage = previewEl.scrollTop / (previewEl.scrollHeight - previewEl.clientHeight);
                             editorEl.scrollTop = percentage * (editorEl.scrollHeight - editorEl.clientHeight);
-                            setTimeout(() => isSyncing = false, 50); // Reset flag after a short delay
+                            setTimeout(() => isSyncing = false, 50);
                         });
                     };
 
@@ -383,7 +411,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 console.error('Error during rendering:', error);
                 new Notice('渲染预览时发生错误，请检查开发者控制台。');
             }
-        }, 250); // 250ms debounce
+        }, 250);
 
         return () => {
             clearTimeout(debounceTimeout);
@@ -392,7 +420,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             }
         };
 
-    }, [markdownContent, rendererApi, opts, plugin, customCss, liveCss, mermaidPath, app.workspace, obsidianTheme]); // Updated dependencies
+    }, [markdownContent, rendererApi, opts, plugin, customCss, liveCss, mermaidPath, app.workspace, obsidianTheme]);
 
     return (
         <div className="mpeasy-view-container">
