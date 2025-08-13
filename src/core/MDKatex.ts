@@ -1,5 +1,6 @@
-const inlineRule = /^(\$){1,2}(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1(?=[\s?!.,:？！。，：]|$)/;
-const inlineRuleNonStandard = /^(\$){1,2}(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/;
+// const inlineRule = /^(\$){1,2}(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1(?=[\s?!.,:？！。，：]|$)/;
+const inlineRule = /^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1(?=[\s?!.,:？！。，：]|$)/
+const inlineRuleNonStandard = /^(\$){1,2}(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/
 const blockRule = /^\s{0,3}(\$){1,2}[ \t]*\n([\s\S]+?)\n\s{0,3}\1[ \t]*(?:\n|$)/;
 
 function createRenderer(display, inlineStyle, blockStyle, iframeWindow, mathjaxPath) {
@@ -17,6 +18,7 @@ function createRenderer(display, inlineStyle, blockStyle, iframeWindow, mathjaxP
     const svg = mjxContainer.firstChild;
     const width = svg.style['min-width'] || svg.getAttribute('width');
     svg.removeAttribute('width');
+    
 
     svg.style = 'max-width: 300vw !important; display: initial; flex-shrink: 0;';
     svg.style.width = width;
