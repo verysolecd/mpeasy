@@ -185,22 +185,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = juicedHtml;
 
-                    // Inject MathJax styles into each SVG to make them self-contained
-                    const mathjaxStyles = sandbox.contentDocument.getElementById('MathJax-SVG-styles')?.textContent || '';
-                    tempDiv.querySelectorAll('mjx-container[jax="SVG"] svg').forEach((svg: SVGSVGElement) => {
-                        const defs = svg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-                        const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-                        style.textContent = mathjaxStyles;
-                        defs.appendChild(style);
-                        svg.insertBefore(defs, svg.firstChild);
-
-                        // Set explicit dimensions
-                        const width = svg.getAttribute('width');
-                        const height = svg.getAttribute('height');
-                        if (width) svg.style.width = width;
-                        if (height) svg.style.height = height;
-                    });
-
                     const outputSection = tempDiv.querySelector('#output');
                     let finalHtml = outputSection ? outputSection.innerHTML : '';
 

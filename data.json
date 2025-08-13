@@ -12,7 +12,7 @@
   "isCountStatus": true,
   "useCustomCSS": true,
   "codeThemeName": "obsidian",
-  "customStyleName": "ref-elegant-custom",
+  "customStyleName": "none",
   "encryptionPassword": "123",
   "codeTheme": "a11y-light.css",
   "size": "18"
