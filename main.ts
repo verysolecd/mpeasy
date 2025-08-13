@@ -2,7 +2,6 @@ import { Plugin } from 'obsidian';
 import { MPEasyView, VIEW_TYPE_MPEASY } from './view';
 import { MPEasySettings, DEFAULT_SETTINGS } from './src/settings';
 import { MPEasySettingTab } from './src/setting-tab';
-import STYLES from './styles.css';
 import { encrypt, decrypt } from './src/utils';
 
 export default class MPEasyPlugin extends Plugin {
@@ -17,9 +16,7 @@ export default class MPEasyPlugin extends Plugin {
 
         this.styleEl = document.createElement('style');
         this.styleEl.id = 'mpeasy-styles';
-        this.styleEl.innerHTML = STYLES;
         document.head.appendChild(this.styleEl);
-
         this.registerView(
             VIEW_TYPE_MPEASY,
             (leaf) => new MPEasyView(leaf, this)

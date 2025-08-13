@@ -223,13 +223,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     const handleUpload = async () => {
         const { yamlData } = parseFrontMatterAndContent(markdownContent);
         const title = (yamlData.title as string) || file.basename;
-        let coverUrl = (yamlData.cover as string) || '';
-        if (!coverUrl) {
-            const firstImageMatch = markdownContent.match(/!\[.*?\]\((.*?)\)/);
-            if (firstImageMatch && firstImageMatch[1]) {
-                coverUrl = firstImageMatch[1];
-            }
-        }
+        const coverUrl = (yamlData.cover as string) || 'https://mmbiz.qpic.cn/sz_mmbiz_png/b8C4TKPfHYFVaicCyYjFk6j4Hw2JsazvnOrqcFGvxesEJDc58fwQsxZ1amzLlibz5FPpY8nLReYicbsribq4ZZEaEQ/0?wx_fmt=png';
+
         new UploadModal(app, async () => {
             new Notice('正在处理内容和上传图片...');
             const finalHtml = await getStyledHtml(true);
@@ -237,12 +232,14 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 new Notice('内容处理失败，请重试。');
                 return;
             }
+
             let thumb_media_id = '';
             if (coverUrl) {
                 new Notice('正在上传封面图...');
                 try {
                     let imageBlob: Blob;
                     if (coverUrl.startsWith('http')) {
+                        console.log("app object:", app);
                         const imageRes = await app.requestUrl({ url: coverUrl, method: 'GET', throw: false });
                         if (imageRes.status !== 200) throw new Error('封面图下载失败');
                         imageBlob = new Blob([imageRes.arrayBuffer], { type: imageRes.headers['content-type'] });
@@ -260,12 +257,15 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     return;
                 }
             }
+
             new Notice('正在上传草稿...');
             try {
                 const result = await wxAddDraft(plugin.settings, {
                     title,
                     content: finalHtml,
                     thumb_media_id,
+                    need_open_comment: 1,
+                    only_fans_can_comment: 0,
                 });
                 if (result.media_id) {
                     new Notice('草稿上传成功！');
@@ -353,15 +353,19 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         <script src="${mermaidPath}"></script>
                         <script src="${mathjaxPath}"></script>
                         <script>
+                            <script>
                             document.addEventListener('DOMContentLoaded', () => {
                                 if (typeof mermaid !== 'undefined') {
                                     mermaid.initialize({ startOnLoad: false, theme: 'default' });
                                     mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
                                 }
-                                if (typeof MathJax !== 'undefined') {
-                                    MathJax.typesetPromise(document.querySelectorAll('#output'));
+                                if (typeof MathJax !== 'undefined' && MathJax.startup) {
+                                    MathJax.startup.promise.then(() => {
+                                        MathJax.typesetPromise(document.querySelectorAll('#output'));
+                                    });
                                 }
                             });
+                        </script>
                         </script>
                     </body>
                     </html>

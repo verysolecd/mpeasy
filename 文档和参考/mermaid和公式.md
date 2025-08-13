@@ -22,3 +22,4 @@ Mermaid 之所以能正常显示，是因为它生成的 SVG 恰好在公众号�
 
 而 MathJax 的公式，由于其生成的 SVG 过于复杂，超出了公众号的兼容范围，因此无法直接复制。我们采取的将 SVG 转换为 <img> 图片的方案，虽然增加了一步处理，但它将一个复杂、不兼容的矢量图，转换成了一个简单、无歧义、100% 兼容的位图（或矢量图容器），从而绕开了公众号编辑器的限制，是解决此类问题的最佳实践。
 
+封面图：https://mmbiz.qpic.cn/sz_mmbiz_png/b8C4TKPfHYFVaicCyYjFk6j4Hw2JsazvnOrqcFGvxesEJDc58fwQsxZ1amzLlibz5FPpY8nLReYicbsribq4ZZEaEQ/0?wxfrom=12&tp=wxpic&usePicPrefetch=1&wx_fmt=png&from=appmsg&watermark=1

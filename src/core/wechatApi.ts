@@ -21,6 +21,8 @@ export interface DraftArticle {
     author?: string;
 	digest?: string;
 	content_source_url?: string;
+	need_open_comment?: number;
+	only_fans_can_comment?: number;
 }
 
 export async function wxAddDraft(settings: MPEasySettings, article: DraftArticle) {
