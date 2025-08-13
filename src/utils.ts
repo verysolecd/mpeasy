@@ -1,5 +1,6 @@
 import { App } from 'obsidian';
 import juice from 'juice';
+import type { IOpts } from './types';
 
 // Note: Much of the original content of this file was related to a legacy
 // inline-style generation system and has been removed as part of a major
@@ -86,113 +87,55 @@ export async function getCustomStyles(app: App): Promise<{ name: string; path: s
     }
 }
 
+export function resolveCssVariables(css: string, opts: Partial<IOpts>): string {
+    const variableRegex = /var\((--[\w-]+)(?:,\s*(.+))?\)/g;
+    const rootVarRegex = /:root\s*\{([^}]+)\}/g;
+    let variables: { [key: string]: string } = {};
 
-function solveWeChatImage(clipboardDiv: HTMLElement) {
-    const images = clipboardDiv.getElementsByTagName('img');
-
-    Array.from(images).forEach((image) => {
-        const width = image.getAttribute('width')!;
-        const height = image.getAttribute('height')!;
-        image.removeAttribute('width');
-        image.removeAttribute('height');
-        image.style.width = width;
-        image.style.height = height;
-    });
-}
-
-function mergeCss(html: string, allCss: string): string {
-    return juice(
-        `<style>${allCss}</style>${html}`, 
-        {
-            inlinePseudoElements: true,
-            preserveImportant: true,
-        }
-    );
-}
-
-function modifyHtmlStructure(htmlString: string): string {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = htmlString;
-
-    // 移动 `li > ul` 和 `li > ol` 到 `li` 后面
-    tempDiv.querySelectorAll('li > ul, li > ol').forEach((originalItem) => {
-        originalItem.parentElement!.insertAdjacentElement('afterend', originalItem);
-    });
-
-    return tempDiv.innerHTML;
-}
-
-function createEmptyNode(): HTMLElement {
-    const node = document.createElement('p');
-    node.style.fontSize = '0';
-    node.style.lineHeight = '0';
-    node.style.margin = '0';
-    node.innerHTML = '&nbsp;';
-    return node;
-}
-
-export function processClipboardContent(
-    originalHtml: string, 
-    primaryColor: string, 
-    allCss: string
-): string {
-    
-    // Use a temporary div to process the HTML
-    const clipboardDiv = document.createElement('div');
-    clipboardDiv.innerHTML = originalHtml;
-
-    // First, inline the CSS
-    let html = mergeCss(clipboardDiv.innerHTML, allCss);
-    
-    // Then, modify the structure
-    html = modifyHtmlStructure(html);
-
-    // Update the div with the modified HTML to perform DOM operations
-    clipboardDiv.innerHTML = html;
-
-    // Post-processing steps from onlyref
-    clipboardDiv.innerHTML = clipboardDiv.innerHTML
-        .replace(/([^-])top:(.*?)em/g, '$1transform: translateY($2em)')
-        .replace(/hsl\(var\(--foreground\)\)/g, '#3f3f3f')
-        .replace(/var\(--blockquote-background\)/g, '#f7f7f7')
-        .replace(/var\(--md-primary-color\)/g, primaryColor)
-        .replace(
-            /<span class="nodeLabel"([^>]*)><p[^>]*>(.*?)<\/p><\/span>/g,
-            '<span class="nodeLabel"$1>$2</span>',
-        )
-        .replace(
-            /<span class="edgeLabel"([^>]*)><p[^>]*>(.*?)<\/p><\/span>/g,
-            '<span class="edgeLabel"$1>$2</span>',
-        );
-
-    solveWeChatImage(clipboardDiv);
-
-    const beforeNode = createEmptyNode();
-    const afterNode = createEmptyNode();
-    clipboardDiv.insertBefore(beforeNode, clipboardDiv.firstChild);
-    clipboardDiv.appendChild(afterNode);
-
-    // Mermaid compatibility
-    const nodes = clipboardDiv.querySelectorAll('.nodeLabel');
-    nodes.forEach((node) => {
-        const parent = node.parentElement!;
-        if (parent) {
-            const xmlns = parent.getAttribute('xmlns')!;
-            const style = parent.getAttribute('style')!;
-            const section = document.createElement('section');
-            if (xmlns) section.setAttribute('xmlns', xmlns);
-            if (style) section.setAttribute('style', style);
-            section.innerHTML = parent.innerHTML;
-
-            const grand = parent.parentElement!;
-            if (grand) {
-                grand.innerHTML = '';
-                grand.appendChild(section);
+    // Extract variables from :root
+    let rootMatch;
+    while ((rootMatch = rootVarRegex.exec(css)) !== null) {
+        const rootVars = rootMatch[1];
+        const varDeclarations = rootVars.split(';');
+        varDeclarations.forEach(declaration => {
+            const parts = declaration.split(':');
+            if (parts.length === 2) {
+                const name = parts[0].trim();
+                const value = parts[1].trim();
+                variables[name] = value;
             }
-        }
-    });
+        });
+    }
 
-    return clipboardDiv.outerHTML;
+    // Override with opts from settings
+    if (opts.primaryColor) {
+        variables['--mpe-primary-color'] = opts.primaryColor;
+    }
+
+    let resolvedCss = css;
+    let iterations = 0;
+
+    while (iterations < 10) {
+        let replaced = false;
+        resolvedCss = resolvedCss.replace(variableRegex, (match, varName, fallback) => {
+            if (variables[varName]) {
+                replaced = true;
+                return variables[varName];
+            }
+            if (fallback) {
+                replaced = true;
+                return fallback;
+            }
+            return match;
+        });
+
+        if (!replaced) {
+            break;
+        }
+        iterations++;
+    }
+
+    return resolvedCss;
 }
 
 // Simple XOR encryption
@@ -220,7 +163,6 @@ export function decrypt(encryptedText: string, key: string): string {
         const decoded_text = atob(encryptedText);
         return xor(decoded_text, key);
     } catch (e) {
-        // If the text is not valid base64, it's probably not encrypted
         return encryptedText;
     }
 }

@@ -10,7 +10,7 @@ import { UploadModal } from './UploadModal';
 import { wxAddDraft, wxUploadImage } from '../core/wechatApi';
 import { processLocalImages } from '../core/htmlPostProcessor';
 import type MPEasyPlugin from '../../main';
-import { preprocessMarkdown } from '../utils';
+import { preprocessMarkdown, resolveCssVariables } from '../utils'; // Import the resolver
 import CssEditor from './CssEditor';
 
 interface MPEasyViewProps {
@@ -43,6 +43,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         customStyleName: plugin.settings.customStyleName,
     });
 
+    // ... (useEffect hooks for opts, theme, file reading, renderer init) ...
     useEffect(() => {
         setOpts(prevOpts => ({
             ...prevOpts,
@@ -118,85 +119,99 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         }
     };
 
-    const getStyledHtml = async (): Promise<string | null> => {
-        if (!rendererApi) {
-            new Notice('渲染器尚未准备好。');
-            return null;
-        }
+    const getStyledHtml = (forUpload: boolean): Promise<string | null> => {
+        return new Promise(async (resolve) => {
+            if (!rendererApi) {
+                new Notice('渲染器尚未准备好。');
+                return resolve(null);
+            }
 
-        // 1. Get the basic rendered HTML
-        const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-        const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
-        const htmlWithProcessedImages = await processLocalImages(parsedHtml, plugin, false);
+            const preprocessedMarkdown = preprocessMarkdown(markdownContent);
+            const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
+            const htmlWithImages = await processLocalImages(parsedHtml, plugin, !forUpload);
 
-        // 2. Get all necessary CSS from the cache
-        const hljsThemeCss = cssCache.current.get(opts.codeThemeName || 'default');
-        const layoutThemeCss = cssCache.current.get(opts.layoutThemeName || 'default');
-        if (!hljsThemeCss || !layoutThemeCss) {
-            new Notice('主题样式尚未加载完成，请稍候。');
-            return null;
-        }
-        const customStyleCss = cssCache.current.get(opts.customStyleName || 'none');
+            const hljsThemeCss = cssCache.current.get(opts.codeThemeName || 'default') || '';
+            const layoutThemeCss = cssCache.current.get(opts.layoutThemeName || 'default') || '';
+            const customStyleCss = cssCache.current.get(opts.customStyleName || 'none') || '';
 
-        // 3. Construct the full HTML document string, just like for the preview iframe
-        const fullHtml = `
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <style>:root { --mpe-primary-color: ${opts.primaryColor || '#007bff'}; }</style>
-                <style id="mpe-layout-theme">${layoutThemeCss || ''}</style>
-                <style id="mpe-code-theme">${hljsThemeCss}</style>
-                <style id="mpe-custom-style">${customStyleCss || ''}</style>
-                <style id="mpe-custom-css">${customCss}</style>
-                <style id="mpe-live-css">${liveCss}</style> 
-            </head>
-            <body class="theme-${opts.layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};">
-                <section id="output">${htmlWithProcessedImages}</section>
-            </body>
-            </html>
-        `;
+            // Pre-resolve CSS variables for better compatibility
+            const allCss = resolveCssVariables(`${layoutThemeCss}\n${hljsThemeCss}\n${customStyleCss}\n${customCss}\n${liveCss}`, opts);
 
-        // 4. Use juice to inline all styles from the <style> tags
-        const juicedHtml = juice(fullHtml, {
-            inlinePseudoElements: true,
-            preserveImportant: true,
+            const sandbox = document.createElement('iframe');
+            sandbox.style.position = 'absolute';
+            sandbox.style.width = '800px';
+            sandbox.style.height = '1px';
+            sandbox.style.top = '-1000px';
+            sandbox.style.left = '-1000px';
+            document.body.appendChild(sandbox);
+
+            const fullHtml = `
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <style>${allCss}</style>
+                </head>
+                <body class="theme-${opts.layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};
+">                    <section id="output">${htmlWithImages}</section>
+                    <script src="${mermaidPath}"></script>
+                    <script>
+                        if (typeof mermaid !== 'undefined') {
+                            mermaid.initialize({ startOnLoad: false, theme: 'default' });
+                            mermaid.run({
+                                nodes: document.querySelectorAll('.mermaid')
+                            });
+                        }
+                    </script>
+                </body>
+                </html>
+            `;
+
+            sandbox.srcdoc = fullHtml;
+
+            sandbox.onload = () => {
+                setTimeout(() => {
+                    if (!sandbox.contentDocument || !sandbox.contentDocument.body) {
+                        document.body.removeChild(sandbox);
+                        return resolve(null);
+                    }
+
+                    const juicedHtml = juice(sandbox.contentDocument.documentElement.outerHTML, {
+                        inlinePseudoElements: true,
+                        preserveImportant: true,
+                    });
+
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = juicedHtml;
+                    const outputSection = tempDiv.querySelector('#output');
+                    let finalHtml = outputSection ? outputSection.innerHTML : '';
+
+                    // Final cleanup
+                    const finalDiv = document.createElement('div');
+                    finalDiv.innerHTML = finalHtml;
+                    const images = finalDiv.getElementsByTagName('img');
+                    Array.from(images).forEach((image) => {
+                        const width = image.getAttribute('width')!;
+                        if (width) image.style.width = width;
+                        image.removeAttribute('width');
+                        image.removeAttribute('height');
+                    });
+
+                    document.body.removeChild(sandbox);
+                    resolve(finalDiv.innerHTML);
+                }, 500);
+            };
         });
-
-        // 5. Parse the inlined HTML and extract the styled content
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = juicedHtml;
-        const outputSection = tempDiv.querySelector('#output');
-        if (!outputSection) {
-            new Notice('无法找到渲染内容进行复制。');
-            return null;
-        }
-
-        // 6. Perform final post-processing for WeChat compatibility
-        // This is a simplified version of the old processClipboardContent
-        const finalDiv = document.createElement('div');
-        finalDiv.innerHTML = outputSection.innerHTML;
-
-        // Fix image styles
-        const images = finalDiv.getElementsByTagName('img');
-        Array.from(images).forEach((image) => {
-            const width = image.getAttribute('width')!;
-            const height = image.getAttribute('height')!;
-            if (width) image.style.width = width;
-            if (height) image.style.height = height;
-            image.removeAttribute('width');
-            image.removeAttribute('height');
-        });
-
-        return finalDiv.innerHTML;
     };
 
     const handleCopy = async () => {
-        const finalHtml = await getStyledHtml();
-        if (finalHtml === null) return;
-
+        new Notice('正在处理内容以便复制...');
+        const finalHtml = await getStyledHtml(false);
+        if (finalHtml === null) {
+            new Notice('处理失败，请重试。');
+            return;
+        }
         const blob = new Blob([finalHtml], { type: 'text/html' });
         const clipboardItem = new ClipboardItem({ 'text/html': blob });
-
         navigator.clipboard.write([clipboardItem]).then(() => {
             new Notice('已成功复制到剪贴板！');
         }, (err) => {
@@ -208,22 +223,19 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         const { yamlData } = parseFrontMatterAndContent(markdownContent);
         const title = (yamlData.title as string) || file.basename;
         let coverUrl = (yamlData.cover as string) || '';
-
         if (!coverUrl) {
             const firstImageMatch = markdownContent.match(/!\[.*?\]\((.*?)\)/);
             if (firstImageMatch && firstImageMatch[1]) {
                 coverUrl = firstImageMatch[1];
             }
         }
-
         new UploadModal(app, async () => {
-            new Notice('正在处理内容...');
-            const finalHtml = await getStyledHtml();
+            new Notice('正在处理内容和上传图片...');
+            const finalHtml = await getStyledHtml(true);
             if (finalHtml === null) {
                 new Notice('内容处理失败，请重试。');
                 return;
             }
-
             let thumb_media_id = '';
             if (coverUrl) {
                 new Notice('正在上传封面图...');
@@ -240,7 +252,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     return;
                 }
             }
-
             new Notice('正在上传草稿...');
             try {
                 const result = await wxAddDraft(plugin.settings, {
@@ -270,15 +281,12 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     
     useEffect(() => {
         if (!rendererApi || !iframeRef.current || !markdownContent) return;
-
         const debounceTimeout = setTimeout(async () => {
             try {
                 const startTime = performance.now();
-
                 const preprocessedMarkdown = preprocessMarkdown(markdownContent);
                 const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
                 const previewHtml = await processLocalImages(parsedHtml, plugin, true);
-
                 const codeThemeName = opts.codeThemeName || 'default';
                 let hljsThemeCss = cssCache.current.get(codeThemeName);
                 if (!hljsThemeCss) {
@@ -291,7 +299,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         hljsThemeCss = '';
                     }
                 }
-
                 const layoutThemeName = opts.layoutThemeName || 'default';
                 let layoutThemeCss = cssCache.current.get(layoutThemeName);
                 if (!layoutThemeCss) {
@@ -308,7 +315,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         }
                     }
                 }
-
                 const customStyleName = opts.customStyleName || 'none';
                 let customStyleCss = cssCache.current.get(customStyleName);
                 if (!customStyleCss && customStyleName !== 'none') {
@@ -321,10 +327,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         customStyleCss = '';
                     }
                 }
-
                 const iframe = iframeRef.current;
                 if (!iframe) return;
-
                 const fullHtml = `
                     <html>
                     <head>
@@ -342,40 +346,29 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         <script>
                             if (typeof mermaid !== 'undefined') {
                                 mermaid.initialize({ startOnLoad: false, theme: 'default' });
+                                mermaid.run({
+                                    nodes: document.querySelectorAll('.mermaid')
+                                });
                             }
                         </script>
                     </body>
                     </html>
                 `;
-
                 iframe.srcdoc = fullHtml;
-                
                 console.log(`MPEasy: Render prepared in ${performance.now() - startTime}ms`);
-
                 iframe.onload = () => {
-                    if (iframe.contentWindow && typeof iframe.contentWindow.mermaid !== 'undefined') {
-                        iframe.contentWindow.mermaid.run({
-                            nodes: iframe.contentDocument.querySelectorAll('.mermaid')
-                        });
-                    }
-
                     if (scrollListenersRef.current) {
                         scrollListenersRef.current.cleanUp();
                     }
-
                     const previewWindow = iframe.contentWindow;
                     const previewEl = iframe.contentDocument.documentElement;
                     const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
                     if (!markdownView || !previewWindow || !previewEl) return;
-
                     const editorEl = (markdownView.getMode() === 'preview')
                         ? markdownView.containerEl.querySelector('.markdown-preview-view')
                         : (markdownView.editor.cm as any).scrollDOM;
-
                     if (!editorEl) return;
-
                     let isSyncing = false;
-
                     const handleEditorScroll = () => {
                         if (isSyncing) return;
                         isSyncing = true;
@@ -385,7 +378,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                             setTimeout(() => isSyncing = false, 50);
                         });
                     };
-
                     const handlePreviewScroll = () => {
                         if (isSyncing) return;
                         isSyncing = true;
@@ -395,10 +387,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                             setTimeout(() => isSyncing = false, 50);
                         });
                     };
-
                     editorEl.addEventListener('scroll', handleEditorScroll);
                     previewWindow.addEventListener('scroll', handlePreviewScroll);
-                    
                     scrollListenersRef.current = { 
                         cleanUp: () => {
                             editorEl.removeEventListener('scroll', handleEditorScroll);
@@ -406,20 +396,17 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         }
                     };
                 };
-
             } catch (error) {
                 console.error('Error during rendering:', error);
                 new Notice('渲染预览时发生错误，请检查开发者控制台。');
             }
         }, 250);
-
         return () => {
             clearTimeout(debounceTimeout);
             if (scrollListenersRef.current) {
                 scrollListenersRef.current.cleanUp();
             }
         };
-
     }, [markdownContent, rendererApi, opts, plugin, customCss, liveCss, mermaidPath, app.workspace, obsidianTheme]);
 
     return (
