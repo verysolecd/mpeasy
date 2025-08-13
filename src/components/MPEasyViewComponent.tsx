@@ -99,7 +99,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             mathjaxPath,
             obsidianTheme: obsidianTheme,
         };
-        const api = initRenderer(initialOpts as IOpts);
+        const api = initRenderer(initialOpts as IOpts, () => iframeRef.current?.contentWindow || null);
         setRendererApi(api);
     }, [plugin.settings.layoutThemeName, plugin.settings.codeThemeName, customCss, mermaidPath, mathjaxPath, obsidianTheme]);
 
@@ -149,8 +149,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     <meta charset="UTF-8">
                     <style>${allCss}</style>
                 </head>
-                <body class="theme-${opts.layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};">
-                    <section id="output">${htmlWithImages}</section>
+                <body class="theme-${opts.layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};
+">                    <section id="output">${htmlWithImages}</section>
                     <script src="${mermaidPath}"></script>
                     <script src="${mathjaxPath}"></script>
                     <script>
@@ -184,7 +184,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = juicedHtml;
-
                     const outputSection = tempDiv.querySelector('#output');
                     let finalHtml = outputSection ? outputSection.innerHTML : '';
 

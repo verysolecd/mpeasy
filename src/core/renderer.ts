@@ -112,7 +112,7 @@ export function parseFrontMatterAndContent(markdownText: string): ParseResult {
   }
 }
 
-export function initRenderer(opts: IOpts): RendererAPI {
+export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null): RendererAPI {
   const footnotes: [number, string, string][] = []
   let footnoteIndex: number = 0
   const listOrderedStack: boolean[] = []
@@ -135,11 +135,9 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
   function setOptions(newOpts: Partial<IOpts>): void {
     opts = { ...opts, ...newOpts }
-    // Style-related updates are now handled by CSS files
-    // We might still need to trigger a re-render if some options change
-    marked.use(markedAlert({})) // Pass empty styles
+    marked.use(markedAlert({}))
     marked.use(
-      MDKatex({ nonStandard: true }, ``, ``),
+      MDKatex({ nonStandard: true }, ``, ``, getIframeWindow),
     )
   }
 
@@ -316,10 +314,10 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
   marked.use({ renderer })
   marked.use(markedToc())
-  marked.use(markedSlider({})) // Pass empty styles
-  marked.use(markedAlert({})) // Pass empty styles
+  marked.use(markedSlider({}))
+  marked.use(markedAlert({}))
   marked.use(
-    MDKatex({ nonStandard: true }, ``, ``),
+    MDKatex({ nonStandard: true }, ``, ``, getIframeWindow),
   )
   marked.use(markedFootnotes())
 
