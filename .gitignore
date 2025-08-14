@@ -6,7 +6,7 @@
 /mathjax.js
 /mermaid.js
 /assets/codestyle/
-
+/data.json
 # IDE config
 .vscode/
 .idea/
@@ -31,5 +31,5 @@ pnpm-debug.log*
 
 
 # 数据文件
-/data.json
+
 
