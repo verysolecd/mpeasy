@@ -25,6 +25,8 @@ export interface MPEasySettings {
     // Encryption
     encryptionPassword?: string;
 
+    defaultBanner: string;
+
     // 向后兼容的旧属性名
     themeName?: string;
     codeBlockTheme?: string;
@@ -47,4 +49,5 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     codeThemeName: 'atom-one-dark', // A popular default code theme
     customStyleName: 'none',
     encryptionPassword: '',
+    defaultBanner: 'assets/images/banner.png',
 };

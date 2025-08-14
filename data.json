@@ -1,7 +1,8 @@
 {
   "wxAppId": "RkpWUAZWUAcBVwpSBQpVUAFX",
   "wxSecret": "UFYFVwUFVwpRUFEBUgICBwQHU1cHUwAABAtSBwBQUAI=",
-  "wxToken": "CAdsVl5dQntYVX5/VVlGdF13eH9DfB9CYENVVFELCApeZ35ReAZaCXR2elAFeHRGW1xGBgtDdFpSVn9reFkGdwV2Wn5fX1xVAn1bHHNfZAB7XFRrQgtdelBSBntWZQtyVVxWCUdZcnldQmFUSAdjeGpwREUBQX8KfgVARVoDY3lpWHN2cHtxYA==",
+  "wxToken": "CAdsewJdQ2dnZX9gfwpxWwplAUVBYEhcRWFLQwB2Q1kGXldLYH9sX1VeZwpJX0RiAnteVnZ/fn1YYENwYlh/W3VeQ15hRGNkWEYDeXBfCF9YXUB+dUYKXFoECQVgYWNbfAd2XF5WW31EZQFUa0Jia0ZUfx9hUFcGYEVRemVEYHNmWHNxcHtgfA==",
+  "wxTokenTimestamp": 1755145734565,
   "layoutThemeName": "ref-elegant",
   "fontSize": "14px",
   "isUseIndent": true,
@@ -14,6 +15,7 @@
   "codeThemeName": "obsidian",
   "customStyleName": "none",
   "encryptionPassword": "123",
+  "defaultBanner": ".obsidian/plugins/mpeasy/assets/images/banner.png",
   "codeTheme": "a11y-light.css",
   "size": "18"
 }

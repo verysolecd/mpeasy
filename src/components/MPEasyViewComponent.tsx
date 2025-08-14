@@ -221,59 +221,91 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     };
 
     const handleUpload = async () => {
+        console.log('MPEasy: 开始上传流程');
         const { yamlData } = parseFrontMatterAndContent(markdownContent);
+        console.log('MPEasy: 解析到的 Frontmatter:', yamlData);
         const title = (yamlData.title as string) || file.basename;
-        const coverUrl = (yamlData.cover as string) || 'https://mmbiz.qpic.cn/sz_mmbiz_png/b8C4TKPfHYFVaicCyYjFk6j4Hw2JsazvnOrqcFGvxesEJDc58fwQsxZ1amzLlibz5FPpY8nLReYicbsribq4ZZEaEQ/0?wx_fmt=png';
+        const bannerField = (yamlData.banner as string) || '';
+        let coverUrl = '';
+
+        if (bannerField) {
+            const markdownMatch = bannerField.match(/!\\\\[.*?\\\\]\\((.*?)\\)/);
+            if (markdownMatch) {
+                coverUrl = markdownMatch[1];
+            } else {
+                coverUrl = bannerField;
+            }
+        } else {
+            coverUrl = plugin.settings.defaultBanner;
+        }
+        console.log(`MPEasy: 文章标题: ${title}`);
+        console.log(`MPEasy: 封面图 URL: ${coverUrl}`);
 
         new UploadModal(app, async () => {
+            console.log('MPEasy: 上传确认框已确认');
             new Notice('正在处理内容和上传图片...');
             const finalHtml = await getStyledHtml(true);
             if (finalHtml === null) {
                 new Notice('内容处理失败，请重试。');
+                console.error('MPEasy: getStyledHtml 返回 null');
                 return;
             }
+            console.log('MPEasy: HTML 内容处理完成');
 
             let thumb_media_id = '';
             if (coverUrl) {
                 new Notice('正在上传封面图...');
+                console.log('MPEasy: 开始上传封面图');
                 try {
                     let imageBlob: Blob;
                     if (coverUrl.startsWith('http')) {
-                        console.log("app object:", app);
+                        console.log(`MPEasy: 从 URL 下载封面图: ${coverUrl}`);
                         const imageRes = await requestUrl({ url: coverUrl, method: 'GET', throw: false });
                         if (imageRes.status !== 200) throw new Error('封面图下载失败');
                         imageBlob = new Blob([imageRes.arrayBuffer], { type: imageRes.headers['content-type'] });
                     } else {
                         const imagePath = normalizePath(coverUrl);
+                        console.log(`MPEasy: 从本地路径读取封面图: ${imagePath}`);
                         const imageBuffer = await app.vault.adapter.readBinary(imagePath);
                         imageBlob = new Blob([imageBuffer]);
                     }
-                    const uploadRes = await wxUploadImage(plugin, imageBlob, 'cover.jpg');
-                    if (!uploadRes.media_id) throw new Error(`封面图上传失败: ${uploadRes.errmsg}`);
+                    const uploadRes = await wxUploadImage(requestUrl, plugin, imageBlob, 'cover.jpg', 'image');
+                    console.log('MPEasy: 封面图上传结果:', uploadRes);
+                    if (!uploadRes.media_id) {
+                        const errorMsg = uploadRes.errmsg || '未知错误';
+                        throw new Error(`封面图上传失败: ${errorMsg}`);
+                    }
                     thumb_media_id = uploadRes.media_id;
                     new Notice('封面图上传成功!');
+                    console.log(`MPEasy: 封面图上传成功, thumb_media_id: ${thumb_media_id}`);
                 } catch (e) {
                     new Notice(`封面图处理失败: ${e.message}`);
+                    console.error('MPEasy: 封面图处理失败:', e);
                     return;
                 }
             }
 
             new Notice('正在上传草稿...');
+            console.log('MPEasy: 开始上传草稿');
             try {
-                const result = await wxAddDraft(plugin, {
+                const result = await wxAddDraft(requestUrl, plugin, {
                     title,
                     content: finalHtml,
                     thumb_media_id,
                     need_open_comment: 1,
                     only_fans_can_comment: 0,
                 });
+                console.log('MPEasy: 草稿上传结果:', result);
                 if (result.media_id) {
                     new Notice('草稿上传成功！');
+                    console.log(`MPEasy: 草稿上传成功, media_id: ${result.media_id}`);
                 } else {
                     new Notice(`上传失败: ${result.errmsg}`);
+                    console.error(`MPEasy: 草稿上传失败: ${result.errmsg}`);
                 }
             } catch (e) {
                 new Notice(`上传时发生错误: ${e.message}`);
+                console.error('MPEasy: 上传草稿时发生错误:', e);
             }
         }).open();
     };

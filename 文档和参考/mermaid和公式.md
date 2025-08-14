@@ -23,3 +23,28 @@ Mermaid 之所以能正常显示，是因为它生成的 SVG 恰好在公众号�
 而 MathJax 的公式，由于其生成的 SVG 过于复杂，超出了公众号的兼容范围，因此无法直接复制。我们采取的将 SVG 转换为 <img> 图片的方案，虽然增加了一步处理，但它将一个复杂、不兼容的矢量图，转换成了一个简单、无歧义、100% 兼容的位图（或矢量图容器），从而绕开了公众号编辑器的限制，是解决此类问题的最佳实践。
 
 封面图：https://mmbiz.qpic.cn/sz_mmbiz_png/b8C4TKPfHYFVaicCyYjFk6j4Hw2JsazvnOrqcFGvxesEJDc58fwQsxZ1amzLlibz5FPpY8nLReYicbsribq4ZZEaEQ/0?wxfrom=12&tp=wxpic&usePicPrefetch=1&wx_fmt=png&from=appmsg&watermark=1
+
+
+
+封面图的来源逻辑非常清晰，定义在 MPEasyViewComponent.tsx 文件中：
+
+优先从 Frontmatter 获取：程序会首先读取当前 Markdown 文件的 frontmatter (文件顶部的YAML配置区)，并查找 cover 字段。如果存在，则使用该字段的值作为封面图的 URL。
+title: 这是文章标题
+cover: /assets/my-cover.png  # 本地图片
+# or
+# cover: https://example.com/remote-cover.jpg # 网络图片
+使用默认图片：如果在 frontmatter 中没有找到 cover 字段，程序会使用一个硬编码在代码中的默认图片作为封面。
+封面图上传逻辑
+当用户点击“上传”按钮后，封面图的处理和上传流程如下：
+
+触发上传: 用户在 MPEasy 视图中点击上传按钮，调用 handleUpload 函数。
+解析封面 URL: handleUpload 函数根据上述逻辑确定封面图的 URL (coverUrl)。
+处理图片数据:
+网络图片: 如果 coverUrl 是 http 或 https:// 开头的，程序会使用 Obsidian 的 requestUrl API 下载该图片，并将其转换为二进制数据 (Blob)。
+本地图片: 如果 coverUrl 是一个本地路径，程序会使用 Obsidian 的 vault.adapter.readBinary API 读取本地文件，并转换为二进制数据 (Blob)。
+上传到微信服务器:
+程序调用 weixin-api.ts 中的 wxUploadImage 函数。
+此函数会先确保获取一个有效的 access_token。
+然后，它将上一步获取的图片二进制数据通过 POST 请求上传到微信的素材接口 (/cgi-bin/material/add_material)。
+获取 thumb_media_id: 微信服务器在成功接收图片后，会返回一个 media_id，这个 ID 就是后续创建草稿时所需的封面 thumb_media_id。
+创建草稿: 程序调用 wxAddDraft 函数，将文章内容和上一步获取的 thumb_media_id 一起提交到微信服务器，最终创建出带有封面的草稿。

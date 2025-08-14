@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice } from "obsidian";
+import { App, PluginSettingTab, Setting, Notice, requestUrl } from "obsidian";
 import MPEasyPlugin from "./main";
 import { wxGetToken } from "./sets/weixin-api";
 
@@ -45,7 +45,7 @@ export class MPEasySettingTab extends PluginSettingTab {
                 .setButtonText("获取")
                 .onClick(async () => {
                     try {
-                        const result = await wxGetToken(this.plugin.settings);
+                        const result = await wxGetToken(this.plugin.settings, requestUrl);
 
                         if ("error" in result) {
                             new Notice(result.error);
@@ -67,7 +67,23 @@ export class MPEasySettingTab extends PluginSettingTab {
                     }
                 }));
 
-        containerEl.createEl('h2', {text: '安全设置'});
+        new Setting(containerEl)
+            .setName('默认封面图')
+            .setDesc('选择一个默认的封面图')
+            .addDropdown(dropdown => {
+                const imagePath = `${this.plugin.manifest.dir}/assets/images`;
+                const images = this.app.vault.adapter.list(imagePath);
+                images.then(list => {
+                    list.files.forEach(file => {
+                        dropdown.addOption(file, file.split('/').pop());
+                    });
+                });
+                dropdown.setValue(this.plugin.settings.defaultBanner)
+                    .onChange(async (value) => {
+                        this.plugin.settings.defaultBanner = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
 
         new Setting(containerEl)
             .setName('加密密码')

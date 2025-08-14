@@ -1,4 +1,4 @@
-import { App, TFile, Notice } from 'obsidian';
+import { App, TFile, Notice, requestUrl } from 'obsidian';
 import type MPEasyPlugin from '../../main';
 import { wxUploadImage } from '../sets/weixin-api';
 
@@ -31,6 +31,7 @@ function findFile(app: App, src: string): TFile | null {
 }
 
 export async function processLocalImages(html: string, plugin: MPEasyPlugin, forPreview: boolean): Promise<string> {
+    console.log(`MPEasy: [processLocalImages] 开始处理本地图片，forPreview: ${forPreview}`);
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     const images = Array.from(doc.querySelectorAll('img'));
@@ -42,10 +43,13 @@ export async function processLocalImages(html: string, plugin: MPEasyPlugin, for
     );
 
     if (localImages.length === 0) {
+        console.log('MPEasy: [processLocalImages] 未发现本地图片');
         return html;
     }
+    console.log(`MPEasy: [processLocalImages] 发现 ${localImages.length} 张本地图片`);
 
     if (forPreview) {
+        console.log('MPEasy: [processLocalImages] 为预览模式处理图片，转换为 Base64');
         for (let i = 0; i < localImages.length; i++) {
             const img = localImages[i];
             const src = img.getAttribute('src');
@@ -54,6 +58,7 @@ export async function processLocalImages(html: string, plugin: MPEasyPlugin, for
             const file = findFile(plugin.app, src);
             if (!file) {
                 img.alt = `图片加载失败: 找不到文件 ${src}`;
+                console.warn(`MPEasy: [processLocalImages] 找不到文件: ${src}`);
                 continue;
             }
 
@@ -62,6 +67,7 @@ export async function processLocalImages(html: string, plugin: MPEasyPlugin, for
             img.src = `data:image/${file.extension};base64,${base64}`;
         }
     } else {
+        console.log('MPEasy: [processLocalImages] 为上传模式处理图片，上传到微信');
         new Notice(`发现 ${localImages.length} 张本地图片，正在上传...`);
         for (let i = 0; i < localImages.length; i++) {
             const img = localImages[i];
@@ -72,30 +78,36 @@ export async function processLocalImages(html: string, plugin: MPEasyPlugin, for
             if (!file) {
                 new Notice(`图片上传失败：找不到文件 ${src}`);
                 img.alt = `图片上传失败: 找不到文件 ${src}`;
+                console.warn(`MPEasy: [processLocalImages] 找不到文件: ${src}`);
                 continue;
             }
 
             new Notice(`正在上传图片 ${i + 1}/${localImages.length}: ${file.name}`);
+            console.log(`MPEasy: [processLocalImages] 正在上传图片 ${i + 1}/${localImages.length}: ${file.name}`);
 
             try {
                 const binary = await plugin.app.vault.readBinary(file);
                 const imageBlob = new Blob([binary], { type: `image/${file.extension}` });
 
-                const uploadResult = await wxUploadImage(plugin, imageBlob, file.name);
+                const uploadResult = await wxUploadImage(requestUrl, plugin, imageBlob, file.name);
+                console.log(`MPEasy: [processLocalImages] 图片 ${file.name} 上传结果:`, uploadResult);
 
                 if (uploadResult && uploadResult.url) {
                     img.src = uploadResult.url;
                     img.dataset.src = uploadResult.url; // 添加 data-src 属性
                     new Notice(`图片 ${file.name} 上传成功！`);
+                    console.log(`MPEasy: [processLocalImages] 图片 ${file.name} 上传成功，URL: ${uploadResult.url}`);
                 } else {
                     throw new Error(uploadResult.errmsg || '未知错误');
                 }
             } catch (e) {
                 new Notice(`处理图片 ${src} 时出错: ${e.message}`);
                 img.alt = `图片上传失败: ${e.message}`;
+                console.error(`MPEasy: [processLocalImages] 处理图片 ${src} 时出错:`, e);
             }
         }
         new Notice('所有图片处理完毕！');
+        console.log('MPEasy: [processLocalImages] 所有图片处理完毕');
     }
 
     return doc.body.innerHTML;

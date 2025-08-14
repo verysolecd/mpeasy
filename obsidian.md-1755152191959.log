@@ -1,0 +1,46 @@
+app.js:1 Viewport failed to stabilize
+e.measure @ app.js:1
+（匿名） @ app.js:1
+requestAnimationFrame（异步）
+e.requestMeasure @ app.js:1
+t.refresh @ app.js:1
+t.onResize @ app.js:1
+t.onResize @ app.js:1
+t.onResize @ app.js:1
+t.onResize @ app.js:1
+c @ app.js:1
+u @ app.js:1
+setTimeout（异步）
+h @ app.js:1
+（匿名） @ app.js:1
+app.js:1 Measure loop restarted more than 5 times
+e.measure @ app.js:1
+（匿名） @ app.js:1
+requestAnimationFrame（异步）
+e.requestMeasure @ app.js:1
+t.refresh @ app.js:1
+t.onResize @ app.js:1
+t.onResize @ app.js:1
+t.onResize @ app.js:1
+e.tryTrigger @ app.js:1
+e.trigger @ app.js:1
+t.trigger @ app.js:1
+t.onResize @ app.js:1
+c @ app.js:1
+u @ app.js:1
+
+plugin:mpeasy-obsidian:253 MPEasy: 开始上传封面图
+plugin:mpeasy-obsidian:253 MPEasy: 从本地路径读取封面图: .obsidian/plugins/mpeasy/assets/images/banner.png
+plugin:mpeasy-obsidian:221 MPEasy: [wxUploadImage] 开始上传图片: cover.jpg, 类型: 默认
+plugin:mpeasy-obsidian:221 MPEasy: [ensureTokenValid] 开始检查 Token
+plugin:mpeasy-obsidian:221 MPEasy: [ensureTokenValid] Token 有效
+plugin:mpeasy-obsidian:221 MPEasy: [wxUploadImage] 请求 URL: https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=95_J0nrUTTMSN8Bj8V0wrQzotSxr2Erk5oexQM_ngmV8znvQ3ImgDLOOkQqCSjLjGmrlRuQWit0HBl9mklrMDt9mh787SPQhM5EmlejOwT3gZpQZtgN-Rae5QwbKWwQAUiABAISM
+plugin:mpeasy-obsidian:226 MPEasy: [wxUploadImage] 请求选项: {method: 'POST', url: 'https://api.weixin.qq.com/cgi-bin/media/uploadimg?…mh787SPQhM5EmlejOwT3gZpQZtgN-Rae5QwbKWwQAUiABAISM', contentType: 'multipart/form-data; boundary=----djmangoBoundrywf0q9wkoa0b00000', body: ArrayBuffer(5722226)}body: ArrayBuffer(5722226)contentType: "multipart/form-data; boundary=----djmangoBoundrywf0q9wkoa0b00000"method: "POST"url: "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=95_J0nrUTTMSN8Bj8V0wrQzotSxr2Erk5oexQM_ngmV8znvQ3ImgDLOOkQqCSjLjGmrlRuQWit0HBl9mklrMDt9mh787SPQhM5EmlejOwT3gZpQZtgN-Rae5QwbKWwQAUiABAISM"[[Prototype]]: Object
+plugin:mpeasy-obsidian:226 MPEasy: [wxUploadImage] 收到响应: {status: 200, headers: {…}, arrayBuffer: ArrayBuffer(152)}arrayBuffer: ArrayBuffer(152)headers: {connection: 'keep-alive', content-length: '152', content-type: 'text/plain', date: 'Thu, 14 Aug 2025 05:44:07 GMT'}json: （…）status: 200text: （…）get json: ƒ json()get text: ƒ text()[[Prototype]]: Object
+plugin:mpeasy-obsidian:253 MPEasy: 封面图上传结果: {url: 'http://mmbiz.qpic.cn/sz_mmbiz_png/b8C4TKPfHYFmNkav…rlpwwecpGTWgmbxGOOBibR8iah8a36E1lfA/0?from=appmsg'}url: "http://mmbiz.qpic.cn/sz_mmbiz_png/b8C4TKPfHYFmNkavfXzU8Wat1cjp9M7EDAlIIr6fuib0uDCpCNFk2OrlpwwecpGTWgmbxGOOBibR8iah8a36E1lfA/0?from=appmsg"[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()length: 1name: "isPrototypeOf"arguments: （…）caller: （…）[[Prototype]]: ƒ ()[[Scopes]]: Scopes[0]propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: （…）get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+plugin:mpeasy-obsidian:253 MPEasy: 封面图处理失败: Error: 封面图上传失败: undefined
+    at fd.eval [as onSubmit] (plugin:mpeasy-obsidian:253:2700)
+eval @ plugin:mpeasy-obsidian:253
+await in eval（异步）
+eval @ plugin:mpeasy-obsidian:221
+（匿名） @ app.js:1
