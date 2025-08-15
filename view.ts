@@ -39,14 +39,25 @@ export class MPEasyView extends ItemView {
         this.root.render(component);
     }
 
+    // Debounce function
+    debounce = <T extends (...args: any[]) => void>(func: T, delay: number) => {
+        let timeout: NodeJS.Timeout;
+        return (...args: Parameters<T>) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), delay);
+        };
+    };
+
+    // Debounced render function
+    debouncedRender = this.debounce((file: TFile) => {
+        this.renderComponent(file);
+    }, 500);
+
     // Updated handler to be more specific
     editorChangeHandler = (editor: Editor, file: TFile) => {
         if (this.linkedFile && file.path === this.linkedFile.path) {
-            const content = editor.getValue();
-            // Here we assume the React component handles its own state updates
-            // For simplicity, we re-render. A more advanced implementation
-            // would use a state management solution or refs.
-            this.renderComponent(file);
+            // Use the debounced function to render
+            this.debouncedRender(file);
         }
     }
 

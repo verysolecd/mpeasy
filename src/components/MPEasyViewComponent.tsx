@@ -43,6 +43,24 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         customStyleName: plugin.settings.customStyleName,
     });
 
+    const cssCache = useRef<Map<string, string>>(new Map());
+    const renderCache = useRef({
+        markdown: '',
+        parsedHtml: '',
+        previewHtml: '',
+    });
+
+    useEffect(() => {
+        // Invalidate cache if the markdown content changes
+        if (markdownContent !== renderCache.current.markdown) {
+            renderCache.current = { 
+                markdown: markdownContent,
+                parsedHtml: '',
+                previewHtml: ''
+            };
+        }
+    }, [markdownContent]);
+
     useEffect(() => {
         setOpts(prevOpts => ({
             ...prevOpts,
@@ -125,8 +143,14 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 return resolve(null);
             }
 
-            const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-            const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
+            let parsedHtml = renderCache.current.parsedHtml;
+            if (!parsedHtml || markdownContent !== renderCache.current.markdown) {
+                const preprocessedMarkdown = preprocessMarkdown(markdownContent);
+                parsedHtml = await rendererApi.parse(preprocessedMarkdown);
+                renderCache.current.parsedHtml = parsedHtml;
+                renderCache.current.markdown = markdownContent;
+            }
+
             const htmlWithImages = await processLocalImages(parsedHtml, plugin, !forUpload);
 
             const hljsThemeCss = cssCache.current.get(opts.codeThemeName || 'default') || '';
@@ -155,25 +179,50 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     <script src="${mathjaxPath}"></script>
                     <script>
                         document.addEventListener('DOMContentLoaded', () => {
+                            const renderingPromises = [];
                             if (typeof mermaid !== 'undefined') {
                                 mermaid.initialize({ startOnLoad: false, theme: 'default' });
-                                mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
+                                const promise = mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
+                                renderingPromises.push(promise);
                             }
                             if (typeof MathJax !== 'undefined') {
-                                MathJax.typesetPromise(document.querySelectorAll('#output'));
+                                try {
+                                    if (MathJax.typesetPromise) {
+                                        const promise = MathJax.typesetPromise(document.querySelectorAll('#output'));
+                                        renderingPromises.push(promise);
+                                    } else if (MathJax.Hub) {
+                                        // Fallback for older MathJax versions
+                                        const promise = new Promise((resolve) => {
+                                            MathJax.Hub.Queue(['Typeset', MathJax.Hub, document.getElementById('output')]);
+                                            MathJax.Hub.Queue(resolve);
+                                        });
+                                        renderingPromises.push(promise);
+                                    } else {
+                                        // If no MathJax rendering available, just resolve
+                                        renderingPromises.push(Promise.resolve());
+                                    }
+                                } catch (e) {
+                                    console.warn('MathJax rendering failed:', e);
+                                    renderingPromises.push(Promise.resolve());
+                                }
                             }
+                            Promise.all(renderingPromises).then(() => {
+                                window.parent.postMessage('mpeasy-render-complete', '*');
+                            }).catch((error) => {
+                                console.warn('Rendering promises failed:', error);
+                                window.parent.postMessage('mpeasy-render-complete', '*');
+                            });
                         });
                     </script>
                 </body>
                 </html>
             `;
 
-            sandbox.srcdoc = fullHtml;
-
-            sandbox.onload = () => {
-                setTimeout(() => {
+            const messageListener = (event: MessageEvent) => {
+                if (event.data === 'mpeasy-render-complete') {
                     if (!sandbox.contentDocument || !sandbox.contentDocument.body) {
                         document.body.removeChild(sandbox);
+                        window.removeEventListener('message', messageListener);
                         return resolve(null);
                     }
 
@@ -191,16 +240,21 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     finalDiv.innerHTML = finalHtml;
                     const images = finalDiv.getElementsByTagName('img');
                     Array.from(images).forEach((image) => {
-                        const width = image.getAttribute('width')!;
+                        const width = image.getAttribute('width');
                         if (width) image.style.width = width;
                         image.removeAttribute('width');
                         image.removeAttribute('height');
                     });
 
                     document.body.removeChild(sandbox);
+                    window.removeEventListener('message', messageListener);
                     resolve(finalDiv.innerHTML);
-                }, 1000); // Increased delay for MathJax
+                }
             };
+
+            window.addEventListener('message', messageListener);
+
+            sandbox.srcdoc = fullHtml;
         });
     };
 
@@ -229,7 +283,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         let coverUrl = '';
 
         if (bannerField) {
-            const markdownMatch = bannerField.match(/!\\\\[.*?\\\\]\\((.*?)\\)/);
+            const markdownMatch = bannerField.match(/!\\[.*?\\]\\((.*?)\\)/);
             if (markdownMatch) {
                 coverUrl = markdownMatch[1];
             } else {
@@ -317,16 +371,26 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         plugin.saveSettings();
     };
 
-    const cssCache = useRef<Map<string, string>>(new Map());
-    
     useEffect(() => {
         if (!rendererApi || !iframeRef.current || !markdownContent) return;
+
         const debounceTimeout = setTimeout(async () => {
             try {
                 const startTime = performance.now();
-                const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-                const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
-                const previewHtml = await processLocalImages(parsedHtml, plugin, true);
+
+                let parsedHtml = renderCache.current.parsedHtml;
+                if (!parsedHtml) {
+                    const preprocessedMarkdown = preprocessMarkdown(markdownContent);
+                    parsedHtml = await rendererApi.parse(preprocessedMarkdown);
+                    renderCache.current.parsedHtml = parsedHtml;
+                }
+
+                let previewHtml = renderCache.current.previewHtml;
+                if (!previewHtml) {
+                    previewHtml = await processLocalImages(parsedHtml, plugin, true);
+                    renderCache.current.previewHtml = previewHtml;
+                }
+                
                 const codeThemeName = opts.codeThemeName || 'default';
                 let hljsThemeCss = cssCache.current.get(codeThemeName);
                 if (!hljsThemeCss) {
@@ -339,6 +403,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         hljsThemeCss = '';
                     }
                 }
+
                 const layoutThemeName = opts.layoutThemeName || 'default';
                 let layoutThemeCss = cssCache.current.get(layoutThemeName);
                 if (!layoutThemeCss) {
@@ -355,6 +420,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         }
                     }
                 }
+
                 const customStyleName = opts.customStyleName || 'none';
                 let customStyleCss = cssCache.current.get(customStyleName);
                 if (!customStyleCss && customStyleName !== 'none') {
@@ -367,8 +433,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         customStyleCss = '';
                     }
                 }
+
                 const iframe = iframeRef.current;
                 if (!iframe) return;
+
                 const fullHtml = `
                     <html>
                     <head>
@@ -400,21 +468,28 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     </body>
                     </html>
                 `;
+
                 iframe.srcdoc = fullHtml;
                 console.log(`MPEasy: Render prepared in ${performance.now() - startTime}ms`);
+
                 iframe.onload = () => {
                     if (scrollListenersRef.current) {
                         scrollListenersRef.current.cleanUp();
                     }
+
                     const previewWindow = iframe.contentWindow;
                     const previewEl = iframe.contentDocument.documentElement;
                     const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
                     if (!markdownView || !previewWindow || !previewEl) return;
+
                     const editorEl = (markdownView.getMode() === 'preview')
                         ? markdownView.containerEl.querySelector('.markdown-preview-view')
                         : (markdownView.editor.cm as any).scrollDOM;
+
                     if (!editorEl) return;
+
                     let isSyncing = false;
+
                     const handleEditorScroll = () => {
                         if (isSyncing) return;
                         isSyncing = true;
@@ -424,6 +499,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                             setTimeout(() => isSyncing = false, 50);
                         });
                     };
+
                     const handlePreviewScroll = () => {
                         if (isSyncing) return;
                         isSyncing = true;
@@ -433,8 +509,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                             setTimeout(() => isSyncing = false, 50);
                         });
                     };
+
                     editorEl.addEventListener('scroll', handleEditorScroll);
                     previewWindow.addEventListener('scroll', handlePreviewScroll);
+
                     scrollListenersRef.current = { 
                         cleanUp: () => {
                             editorEl.removeEventListener('scroll', handleEditorScroll);
@@ -447,6 +525,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 new Notice('渲染预览时发生错误，请检查开发者控制台。');
             }
         }, 250);
+
         return () => {
             clearTimeout(debounceTimeout);
             if (scrollListenersRef.current) {
