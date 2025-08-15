@@ -44,6 +44,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
     });
 
     const cssCache = useRef<Map<string, string>>(new Map());
+    const cssLoadingCache = useRef<Map<string, Promise<string>>>(new Map());
     const renderCache = useRef({
         markdown: '',
         parsedHtml: '',
@@ -153,9 +154,11 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
             const htmlWithImages = await processLocalImages(parsedHtml, plugin, !forUpload);
 
-            const hljsThemeCss = cssCache.current.get(opts.codeThemeName || 'default') || '';
-            const layoutThemeCss = cssCache.current.get(opts.layoutThemeName || 'default') || '';
-            const customStyleCss = cssCache.current.get(opts.customStyleName || 'none') || '';
+            const [hljsThemeCss, layoutThemeCss, customStyleCss] = await Promise.all([
+                getCachedCss(opts.codeThemeName || 'default', 'codestyle'),
+                getCachedCss(opts.layoutThemeName || 'default', 'theme'),
+                getCachedCss(opts.customStyleName || 'none', 'style')
+            ]);
 
             const allCss = resolveCssVariables(`${layoutThemeCss}\n${hljsThemeCss}\n${customStyleCss}\n${customCss}\n${liveCss}`, opts);
 
@@ -191,14 +194,12 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                                         const promise = MathJax.typesetPromise(document.querySelectorAll('#output'));
                                         renderingPromises.push(promise);
                                     } else if (MathJax.Hub) {
-                                        // Fallback for older MathJax versions
                                         const promise = new Promise((resolve) => {
                                             MathJax.Hub.Queue(['Typeset', MathJax.Hub, document.getElementById('output')]);
                                             MathJax.Hub.Queue(resolve);
                                         });
                                         renderingPromises.push(promise);
                                     } else {
-                                        // If no MathJax rendering available, just resolve
                                         renderingPromises.push(Promise.resolve());
                                     }
                                 } catch (e) {
@@ -283,7 +284,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         let coverUrl = '';
 
         if (bannerField) {
-            const markdownMatch = bannerField.match(/!\\[.*?\\]\\((.*?)\\)/);
+            const markdownMatch = bannerField.match(/!\[.*?\]\((.*?)\)/);
             if (markdownMatch) {
                 coverUrl = markdownMatch[1];
             } else {
@@ -298,50 +299,77 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         new UploadModal(app, async () => {
             console.log('MPEasy: 上传确认框已确认');
             new Notice('正在处理内容和上传图片...');
-            const finalHtml = await getStyledHtml(true);
-            if (finalHtml === null) {
-                new Notice('内容处理失败，请重试。');
-                console.error('MPEasy: getStyledHtml 返回 null');
-                return;
-            }
-            console.log('MPEasy: HTML 内容处理完成');
+            
+            try {
+                // 1. 处理HTML内容
+                const finalHtml = await getStyledHtml(true);
+                if (finalHtml === null) {
+                    new Notice('内容处理失败，请重试。');
+                    console.error('MPEasy: getStyledHtml 返回 null');
+                    return;
+                }
+                console.log('MPEasy: HTML 内容处理完成');
 
-            let thumb_media_id = '';
-            if (coverUrl) {
-                new Notice('正在上传封面图...');
-                console.log('MPEasy: 开始上传封面图');
-                try {
-                    let imageBlob: Blob;
+                // 2. 准备所有图片上传任务
+                const uploadTasks: Array<{blob: Blob, filename: string, type?: string, isCover?: boolean}> = [];
+                
+                // 添加封面图到上传任务（如果有）
+                if (coverUrl) {
+                    let coverBlob: Blob;
                     if (coverUrl.startsWith('http')) {
                         console.log(`MPEasy: 从 URL 下载封面图: ${coverUrl}`);
                         const imageRes = await requestUrl({ url: coverUrl, method: 'GET', throw: false });
                         if (imageRes.status !== 200) throw new Error('封面图下载失败');
-                        imageBlob = new Blob([imageRes.arrayBuffer], { type: imageRes.headers['content-type'] });
+                        coverBlob = new Blob([imageRes.arrayBuffer], { type: imageRes.headers['content-type'] });
                     } else {
                         const imagePath = normalizePath(coverUrl);
                         console.log(`MPEasy: 从本地路径读取封面图: ${imagePath}`);
                         const imageBuffer = await app.vault.adapter.readBinary(imagePath);
-                        imageBlob = new Blob([imageBuffer]);
+                        coverBlob = new Blob([imageBuffer]);
                     }
-                    const uploadRes = await wxUploadImage(requestUrl, plugin, imageBlob, 'cover.jpg', 'image');
-                    console.log('MPEasy: 封面图上传结果:', uploadRes);
-                    if (!uploadRes.media_id) {
-                        const errorMsg = uploadRes.errmsg || '未知错误';
-                        throw new Error(`封面图上传失败: ${errorMsg}`);
-                    }
-                    thumb_media_id = uploadRes.media_id;
-                    new Notice('封面图上传成功!');
-                    console.log(`MPEasy: 封面图上传成功, thumb_media_id: ${thumb_media_id}`);
-                } catch (e) {
-                    new Notice(`封面图处理失败: ${e.message}`);
-                    console.error('MPEasy: 封面图处理失败:', e);
-                    return;
+                    uploadTasks.push({blob: coverBlob, filename: 'cover.jpg', type: 'image', isCover: true});
                 }
-            }
 
-            new Notice('正在上传草稿...');
-            console.log('MPEasy: 开始上传草稿');
-            try {
+                // 3. 并行上传所有图片
+                new Notice(`正在上传 ${uploadTasks.length} 张图片...`);
+                console.log(`MPEasy: 开始并行上传 ${uploadTasks.length} 张图片`);
+
+                const uploadPromises = uploadTasks.map(async (task, index) => {
+                    try {
+                        const uploadRes = await wxUploadImage(
+                            requestUrl, 
+                            plugin, 
+                            task.blob, 
+                            task.filename, 
+                            task.type
+                        );
+                        
+                        if (!uploadRes.media_id) {
+                            throw new Error(`图片上传失败: ${uploadRes.errmsg || '未知错误'}`);
+                        }
+                        
+                        console.log(`MPEasy: 图片 ${index + 1} 上传成功, media_id: ${uploadRes.media_id}`);
+                        
+                        return {
+                            media_id: uploadRes.media_id,
+                            isCover: task.isCover || false
+                        };
+                    } catch (error) {
+                        console.error(`MPEasy: 图片 ${index + 1} 上传失败:`, error);
+                        throw error;
+                    }
+                });
+
+                const uploadResults = await Promise.all(uploadPromises);
+                
+                // 4. 获取封面图的media_id
+                const coverResult = uploadResults.find(r => r.isCover);
+                const thumb_media_id = coverResult ? coverResult.media_id : '';
+
+                new Notice('正在上传草稿...');
+                console.log('MPEasy: 开始上传草稿');
+                
+                // 5. 上传草稿
                 const result = await wxAddDraft(requestUrl, plugin, {
                     title,
                     content: finalHtml,
@@ -349,6 +377,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     need_open_comment: 1,
                     only_fans_can_comment: 0,
                 });
+                
                 console.log('MPEasy: 草稿上传结果:', result);
                 if (result.media_id) {
                     new Notice('草稿上传成功！');
@@ -357,11 +386,62 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     new Notice(`上传失败: ${result.errmsg}`);
                     console.error(`MPEasy: 草稿上传失败: ${result.errmsg}`);
                 }
+                
             } catch (e) {
                 new Notice(`上传时发生错误: ${e.message}`);
-                console.error('MPEasy: 上传草稿时发生错误:', e);
+                console.error('MPEasy: 上传过程中发生错误:', e);
             }
         }).open();
+    };
+
+    const getCachedCss = async (themeName: string, type: 'theme' | 'codestyle' | 'style'): Promise<string> => {
+        if (themeName === 'none') return '';
+        
+        const cacheKey = `${type}-${themeName}`;
+        
+        // 如果已在内存缓存中，直接返回
+        if (cssCache.current.has(cacheKey)) {
+            return cssCache.current.get(cacheKey)!;
+        }
+        
+        // 如果正在加载中，返回同一个Promise避免重复加载
+        if (cssLoadingCache.current.has(cacheKey)) {
+            return cssLoadingCache.current.get(cacheKey)!;
+        }
+        
+        // 创建新的加载Promise
+        const loadPromise = loadCssContent(themeName, type, cacheKey);
+        cssLoadingCache.current.set(cacheKey, loadPromise);
+        
+        return loadPromise;
+    };
+
+    const loadCssContent = async (themeName: string, type: string, cacheKey: string): Promise<string> => {
+        try {
+            let filePath = '';
+            switch (type) {
+                case 'theme':
+                    filePath = `${plugin.manifest.dir}/assets/theme/${themeName}.css`;
+                    break;
+                case 'codestyle':
+                    filePath = `${plugin.manifest.dir}/assets/codestyle/${themeName}.css`;
+                    break;
+                case 'style':
+                    filePath = `${plugin.manifest.dir}/assets/style/${themeName}.css`;
+                    break;
+            }
+            
+            const content = await app.vault.adapter.read(filePath);
+            cssCache.current.set(cacheKey, content);
+            return content;
+        } catch (e) {
+            console.error(`加载CSS失败: ${themeName}`, e);
+            if (type === 'theme' && themeName !== 'default') {
+                // 主题加载失败时回退到默认主题
+                return loadCssContent('default', type, cacheKey);
+            }
+            return '';
+        }
     };
 
     const handleOptsChange = (newOpts: Partial<IOpts>) => {
@@ -369,6 +449,19 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         setOpts(updatedOpts);
         Object.assign(plugin.settings, updatedOpts);
         plugin.saveSettings();
+        
+        // 清除相关缓存以强制更新
+        if (newOpts.codeThemeName || newOpts.layoutThemeName || newOpts.customStyleName) {
+            const keysToClear = [];
+            if (newOpts.codeThemeName) keysToClear.push(`codestyle-${newOpts.codeThemeName}`);
+            if (newOpts.layoutThemeName) keysToClear.push(`theme-${newOpts.layoutThemeName}`);
+            if (newOpts.customStyleName) keysToClear.push(`style-${newOpts.customStyleName}`);
+            
+            keysToClear.forEach(key => {
+                cssCache.current.delete(key);
+                cssLoadingCache.current.delete(key);
+            });
+        }
     };
 
     useEffect(() => {
@@ -391,48 +484,12 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     renderCache.current.previewHtml = previewHtml;
                 }
                 
-                const codeThemeName = opts.codeThemeName || 'default';
-                let hljsThemeCss = cssCache.current.get(codeThemeName);
-                if (!hljsThemeCss) {
-                    const hljsThemePath = `${plugin.manifest.dir}/assets/codestyle/${codeThemeName}.css`;
-                    try {
-                        hljsThemeCss = await app.vault.adapter.read(hljsThemePath);
-                        cssCache.current.set(codeThemeName, hljsThemeCss);
-                    } catch (e) {
-                        console.error(`Could not load code theme: ${hljsThemePath}`, e);
-                        hljsThemeCss = '';
-                    }
-                }
-
-                const layoutThemeName = opts.layoutThemeName || 'default';
-                let layoutThemeCss = cssCache.current.get(layoutThemeName);
-                if (!layoutThemeCss) {
-                    const layoutThemePath = `${plugin.manifest.dir}/assets/theme/${layoutThemeName}.css`;
-                    try {
-                        layoutThemeCss = await app.vault.adapter.read(layoutThemePath);
-                        cssCache.current.set(layoutThemeName, layoutThemeCss);
-                    } catch (e) {
-                        console.error(`Could not load layout theme: ${layoutThemePath}, falling back to default.`, e);
-                        if (layoutThemeName !== 'default') {
-                            const defaultThemePath = `${plugin.manifest.dir}/assets/theme/default.css`;
-                            layoutThemeCss = await app.vault.adapter.read(defaultThemePath);
-                            cssCache.current.set('default', layoutThemeCss);
-                        }
-                    }
-                }
-
-                const customStyleName = opts.customStyleName || 'none';
-                let customStyleCss = cssCache.current.get(customStyleName);
-                if (!customStyleCss && customStyleName !== 'none') {
-                    const customStylePath = `${plugin.manifest.dir}/assets/style/${customStyleName}.css`;
-                    try {
-                        customStyleCss = await app.vault.adapter.read(customStylePath);
-                        cssCache.current.set(customStyleName, customStyleCss);
-                    } catch (e) {
-                        console.error(`Could not load custom style: ${customStylePath}`, e);
-                        customStyleCss = '';
-                    }
-                }
+                // 并行加载所有CSS文件
+                const [hljsThemeCss, layoutThemeCss, customStyleCss] = await Promise.all([
+                    getCachedCss(opts.codeThemeName || 'default', 'codestyle'),
+                    getCachedCss(opts.layoutThemeName || 'default', 'theme'),
+                    getCachedCss(opts.customStyleName || 'none', 'style')
+                ]);
 
                 const iframe = iframeRef.current;
                 if (!iframe) return;
@@ -448,21 +505,23 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         <style id="mpe-custom-css">${customCss}</style>
                         <style id="mpe-live-css">${liveCss}</style> 
                     </head>
-                    <body class="theme-${layoutThemeName}" style="font-size: ${opts.fontSize || '16px'};">
+                    <body class="theme-${opts.layoutThemeName || 'default'}" style="font-size: ${opts.fontSize || '16px'};">
                         <section id="output">${previewHtml}</section>
                         <script src="${mermaidPath}"></script>
                         <script src="${mathjaxPath}"></script>
                         <script>
                             document.addEventListener('DOMContentLoaded', () => {
+                                const promises = [];
                                 if (typeof mermaid !== 'undefined') {
                                     mermaid.initialize({ startOnLoad: false, theme: 'default' });
-                                    mermaid.run({ nodes: document.querySelectorAll('.mermaid') });
+                                    promises.push(mermaid.run({ nodes: document.querySelectorAll('.mermaid') }));
                                 }
                                 if (typeof MathJax !== 'undefined' && MathJax.startup) {
-                                    MathJax.startup.promise.then(() => {
-                                        MathJax.typesetPromise(document.querySelectorAll('#output'));
-                                    });
+                                    promises.push(MathJax.startup.promise.then(() => 
+                                        MathJax.typesetPromise(document.querySelectorAll('#output'))
+                                    ));
                                 }
+                                Promise.all(promises).catch(console.warn);
                             });
                         </script>
                     </body>
@@ -478,7 +537,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     }
 
                     const previewWindow = iframe.contentWindow;
-                    const previewEl = iframe.contentDocument.documentElement;
+                    const previewEl = iframe.contentDocument?.documentElement;
                     const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
                     if (!markdownView || !previewWindow || !previewEl) return;
 
@@ -494,8 +553,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         if (isSyncing) return;
                         isSyncing = true;
                         requestAnimationFrame(() => {
-                            const percentage = editorEl.scrollTop / (editorEl.scrollHeight - editorEl.clientHeight);
-                            previewEl.scrollTop = percentage * (previewEl.scrollHeight - previewEl.clientHeight);
+                            const percentage = editorEl.scrollTop / Math.max(1, editorEl.scrollHeight - editorEl.clientHeight);
+                            previewEl.scrollTop = percentage * Math.max(1, previewEl.scrollHeight - previewEl.clientHeight);
                             setTimeout(() => isSyncing = false, 50);
                         });
                     };
@@ -504,14 +563,14 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         if (isSyncing) return;
                         isSyncing = true;
                         requestAnimationFrame(() => {
-                            const percentage = previewEl.scrollTop / (previewEl.scrollHeight - previewEl.clientHeight);
-                            editorEl.scrollTop = percentage * (editorEl.scrollHeight - editorEl.clientHeight);
+                            const percentage = previewEl.scrollTop / Math.max(1, previewEl.scrollHeight - previewEl.clientHeight);
+                            editorEl.scrollTop = percentage * Math.max(1, editorEl.scrollHeight - editorEl.clientHeight);
                             setTimeout(() => isSyncing = false, 50);
                         });
                     };
 
-                    editorEl.addEventListener('scroll', handleEditorScroll);
-                    previewWindow.addEventListener('scroll', handlePreviewScroll);
+                    editorEl.addEventListener('scroll', handleEditorScroll, { passive: true });
+                    previewWindow.addEventListener('scroll', handlePreviewScroll, { passive: true });
 
                     scrollListenersRef.current = { 
                         cleanUp: () => {
@@ -524,7 +583,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 console.error('Error during rendering:', error);
                 new Notice('渲染预览时发生错误，请检查开发者控制台。');
             }
-        }, 250);
+        }, 150); // 减少防抖时间
 
         return () => {
             clearTimeout(debounceTimeout);

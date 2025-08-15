@@ -118,6 +118,12 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
   const listOrderedStack: boolean[] = []
   const listCounters: number[] = []
 
+  // 缓存常用值
+  const cache = {
+    lastOpts: opts,
+    hljsLanguages: new Set<string>()
+  };
+
   function getOpts(): IOpts {
     return opts
   }
@@ -134,7 +140,9 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
   }
 
   function setOptions(newOpts: Partial<IOpts>): void {
+    if (JSON.stringify(newOpts) === JSON.stringify(cache.lastOpts)) return;
     opts = { ...opts, ...newOpts }
+    cache.lastOpts = opts;
     marked.use(markedAlert({}))
     marked.use(
       MDKatex({ nonStandard: true }, ``, ``, getIframeWindow),
@@ -192,17 +200,48 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
       if (lang.startsWith(`mermaid`)) {
         return `<pre class="mermaid">${text}</pre>`
       }
+
       const langText = lang.split(` `)[0]
       const language = hljs.getLanguage(langText) ? langText : `plaintext`
+
+      // 缓存语言检查
+      if (!cache.hljsLanguages.has(language)) {
+        cache.hljsLanguages.add(language);
+      }
+
+      // 优化高亮处理
       let highlighted = hljs.highlight(text, { language }).value
       highlighted = highlighted.replace(/\t/g, `    `)
+      highlighted = highlighted.replace(/\r?\n/g, `<br/>`)
       highlighted = highlighted
-        .replace(/\r\n/g, `<br/>`)
-        .replace(/\n/g, `<br/>`)
         .replace(/(>[^<]+)|(^[^<]+)/g, str => str.replace(/\s/g, `&nbsp;`))
-      const span = `<span class="mac-sign" style="padding: 10px 14px 0;" hidden>${macCodeSvg}</span>`
-      const code = `<code class="language-${lang}">${highlighted}</code>`
-      return `<pre class="hljs mpe-code-pre">${span}${code}</pre>`
+
+      const isShowLineNumbers = lang.includes(`=l`) || opts.codeLineNumbers
+      const isShowMacStyleBar = lang.includes(`=b`) || opts.codeMacBar
+      const isShowCopyButton = lang.includes(`=c`) || opts.codeCopy
+
+      // 使用模板字符串优化性能
+      const preClasses = `hljs mpe-code-pre language-${language}${isShowLineNumbers ? ' line-numbers' : ''}${isShowMacStyleBar ? ' mac-style' : ''}`;
+      const codeClasses = `language-${language}`;
+
+      let additionalHtml = '';
+
+      if (isShowLineNumbers) {
+        const lines = text.split('\n');
+        const lineNumbers = lines.map((_, i) => `<span class="line-number">${i+1}</span>`).join('<br/>');
+        additionalHtml += `<div class="mpe-line-numbers">${lineNumbers}</div>`;
+      }
+
+      const macBar = isShowMacStyleBar ? `<span class="mac-sign" style="padding: 10px 14px 0;">${macCodeSvg}</span>` : '';
+      const copyButton = isShowCopyButton
+        ? `<button class="mpe-copy-button" data-clipboard-text="${escapeHtml(text)}">📋</button>`
+        : '';
+
+      return `<pre class="${preClasses}">
+        <div class="mpe-code-header">${macBar}${copyButton}</div>
+        <code class="${codeClasses}">${highlighted}</code>
+        ${additionalHtml}
+      </pre>`.replace(/\s{2,}/g, ' ');
     },
 
     codespan({ text }: Tokens.Codespan): string {

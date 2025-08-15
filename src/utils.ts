@@ -6,37 +6,56 @@ import type { IOpts } from './types';
 // inline-style generation system and has been removed as part of a major
 // refactoring to a CSS class-based, file-driven theme system.
 
+// 缓存正则表达式
+const wikilinkImageRegex = /!\[\[(.*?)\]\]/g;
+
 export function preprocessMarkdown(markdown: string): string {
-    // This regex finds all occurrences of ![[...]]
-    const wikilinkImageRegex = /!\[\[(.*?)\]\]/g;
     return markdown.replace(wikilinkImageRegex, '[]($1)');
 }
 
-async function getThemes(app: App, themeFolder: 'theme' | 'codestyle'): Promise<{ name: string; path: string }[]> {
-    const themeDir = `${app.vault.configDir}/plugins/mpeasy/assets/${themeFolder}`;
-    try {
-        const files = await app.vault.adapter.list(themeDir);
-        const themePromises = files.files
-            .filter(file => file.endsWith('.css') && !file.endsWith('.min.css'))
-            .map(async (filePath) => {
-                const fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
-                const themePath = fileName.replace('.css', '');
-                const fileContent = await app.vault.adapter.read(filePath);
-                const match = fileContent.match(/\/\*\s*#theme name:\s*(.*?)\s*\*\//);
-                const themeName = match ? match[1] : themePath;
-                return { name: themeName, path: themePath };
-            });
+// 缓存主题结果
+const themeCache = new Map<string, Promise<{ name: string; path: string }[]>>();
 
-        const themes = await Promise.all(themePromises);
-        // Add a default option
-        if (themeFolder === 'theme') {
-            themes.unshift({ name: '默认', path: 'default' });
-        }
-        return themes;
-    } catch (error) {
-        console.error(`Failed to read themes from assets/${themeFolder}:`, error);
-        return [{ name: '默认', path: 'default' }]; // Fallback
+async function getThemes(app: App, themeFolder: 'theme' | 'codestyle'): Promise<{ name: string; path: string }[]> {
+    const cacheKey = `${app.vault.configDir}/plugins/mpeasy/assets/${themeFolder}`;
+    
+    if (themeCache.has(cacheKey)) {
+        return themeCache.get(cacheKey)!;
     }
+    
+    const themePromise = (async () => {
+        try {
+            const files = await app.vault.adapter.list(cacheKey);
+            const themes: { name: string; path: string }[] = [];
+            
+            // 并行读取所有文件
+            const readPromises = files.files
+                .filter(file => file.endsWith('.css') && !file.endsWith('.min.css'))
+                .map(async (filePath) => {
+                    const fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
+                    const themePath = fileName.replace('.css', '');
+                    const fileContent = await app.vault.adapter.read(filePath);
+                    const match = fileContent.match(/\/\*\s*#theme name:\s*(.*?)\s*\*\//);
+                    const themeName = match ? match[1] : themePath;
+                    return { name: themeName, path: themePath };
+                });
+
+            const results = await Promise.all(readPromises);
+            themes.push(...results);
+            
+            // Add a default option
+            if (themeFolder === 'theme') {
+                themes.unshift({ name: '默认', path: 'default' });
+            }
+            return themes;
+        } catch (error) {
+            console.error(`Failed to read themes from assets/${themeFolder}:`, error);
+            return [{ name: '默认', path: 'default' }]; // Fallback
+        }
+    })();
+    
+    themeCache.set(cacheKey, themePromise);
+    return themePromise;
 }
 
 
@@ -87,55 +106,33 @@ export async function getCustomStyles(app: App): Promise<{ name: string; path: s
     }
 }
 
-export function resolveCssVariables(css: string, opts: Partial<IOpts>): string {
-    const variableRegex = /var\((--[\w-]+)(?:,\s*(.+))?\)/g;
-    const rootVarRegex = /:root\s*\{([^}]+)\}/g;
-    let variables: { [key: string]: string } = {};
+// 缓存正则表达式
+const variableRegex = /var\((--[\w-]+)(?:,\s*([^)]+))?\)/g;
+const rootVarRegex = /:root\s*\{([^}]+)\}/g;
+const cssVarRegex = /--[\w-]+:\s*([^;]+)/g;
 
-    // Extract variables from :root
-    let rootMatch;
-    while ((rootMatch = rootVarRegex.exec(css)) !== null) {
-        const rootVars = rootMatch[1];
-        const varDeclarations = rootVars.split(';');
-        varDeclarations.forEach(declaration => {
-            const parts = declaration.split(':');
-            if (parts.length === 2) {
-                const name = parts[0].trim();
-                const value = parts[1].trim();
-                variables[name] = value;
-            }
-        });
+export function resolveCssVariables(css: string, opts: Partial<IOpts>): string {
+    const variables: { [key: string]: string } = {};
+
+    // 一次性提取所有变量定义
+    let match;
+    while ((match = rootVarRegex.exec(css)) !== null) {
+        const rootVars = match[1];
+        let varMatch;
+        while ((varMatch = cssVarRegex.exec(rootVars)) !== null) {
+            variables[varMatch[1]] = varMatch[2].trim();
+        }
     }
 
-    // Override with opts from settings
+    // 应用设置覆盖
     if (opts.primaryColor) {
         variables['--mpe-primary-color'] = opts.primaryColor;
     }
 
-    let resolvedCss = css;
-    let iterations = 0;
-
-    while (iterations < 10) {
-        let replaced = false;
-        resolvedCss = resolvedCss.replace(variableRegex, (match, varName, fallback) => {
-            if (variables[varName]) {
-                replaced = true;
-                return variables[varName];
-            }
-            if (fallback) {
-                replaced = true;
-                return fallback;
-            }
-            return match;
-        });
-
-        if (!replaced) {
-            break;
-        }
-        iterations++;
-    }
-
-    return resolvedCss;
+    // 单次替换所有变量
+    return css.replace(variableRegex, (match, varName, fallback) => 
+        variables[varName] || fallback || match
+    );
 }
 
 // Simple XOR encryption
