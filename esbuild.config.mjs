@@ -60,7 +60,7 @@ const buildPlugin = () => {
             ...builtins()
         ],
         format: 'cjs',
-        outfile: 'main.js',
+        outfile: 'Dist/main.js',
         plugins: [cssPlugin],
     };
 
@@ -74,7 +74,7 @@ const buildPlugin = () => {
 const buildLibs = () => {
     // Copy mermaid library from node_modules
     const mermaidSrc = './node_modules/mermaid/dist/mermaid.min.js';
-    const mermaidDest = 'mermaid.js';
+    const mermaidDest = 'Dist/mermaid.js';
     fs.copyFile(mermaidSrc, mermaidDest, (err) => {
         if (err) {
             console.error('Error copying mermaid library:', err);
@@ -104,7 +104,7 @@ const buildLibs = () => {
     esbuild.build({
         ...baseConfig,
         entryPoints: ['mathjax-entry.js'],
-        outfile: 'mathjax.js',
+        outfile: 'Dist/mathjax.js',
         format: 'iife',
         platform: 'browser',
     }).then(() => {
@@ -115,7 +115,7 @@ const buildLibs = () => {
     });
     
     const highlightStylesSrc = './node_modules/highlight.js/styles';
-    const highlightStylesDest = './assets/codestyle';
+    const highlightStylesDest = './Dist/assets/codestyle';
 
     fs.readdir(highlightStylesSrc, (err, files) => {
         if (err) {

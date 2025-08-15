@@ -5,9 +5,11 @@
     "main": "main.js",
     "scripts": {
         "dev": "node esbuild.config.mjs --watch",
-        "build": "npm run build:libs && npm run build:plugin",
+        "build": "node build.js",
         "build:plugin": "node esbuild.config.mjs production",
-        "build:libs": "node esbuild.config.mjs libs"
+        "build:libs": "node esbuild.config.mjs libs",
+        "clean": "node -e \"require('fs').rmSync('Dist', {recursive: true, force: true}); console.log('✅ Dist目录已清理')\"",
+        "build:dist": "npm run build"
     },
     "keywords": [],
     "author": "",

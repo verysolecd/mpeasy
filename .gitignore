@@ -2,6 +2,7 @@
 /node_modules
 
 # Build output
+/Dist
 /main.js
 /mathjax.js
 /mermaid.js

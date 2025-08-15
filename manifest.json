@@ -1,11 +1,12 @@
 {
     "id": "mpeasy-obsidian",
     "name": "MPEasy",
-    "version": "1.0.0",
-    "minAppVersion": "1.0.0",
-    "description": "一个强大的 Markdown 格式化工具，专为微信公众号排版设计。",
+    "version": "1.0.1",
+    "minAppVersion": "0.15.0",
+    "description": "一个强大的 Markdown 格式化工具，专为微信公众号排版设计，支持代码高亮、Mac风格代码块、复制按钮、Mermaid图表等功能。",
     "author": "键盘造车手",
-    "authorUrl": "",
+    "authorUrl": "https://github.com/键盘造车手",
+    "fundingUrl": "https://github.com/sponsors/键盘造车手",
     "isDesktopOnly": false,
     "main": "main.js"
 }
