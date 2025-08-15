@@ -4,6 +4,7 @@ import { App, Notice, TFile, MarkdownView, normalizePath, requestUrl } from 'obs
 import juice from 'juice';
 import Header from './Header';
 import StylePanel from './StylePanel';
+import WeChatArticleSettings from './WeChatArticleSettings';
 import { initRenderer, parseFrontMatterAndContent } from '../core/renderer';
 import type { RendererAPI, IOpts } from '../types';
 import { UploadModal } from './UploadModal';
@@ -41,6 +42,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         isCountStatus: plugin.settings.isCountStatus,
         codeThemeName: plugin.settings.codeThemeName,
         customStyleName: plugin.settings.customStyleName,
+        enableComments: plugin.settings.enableComments,
+        onlyFansCanComment: plugin.settings.onlyFansCanComment,
     });
 
     const cssCache = useRef<Map<string, string>>(new Map());
@@ -75,6 +78,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             isMacCodeBlock: plugin.settings.isMacCodeBlock,
             isCiteStatus: plugin.settings.isCiteStatus,
             isCountStatus: plugin.settings.isCountStatus,
+            enableComments: plugin.settings.enableComments,
+            onlyFansCanComment: plugin.settings.onlyFansCanComment,
         }));
     }, [
         plugin.settings.layoutThemeName,
@@ -87,6 +92,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         plugin.settings.isMacCodeBlock,
         plugin.settings.isCiteStatus,
         plugin.settings.isCountStatus,
+        plugin.settings.enableComments,
+        plugin.settings.onlyFansCanComment,
     ]);
 
     useEffect(() => {
@@ -277,21 +284,74 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
     const handleUpload = async () => {
         console.log('MPEasy: 开始上传流程');
-        const { yamlData } = parseFrontMatterAndContent(markdownContent);
+        console.log('MPEasy: 原始markdown内容长度:', markdownContent.length);
+        console.log('MPEasy: 原始markdown内容前500字符:', markdownContent.substring(0, 500));
+        const { yamlData, markdownContent: content } = parseFrontMatterAndContent(markdownContent);
         console.log('MPEasy: 解析到的 Frontmatter:', yamlData);
+        console.log('MPEasy: banner字段原始值:', yamlData.banner);
+        console.log('MPEasy: banner字段类型:', typeof yamlData.banner);
         const title = (yamlData.title as string) || file.basename;
-        const bannerField = (yamlData.banner as string) || '';
+        
+        let bannerField = (yamlData.banner as string) || '';
+        
+        // 如果banner字段为空，尝试从原始内容中提取
+        if (!bannerField) {
+            // 从原始内容中查找banner字段的Markdown格式
+            const bannerMatch = markdownContent.match(/^banner:\s*(!\[.*?\]\(.*?\)|!\[\[.*?\]\]|[^\n]+)/m);
+            if (bannerMatch) {
+                bannerField = bannerMatch[1].trim();
+                console.log('MPEasy: 从原始内容提取的banner字段:', bannerField);
+            }
+        }
+        
         let coverUrl = '';
 
         if (bannerField) {
+            // 支持多种图片格式解析
+            let extractedUrl = '';
+            
+            // 1. 标准Markdown格式: ![alt](url)
             const markdownMatch = bannerField.match(/!\[.*?\]\((.*?)\)/);
             if (markdownMatch) {
-                coverUrl = markdownMatch[1];
-            } else {
-                coverUrl = bannerField;
+                extractedUrl = markdownMatch[1];
+            }
+            // 2. Obsidian Wiki链接格式: ![[image.png]]
+            else if (bannerField.startsWith('![[') && bannerField.endsWith(']]')) {
+                extractedUrl = bannerField.slice(3, -2);
+            }
+            // 3. 直接URL或路径
+            else {
+                extractedUrl = bannerField.trim();
+            }
+
+            // 处理相对路径
+            if (!extractedUrl.startsWith('http') && !extractedUrl.startsWith('/')) {
+                // 相对于当前文件的路径
+                const currentDir = file.parent?.path || '';
+                extractedUrl = normalizePath(currentDir + '/' + extractedUrl);
+            }
+
+            coverUrl = extractedUrl;
+            console.log(`MPEasy: 从banner字段提取的封面URL: ${coverUrl}`);
+            
+            // 验证文件是否存在（本地路径）
+            if (!coverUrl.startsWith('http')) {
+                try {
+                    const exists = await app.vault.adapter.exists(coverUrl);
+                    if (!exists) {
+                        new Notice(`警告：指定的封面图不存在: ${coverUrl}`);
+                        console.warn(`MPEasy: 封面图文件不存在: ${coverUrl}`);
+                        // 不强制使用默认封面，让用户知道问题所在
+                    } else {
+                        console.log(`MPEasy: 封面图文件验证通过: ${coverUrl}`);
+                    }
+                } catch (e) {
+                    console.warn(`MPEasy: 验证封面图文件时出错: ${e.message}`);
+                }
             }
         } else {
             coverUrl = plugin.settings.defaultBanner;
+            console.log('MPEasy: 使用默认封面:', coverUrl);
         }
         console.log(`MPEasy: 文章标题: ${title}`);
         console.log(`MPEasy: 封面图 URL: ${coverUrl}`);
@@ -327,7 +387,24 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         const imageBuffer = await app.vault.adapter.readBinary(imagePath);
                         coverBlob = new Blob([imageBuffer]);
                     }
-                    uploadTasks.push({blob: coverBlob, filename: 'cover.jpg', type: 'image', isCover: true});
+                    // 从coverUrl中提取实际文件名
+                    let actualFilename = 'cover.jpg';
+                    if (coverUrl.startsWith('http')) {
+                        const urlParts = coverUrl.split('/');
+                        const filenameFromUrl = urlParts[urlParts.length - 1];
+                        if (filenameFromUrl && filenameFromUrl.includes('.')) {
+                            actualFilename = filenameFromUrl;
+                        }
+                    } else {
+                        // 本地路径
+                        const pathParts = coverUrl.split('/');
+                        const filenameFromPath = pathParts[pathParts.length - 1];
+                        if (filenameFromPath && filenameFromPath.includes('.')) {
+                            actualFilename = filenameFromPath;
+                        }
+                    }
+                    console.log(`MPEasy: 使用实际封面文件名: ${actualFilename}`);
+                    uploadTasks.push({blob: coverBlob, filename: actualFilename, type: 'image', isCover: true});
                 }
 
                 // 3. 并行上传所有图片
@@ -370,12 +447,18 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 console.log('MPEasy: 开始上传草稿');
                 
                 // 5. 上传草稿
+                const author = yamlData.author as string || '';
+                const digest = yamlData.digest as string || '';
+                const content_source_url = yamlData.source as string || '';
                 const result = await wxAddDraft(requestUrl, plugin, {
                     title,
+                    author,
+                    digest,
+                    content_source_url,
                     content: finalHtml,
                     thumb_media_id,
-                    need_open_comment: 1,
-                    only_fans_can_comment: 0,
+                    need_open_comment: plugin.settings.enableComments ? 1 : 0,
+                    only_fans_can_comment: plugin.settings.onlyFansCanComment ? 0 : 1,
                 });
                 
                 console.log('MPEasy: 草稿上传结果:', result);
@@ -606,6 +689,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                     />
                 </div>
                 <div className="mpeasy-right-panel">
+                    <WeChatArticleSettings opts={opts} onOptsChange={handleOptsChange} />
                     <StylePanel opts={opts} onOptsChange={handleOptsChange} app={app} />
                     <CssEditor value={liveCss} onChange={setLiveCss} />
                 </div>

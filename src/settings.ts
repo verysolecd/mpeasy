@@ -22,14 +22,13 @@ export interface MPEasySettings {
     codeThemeName: string;
     customStyleName: string;
 
-    // Encryption
-    encryptionPassword?: string;
-
+    // Security Settings
+    encryptionPassword: string;
     defaultBanner: string;
 
-    // 向后兼容的旧属性名
-    themeName?: string;
-    codeBlockTheme?: string;
+    // WeChat Article Settings
+    enableComments: boolean;
+    onlyFansCanComment: boolean;
 }
 
 export const DEFAULT_SETTINGS: MPEasySettings = {
@@ -50,4 +49,6 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     customStyleName: 'none',
     encryptionPassword: '',
     defaultBanner: 'assets/images/banner.png',
+    enableComments: true, // 默认允许评论
+    onlyFansCanComment: true, // 默认允许所有人评论
 };
