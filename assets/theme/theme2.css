@@ -1,4 +1,4 @@
-/* #theme name: 主题2 */
+/* #theme name: 主题1 */
 /*自定义样式，实时生效*/
 
 /*自定义样式，实时生效*/
@@ -8,7 +8,7 @@
  * 全文字体 font-family:ptima-Regular;
  * 英文换行 word-break:break-all;
  */
-#nice {
+：root  {
   font-family:PingFangSC-Light;
   background-color: #ffffff;
   color: #333333;

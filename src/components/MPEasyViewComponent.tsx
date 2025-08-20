@@ -161,13 +161,19 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
             const htmlWithImages = await processLocalImages(parsedHtml, plugin, !forUpload);
 
-            const [hljsThemeCss, layoutThemeCss, customStyleCss] = await Promise.all([
+            const [hljsThemeCss, layoutThemeCss, customStyleCss, commonCss] = await Promise.all([
                 getCachedCss(opts.codeThemeName || 'default', 'codestyle'),
                 getCachedCss(opts.layoutThemeName || 'default', 'theme'),
-                getCachedCss(opts.customStyleName || 'none', 'style')
+                getCachedCss(opts.customStyleName || 'none', 'style'),
+                getCachedCss('common', 'theme'),
             ]);
 
-            const allCss = resolveCssVariables(`${layoutThemeCss}\n${hljsThemeCss}\n${customStyleCss}\n${customCss}\n${liveCss}`, opts);
+            const allCss = resolveCssVariables(`${layoutThemeCss}
+${hljsThemeCss}
+${customStyleCss}
+${commonCss}
+${customCss}
+${liveCss}`, opts);
 
             const sandbox = document.createElement('iframe');
             sandbox.style.position = 'absolute';
@@ -568,10 +574,11 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 }
                 
                 // 并行加载所有CSS文件
-                const [hljsThemeCss, layoutThemeCss, customStyleCss] = await Promise.all([
+                const [hljsThemeCss, layoutThemeCss, customStyleCss, commonCss] = await Promise.all([
                     getCachedCss(opts.codeThemeName || 'default', 'codestyle'),
                     getCachedCss(opts.layoutThemeName || 'default', 'theme'),
-                    getCachedCss(opts.customStyleName || 'none', 'style')
+                    getCachedCss(opts.customStyleName || 'none', 'style'),
+                    getCachedCss('common', 'theme'),
                 ]);
 
                 const iframe = iframeRef.current;
@@ -585,6 +592,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         <style id="mpe-layout-theme">${layoutThemeCss || ''}</style>
                         <style id="mpe-code-theme">${hljsThemeCss}</style>
                         <style id="mpe-custom-style">${customStyleCss || ''}</style>
+                        <style id="mpe-common-style">${commonCss}</style>
                         <style id="mpe-custom-css">${customCss}</style>
                         <style id="mpe-live-css">${liveCss}</style> 
                     </head>

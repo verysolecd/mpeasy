@@ -140,7 +140,6 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
   }
 
   function setOptions(newOpts: Partial<IOpts>): void {
-    if (JSON.stringify(newOpts) === JSON.stringify(cache.lastOpts)) return;
     opts = { ...opts, ...newOpts }
     cache.lastOpts = opts;
     marked.use(markedAlert({}))
@@ -150,7 +149,7 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
   }
 
   function buildReadingTime(readingTime: ReadTimeResults): string {
-    if (!opts.countStatus) {
+    if (!opts.isCountStatus) {
       return ``
     }
     if (!readingTime.words) {
@@ -301,7 +300,7 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
       if (href === text) {
         return parsedText
       }
-      if (opts.citeStatus) {
+      if (opts.isCiteStatus) {
         const ref = addFootnote(title || text, href)
         return `<span class="mpe-link mpe-link-cite">${parsedText}<sup>[${ref}]</sup></span>`
       }

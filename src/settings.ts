@@ -38,7 +38,7 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     wxTokenTimestamp: 0,
     layoutThemeName: 'minimal', // Use the new minimal theme as default
     fontSize: '16px',
-    isUseIndent: true,
+    isUseIndent: false,
     primaryColor: '#007bff', // A nice default blue
     legend: 'alt',
     isMacCodeBlock: true,
