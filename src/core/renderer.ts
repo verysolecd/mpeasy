@@ -216,7 +216,7 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
         .replace(/(>[^<]+)|(^[^<]+)/g, str => str.replace(/\s/g, `&nbsp;`))
 
       const isShowLineNumbers = lang.includes(`=l`) || opts.codeLineNumbers
-      const isShowMacStyleBar = lang.includes(`=b`) || opts.codeMacBar
+      const isShowMacStyleBar = lang.includes(`=b`) || opts.isMacCodeBlock
       const isShowCopyButton = lang.includes(`=c`) || opts.codeCopy
 
       // 使用模板字符串优化性能
@@ -384,11 +384,13 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
     <style>
       .mpe-code-pre {
         padding: 0 !important;
+        border-radius: 6px;
+        margin: 1em 0;
       }
 
       .hljs.mpe-code-pre code {
         display: -webkit-box;
-        padding: 0.5em 1em 1em;
+        padding: 20px;
         overflow-x: auto;
         text-indent: 0;
       }

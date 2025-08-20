@@ -21,6 +21,8 @@ export interface MPEasySettings {
     // Code Block Settings
     codeThemeName: string;
     customStyleName: string;
+    customCss: string;
+customCodeBlockCss: string;
 
     // Security Settings
     encryptionPassword: string;
@@ -47,6 +49,8 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     useCustomCSS: false,
     codeThemeName: 'atom-one-dark', // A popular default code theme
     customStyleName: 'none',
+    customCss: '',
+    
     encryptionPassword: '',
     defaultBanner: 'assets/images/banner.png',
     enableComments: true, // 默认允许评论

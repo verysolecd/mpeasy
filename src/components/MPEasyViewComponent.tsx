@@ -23,11 +23,11 @@ interface MPEasyViewProps {
     mathjaxPath: string;
 }
 
-const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathjaxPath }: MPEasyViewProps) => {
+const MPEasyViewComponent = ({ file, app, plugin, customCss: _customCss, mermaidPath, mathjaxPath }: MPEasyViewProps) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [rendererApi, setRendererApi] = useState<RendererAPI | null>(null);
     const [markdownContent, setMarkdownContent] = useState('');
-    const [liveCss, setLiveCss] = useState('');
+    const [customCss, setCustomCss] = useState(plugin.settings.customCss);
     const [obsidianTheme, setObsidianTheme] = useState<'light' | 'dark'>('light');
     const scrollListenersRef = useRef<{ cleanUp: () => void } | null>(null);
 
@@ -63,8 +63,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             isCiteStatus: plugin.settings.isCiteStatus,
             isCountStatus: plugin.settings.isCountStatus,
             enableComments: plugin.settings.enableComments,
-            onlyFansCanComment: plugin.settings.onlyFansCanComment,
+             onlyFansCanComment: plugin.settings.onlyFansCanComment,
+            customCss: plugin.settings.customCss,
         }));
+        setCustomCss(plugin.settings.customCss);
     }, [
         plugin.settings.layoutThemeName,
         plugin.settings.codeThemeName,
@@ -77,7 +79,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         plugin.settings.isCiteStatus,
         plugin.settings.isCountStatus,
         plugin.settings.enableComments,
-        plugin.settings.onlyFansCanComment,
+         plugin.settings.onlyFansCanComment,
+        plugin.settings.customCss,
     ]);
 
     useEffect(() => {
@@ -128,7 +131,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         }
     };
 
-    const getStyledHtml = (forUpload: boolean): Promise<string | null> => {
+    const getStyledHtml = async (forUpload: boolean): Promise<string | null> => {
         return new Promise(async (resolve) => {
             if (!rendererApi) {
                 new Notice('渲染器尚未准备好。');
@@ -140,14 +143,15 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
             const htmlWithImages = await processLocalImages(parsedHtml, plugin, !forUpload);
 
-            const [hljsThemeCss, layoutThemeCss, customStyleCss, commonCss] = await Promise.all([
+            const [hljsThemeCss, layoutThemeCss, customStyleCss] = await Promise.all([
                 getCachedCss(opts.codeThemeName || 'default', 'codestyle'),
                 getCachedCss(opts.layoutThemeName || 'default', 'theme'),
                 getCachedCss(opts.customStyleName || 'none', 'style'),
-                getCachedCss('common', 'theme'),
             ]);
 
-            const allCss = resolveCssVariables(`${layoutThemeCss}\n${hljsThemeCss}\n${customStyleCss}\n${commonCss}\n${customCss}\n${liveCss}`, opts);
+            const commonCss = await app.vault.adapter.read(`${plugin.manifest.dir}/assets/common.css`);
+
+            const allCss = resolveCssVariables(`${layoutThemeCss}\n${hljsThemeCss}\n${customStyleCss}\n${commonCss}\n${plugin.settings.customCss}`, opts);
 
             const sandbox = document.createElement('iframe');
             sandbox.style.position = 'absolute';
@@ -291,7 +295,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
             let extractedUrl = '';
             
             // 1. 标准Markdown格式: ![alt](url)
-            const markdownMatch = bannerField.match(/!\[.*?]\]\((.*?)\)/);
+            const markdownMatch = bannerField.match(/!\[.*?\]\((.*?)\)/);
             if (markdownMatch) {
                 extractedUrl = markdownMatch[1];
             }
@@ -507,6 +511,12 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
         }
     };
 
+    const handleSaveCustomCss = () => {
+        plugin.settings.customCss = customCss;
+        plugin.saveSettings();
+        new Notice('自定义CSS已保存!');
+    };
+
     const handleOptsChange = (newOpts: Partial<IOpts>) => {
         const updatedOpts = { ...opts, ...newOpts };
         setOpts(updatedOpts);
@@ -539,12 +549,13 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 const previewHtml = await processLocalImages(parsedHtml, plugin, true);
                 
                 // 并行加载所有CSS文件
-                const [hljsThemeCss, layoutThemeCss, customStyleCss, commonCss] = await Promise.all([
+                const [hljsThemeCss, layoutThemeCss, customStyleCss] = await Promise.all([
                     getCachedCss(opts.codeThemeName || 'default', 'codestyle'),
                     getCachedCss(opts.layoutThemeName || 'default', 'theme'),
                     getCachedCss(opts.customStyleName || 'none', 'style'),
-                    getCachedCss('common', 'theme'),
                 ]);
+
+                const commonCss = await app.vault.adapter.read(`${plugin.manifest.dir}/assets/common.css`);
 
                 const iframe = iframeRef.current;
                 if (!iframe) return;
@@ -559,7 +570,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                         <style id="mpe-custom-style">${customStyleCss || ''}</style>
                         <style id="mpe-common-style">${commonCss}</style>
                         <style id="mpe-custom-css">${customCss}</style>
-                        <style id="mpe-live-css">${liveCss}</style> 
+                        <style id="mpe-custom-css">${customCss}</style>
                     </head>
                     <body class="theme-${opts.layoutThemeName || 'default'}" style="font-size: ${opts.fontSize || '16px'};">
                         <section id="output">${previewHtml}</section>
@@ -647,7 +658,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 scrollListenersRef.current.cleanUp();
             }
         };
-    }, [markdownContent, rendererApi, opts, plugin, customCss, liveCss, mermaidPath, app.workspace, obsidianTheme]);
+    }, [markdownContent, rendererApi, opts, plugin, customCss, mermaidPath, app.workspace, obsidianTheme]);
 
     return (
         <div className="mpeasy-view-container">
@@ -663,8 +674,14 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 </div>
                 <div className="mpeasy-right-panel">
                     <WeChatArticleSettings opts={opts} onOptsChange={handleOptsChange} />
-                    <StylePanel opts={opts} onOptsChange={handleOptsChange} app={app} />
-                    <CssEditor value={liveCss} onChange={setLiveCss} />
+                    <StylePanel
+                        opts={opts}
+                        onOptsChange={handleOptsChange}
+                        app={app}
+                        customCss={customCss}
+                        setCustomCss={setCustomCss}
+                        onSaveCustomCss={handleSaveCustomCss}
+                    />
                 </div>
             </div>
         </div>

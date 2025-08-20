@@ -4,11 +4,17 @@ import type { IOpts, MPEasySettings } from '../types';
 import { getLayoutThemes, getCodeBlockThemes, getCustomStyles } from '../utils';
 import Combobox from './Combobox';
 import { App } from 'obsidian';
+import CssEditor from './CssEditor';
 
 interface StylePanelProps {
     opts: Partial<IOpts>;
     onOptsChange: (newOpts: Partial<MPEasySettings>) => void;
     app: App;
+    customCss: string;
+    setCustomCss: (css: string) => void;
+    customCodeBlockCss: string;
+    setCustomCodeBlockCss: (css: string) => void;
+    onSaveCustomCss: () => void;
 }
 
 const PRESET_COLORS = [
@@ -25,7 +31,7 @@ const PRESET_COLORS = [
     { name: '樱花粉', color: '#FFB7C5' },
 ];
 
-const StylePanel = ({ opts, onOptsChange, app }: StylePanelProps) => {
+const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCodeBlockCss, setCustomCodeBlockCss, onSaveCustomCss }: StylePanelProps) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [layoutThemes, setLayoutThemes] = useState<{ name: string; path: string }[]>([]);
     const [codeBlockThemes, setCodeBlockThemes] = useState<{ name: string; path: string }[]>([]);
@@ -312,6 +318,14 @@ const StylePanel = ({ opts, onOptsChange, app }: StylePanelProps) => {
                         onChange={(e) => handleValueChange('useCustomCSS', e.target.checked)}
                     />
                 </div>
+
+                <div className="style-panel-item-column">
+                    <label>自定义CSS</label>
+                    <CssEditor value={customCss} onChange={setCustomCss} />
+                    <button type="button" onClick={onSaveCustomCss}>保存自定义CSS</button>
+                </div>
+
+                
             </form>
             )}
         </div>
