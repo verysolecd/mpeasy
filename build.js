@@ -62,32 +62,25 @@ function copyDirectory(src, dest) {
 // 执行构建
 function build() {
     try {
-        console.log('🚀 开始构建...');
-        
+        console.log('🚀 开始构建...');        
         // 清理Dist目录
-        cleanDist();
-        
+        cleanDist();        
         // 执行构建
         console.log('📦 构建插件...');
-        execSync('node esbuild.config.mjs production', { stdio: 'inherit' });
-        
+        execSync('node esbuild.config.mjs production', { stdio: 'inherit' });        
         console.log('📦 构建库文件...');
-        execSync('node esbuild.config.mjs libs', { stdio: 'inherit' });
-        
+        execSync('node esbuild.config.mjs libs', { stdio: 'inherit' });        
         // 复制文件
-        copyToDist();
-        
+        copyToDist();        
         console.log('✅ 构建完成！');
-        console.log('📁 输出目录: Dist/');
-        
+        console.log('📁 输出目录: Dist/');        
         // 列出Dist目录内容
         const distFiles = fs.readdirSync('Dist');
         console.log('\n📋 Dist目录内容:');
         distFiles.forEach(file => {
             const stats = fs.statSync(path.join('Dist', file));
             console.log(`  ${stats.isDirectory() ? '📁' : '📄'} ${file}`);
-        });
-        
+        });        
     } catch (error) {
         console.error('❌ 构建失败:', error.message);
         process.exit(1);
@@ -98,5 +91,4 @@ function build() {
 if (require.main === module) {
     build();
 }
-
 module.exports = { build, cleanDist, copyToDist };

@@ -23,7 +23,7 @@
 
 ### 方法二：手动安装
 1. 下载最新版本的 `main.js`、`manifest.json` 和 `styles.css`
-2. 放入你的 Obsidian Vault 的 `.obsidian/plugins/mpeasy/` 目录
+2. 放入你的 Obsidian Vault 的 `.obsidian/plugins/obsidian-mpeasy/` 目录
 3. 在 Obsidian 设置中启用插件
 
 ## 📖 使用方法

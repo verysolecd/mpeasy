@@ -17,7 +17,7 @@ export function preprocessMarkdown(markdown: string): string {
 const themeCache = new Map<string, Promise<{ name: string; path: string }[]>>();
 
 async function getThemes(app: App, themeFolder: 'theme' | 'codestyle'): Promise<{ name: string; path: string }[]> {
-    const cacheKey = `${app.vault.configDir}/plugins/mpeasy/assets/${themeFolder}`;
+    const cacheKey = `${app.vault.configDir}/plugins/obsidian-mpeasy/assets/${themeFolder}`;
     
     if (themeCache.has(cacheKey)) {
         return themeCache.get(cacheKey)!;
@@ -83,7 +83,7 @@ export async function getCodeBlockThemes(app: App): Promise<{ name: string; path
  * @returns A promise that resolves to an array of style objects.
  */
 export async function getCustomStyles(app: App): Promise<{ name: string; path: string }[]> {
-    const styleDir = `${app.vault.configDir}/plugins/mpeasy/assets/style`;
+    const styleDir = `${app.vault.configDir}/plugins/obsidian-mpeasy/assets/style`;
     try {
         const files = await app.vault.adapter.list(styleDir);
         const stylePromises = files.files
