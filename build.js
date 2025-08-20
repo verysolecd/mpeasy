@@ -81,6 +81,9 @@ function build() {
             const stats = fs.statSync(path.join('Dist', file));
             console.log(`  ${stats.isDirectory() ? '📁' : '📄'} ${file}`);
         });        
+        // Deploy plugin
+        console.log('🚀 开始部署...');
+        execSync('node esbuild.config.mjs deploy', { stdio: 'inherit' });        
     } catch (error) {
         console.error('❌ 构建失败:', error.message);
         process.exit(1);

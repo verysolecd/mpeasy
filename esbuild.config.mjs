@@ -13,7 +13,15 @@ if you want to view the source, please visit the github repository of this plugi
 const buildMode = process.argv[2] || 'dev';
 const isProd = buildMode === 'production' || buildMode === 'libs';
 
-const deployDir = 'D:\\GX-LLF\\00-\\onedrive\\OB\\OBvaults\\MyVault\\.obsidian\\plugins\\obsidian-mpeasy';
+let deployDir = '';
+try {
+    const buildConfig = JSON.parse(fs.readFileSync('build.json', 'utf8'));
+    if (buildConfig.deployPath) {
+        deployDir = buildConfig.deployPath;
+    }
+} catch (error) {
+    // build.json doesn't exist or is invalid, ignore deployment
+}
 
 const baseConfig = {
     bundle: true,
@@ -53,7 +61,7 @@ async function copyDir(src, dest) {
 }
 
 async function deployPlugin() {
-    if (!isProd) return;
+    if (!isProd || !deployDir) return;
     console.log(`Deploying plugin to ${deployDir}...`);
     try {
         await fs.promises.rm(deployDir, { recursive: true, force: true });
@@ -104,7 +112,6 @@ const buildPlugin = () => {
             await fs.promises.copyFile('manifest.json', 'Dist/manifest.json');
             await fs.promises.copyFile('styles.css', 'Dist/styles.css');
             await copyDir('assets', 'Dist/assets');
-            return deployPlugin();
         });
     } else if (buildMode === 'watch') {
         pluginConfig.watch = { 
@@ -194,6 +201,8 @@ const buildLibs = () => {
 
 if (buildMode === 'libs') {
     buildLibs();
+} else if (buildMode === 'deploy') {
+    deployPlugin();
 } else {
     buildPlugin();
 }

@@ -143,15 +143,21 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss: _customCss, mermaid
 
             const htmlWithImages = await processLocalImages(parsedHtml, plugin, !forUpload);
 
+            const baseCss = await app.vault.adapter.read(`${plugin.manifest.dir}/assets/base.css`);
+
             const [hljsThemeCss, layoutThemeCss, customStyleCss] = await Promise.all([
                 getCachedCss(opts.codeThemeName || 'default', 'codestyle'),
-                getCachedCss(opts.layoutThemeName || 'default', 'theme'),
+                opts.layoutThemeName && opts.layoutThemeName !== 'default' 
+                    ? getCachedCss(opts.layoutThemeName, 'theme') 
+                    : Promise.resolve(''),
                 getCachedCss(opts.customStyleName || 'none', 'style'),
             ]);
 
-            const commonCss = await app.vault.adapter.read(`${plugin.manifest.dir}/assets/common.css`);
-
-            const allCss = resolveCssVariables(`${layoutThemeCss}\n${hljsThemeCss}\n${customStyleCss}\n${commonCss}\n${plugin.settings.customCss}`, opts);
+            const allCss = resolveCssVariables(`${baseCss}
+${layoutThemeCss}
+${hljsThemeCss}
+${customStyleCss}
+${plugin.settings.customCss}`, opts);
 
             const sandbox = document.createElement('iframe');
             sandbox.style.position = 'absolute';
@@ -503,10 +509,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss: _customCss, mermaid
             return content;
         } catch (e) {
             console.error(`加载CSS失败: ${themeName}`, e);
-            if (type === 'theme' && themeName !== 'default') {
-                // 主题加载失败时回退到默认主题
-                return loadCssContent('default', type, cacheKey);
-            }
             return '';
         }
     };
@@ -548,14 +550,16 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss: _customCss, mermaid
                 const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
                 const previewHtml = await processLocalImages(parsedHtml, plugin, true);
                 
+                const baseCss = await app.vault.adapter.read(`${plugin.manifest.dir}/assets/base.css`);
+
                 // 并行加载所有CSS文件
                 const [hljsThemeCss, layoutThemeCss, customStyleCss] = await Promise.all([
                     getCachedCss(opts.codeThemeName || 'default', 'codestyle'),
-                    getCachedCss(opts.layoutThemeName || 'default', 'theme'),
+                    opts.layoutThemeName && opts.layoutThemeName !== 'default' 
+                        ? getCachedCss(opts.layoutThemeName, 'theme') 
+                        : Promise.resolve(''),
                     getCachedCss(opts.customStyleName || 'none', 'style'),
                 ]);
-
-                const commonCss = await app.vault.adapter.read(`${plugin.manifest.dir}/assets/common.css`);
 
                 const iframe = iframeRef.current;
                 if (!iframe) return;
@@ -565,11 +569,10 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss: _customCss, mermaid
                     <head>
                         <meta charset="UTF-8">
                         <style>:root { --mpe-primary-color: ${opts.primaryColor || '#007bff'}; }</style>
+                        <style id="mpe-base-style">${baseCss}</style>
                         <style id="mpe-layout-theme">${layoutThemeCss || ''}</style>
                         <style id="mpe-code-theme">${hljsThemeCss}</style>
                         <style id="mpe-custom-style">${customStyleCss || ''}</style>
-                        <style id="mpe-common-style">${commonCss}</style>
-                        <style id="mpe-custom-css">${customCss}</style>
                         <style id="mpe-custom-css">${customCss}</style>
                     </head>
                     <body class="theme-${opts.layoutThemeName || 'default'}" style="font-size: ${opts.fontSize || '16px'};">

@@ -1,7 +1,7 @@
-/* #theme name: 默认 */
-/* MPEasy Base Layout - default.css */
-/* This file provides the foundational structure for all themes. */
+/* MPEasy Base Stylesheet */
+/* This file combines the original default.css and common.css to create a single foundational stylesheet for all themes. */
 
+/* --- From default.css --- */
 :root {
     /* --- Default Theme Variables --- */
     /* These are the default values, which can be overridden by specific theme files. */
@@ -30,7 +30,7 @@
     --mpe-link-hover-decoration: underline;
 
     /* Blockquotes */
-    --mpe-blockquote-margin: 1em 0;
+    --mpe-blockquote-margin: 0.2em 0;
     --mpe-blockquote-padding: 0 1em;
     --mpe-blockquote-color: #6a737d;
     --mpe-blockquote-color-dark: #999;
@@ -64,8 +64,6 @@
     text-indent: 2em;
 }
 
-
-
 .mpe-paragraph {
     margin-top: 0;
     margin-bottom: 1em;
@@ -85,9 +83,9 @@
 }
 
 .mpe-heading-1 { font-size: 2em; }
-.mpe-heading-2 { font-size: 1.5em; }
-.mpe-heading-3 { font-size: 1.25em; }
-.mpe-heading-4, .mpe-heading-5, .mpe-heading-6 { font-size: 1em; }
+.mpe-heading-2 { font-size: 1.8em; }
+.mpe-heading-3 { font-size: 1.5em; }
+.mpe-heading-4, .mpe-heading-5, .mpe-heading-6 { font-size: 1.25em; }
 
 .mpe-blockquote {
     margin: var(--mpe-blockquote-margin);
@@ -132,6 +130,16 @@
     color: var(--mpe-codespan-color-dark);
 }
 
+/* List Styles */
+.mpe-list {
+    list-style-type: none;
+    padding-left: 20px;
+}
+
+.mpe-list-item {
+    margin-bottom: 0.5em;
+}
+
 /* --- Special Content Styling --- */
 
 /* Default code color for un-highlighted languages */
@@ -146,4 +154,67 @@
 pre.mermaid {
   display: flex;
   justify-content: center;
+}
+
+/* --- From common.css --- */
+/* Common styles for high-priority overrides */
+
+/* Indent Style - Applied when enabled in settings */
+.mpeasy-container.mpe-use-indent .mpe-paragraph {
+    text-indent: 2em !important;
+}
+
+/* Mermaid Diagram Styles */
+.mermaid svg text,
+.mermaid svg tspan {
+    font-family: "Microsoft YaHei", "微软雅黑", sans-serif !important;
+    font-size: 14px !important;
+}
+
+/* GFM Alerts */
+.mpe-alert {
+    padding: 1em;
+    margin: 1em 0;
+    border-left: 4px solid;
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.mpe-alert-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+
+.mpe-alert-title svg {
+    fill: currentColor;
+}
+
+.mpe-alert-note { border-left-color: #478be6; }
+.mpe-alert-title-note { color: #478be6; }
+
+.mpe-alert-info { border-left-color: #93c5fd; }
+.mpe-alert-title-info { color: #93c5fd; }
+
+.mpe-alert-tip { border-left-color: #57ab5a; }
+.mpe-alert-title-tip { color: #57ab5a; }
+
+.mpe-alert-important { border-left-color: #986ee2; }
+.mpe-alert-title-important { color: #986ee2; }
+
+.mpe-alert-warning { border-left-color: #c69026; }
+.mpe-alert-title-warning { color: #c69026; }
+
+.mpe-alert-caution { border-left-color: #e5534b; }
+.mpe-alert-title-caution { color: #e5534b; }
+
+/* Citation (Footnote) Superscript */
+.mpe-link-cite sup {
+  vertical-align: super;
+  font-size: 0.8em;
+  display: inline-block;
+  line-height: 1;
+  margin-left: 2px;
 }
