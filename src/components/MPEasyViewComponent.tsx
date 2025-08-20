@@ -48,22 +48,6 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
 
     const cssCache = useRef<Map<string, string>>(new Map());
     const cssLoadingCache = useRef<Map<string, Promise<string>>>(new Map());
-    const renderCache = useRef({
-        markdown: '',
-        parsedHtml: '',
-        previewHtml: '',
-    });
-
-    useEffect(() => {
-        // Invalidate cache if the markdown content changes
-        if (markdownContent !== renderCache.current.markdown) {
-            renderCache.current = { 
-                markdown: markdownContent,
-                parsedHtml: '',
-                previewHtml: ''
-            };
-        }
-    }, [markdownContent]);
 
     useEffect(() => {
         setOpts(prevOpts => ({
@@ -151,13 +135,8 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 return resolve(null);
             }
 
-            let parsedHtml = renderCache.current.parsedHtml;
-            if (!parsedHtml || markdownContent !== renderCache.current.markdown) {
-                const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-                parsedHtml = await rendererApi.parse(preprocessedMarkdown);
-                renderCache.current.parsedHtml = parsedHtml;
-                renderCache.current.markdown = markdownContent;
-            }
+            const preprocessedMarkdown = preprocessMarkdown(markdownContent);
+            const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
 
             const htmlWithImages = await processLocalImages(parsedHtml, plugin, !forUpload);
 
@@ -168,12 +147,7 @@ const MPEasyViewComponent = ({ file, app, plugin, customCss, mermaidPath, mathja
                 getCachedCss('common', 'theme'),
             ]);
 
-            const allCss = resolveCssVariables(`${layoutThemeCss}
-${hljsThemeCss}
-${customStyleCss}
-${commonCss}
-${customCss}
-${liveCss}`, opts);
+            const allCss = resolveCssVariables(`${layoutThemeCss}\n${hljsThemeCss}\n${customStyleCss}\n${commonCss}\n${customCss}\n${liveCss}`, opts);
 
             const sandbox = document.createElement('iframe');
             sandbox.style.position = 'absolute';
@@ -303,7 +277,7 @@ ${liveCss}`, opts);
         // 如果banner字段为空，尝试从原始内容中提取
         if (!bannerField) {
             // 从原始内容中查找banner字段的Markdown格式
-            const bannerMatch = markdownContent.match(/^banner:\s*(!\[.*?\]\(.*?\)|!\[\[.*?\]\]|[^\n]+)/m);
+            const bannerMatch = markdownContent.match(/^banner:\s*(!\[.*?\]\(.*\)|!\[\[.*?\]\]|[^\n]+)/m);
             if (bannerMatch) {
                 bannerField = bannerMatch[1].trim();
                 console.log('MPEasy: 从原始内容提取的banner字段:', bannerField);
@@ -317,7 +291,7 @@ ${liveCss}`, opts);
             let extractedUrl = '';
             
             // 1. 标准Markdown格式: ![alt](url)
-            const markdownMatch = bannerField.match(/!\[.*?\]\((.*?)\)/);
+            const markdownMatch = bannerField.match(/!\[.*?]\]\((.*?)\)/);
             if (markdownMatch) {
                 extractedUrl = markdownMatch[1];
             }
@@ -560,18 +534,9 @@ ${liveCss}`, opts);
             try {
                 const startTime = performance.now();
 
-                let parsedHtml = renderCache.current.parsedHtml;
-                if (!parsedHtml) {
-                    const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-                    parsedHtml = await rendererApi.parse(preprocessedMarkdown);
-                    renderCache.current.parsedHtml = parsedHtml;
-                }
-
-                let previewHtml = renderCache.current.previewHtml;
-                if (!previewHtml) {
-                    previewHtml = await processLocalImages(parsedHtml, plugin, true);
-                    renderCache.current.previewHtml = previewHtml;
-                }
+                const preprocessedMarkdown = preprocessMarkdown(markdownContent);
+                const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
+                const previewHtml = await processLocalImages(parsedHtml, plugin, true);
                 
                 // 并行加载所有CSS文件
                 const [hljsThemeCss, layoutThemeCss, customStyleCss, commonCss] = await Promise.all([
