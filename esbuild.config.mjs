@@ -137,7 +137,7 @@ const buildLibs = () => {
     fs.writeFileSync('mathjax-entry.js', `
         window.MathJax = {
             tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']]),
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']]
             },
             svg: {

@@ -6,7 +6,7 @@ import gdscript from '@exercism/highlightjs-gdscript';
 import frontMatter from 'front-matter';
 import hljs from 'highlight.js';
 import { marked } from 'marked';
-import mermaid from 'mermaid';
+
 import readingTime from 'reading-time';
 import markedAlert from './MDAlert';
 import markedFootnotes from './MDFootnotes';
