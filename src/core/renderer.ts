@@ -192,8 +192,8 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
 
     blockquote({ tokens }: Tokens.Blockquote): string {
       let text = this.parser.parse(tokens)
-      text = text.replace(/<p class="mpe-paragraph">/g, `<p class="mpe-paragraph mpe-blockquote-paragraph">`)
-      return `<blockquote class="mpe-blockquote">${text}</blockquote>`
+      text = text.replace(/<p>/g, `<p>`)
+      return `<blockquote>${text}</blockquote>`
     },
 
     code({ text, lang = `` }: Tokens.Code): string {
@@ -347,7 +347,7 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
     },
 
     hr(_: Tokens.Hr): string {
-      return `<hr class="mpe-hr"/>`
+      return `<hr/>`
     },
   }
 

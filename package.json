@@ -20,6 +20,7 @@
         "@types/react-dom": "^18.0.9",
         "builtins": "^5.1.0",
         "esbuild": "^0.24.2",
+        "less": "^4.4.1",
         "obsidian": "latest",
         "typescript": "4.7.4"
     },
