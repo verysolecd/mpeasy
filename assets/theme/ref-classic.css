@@ -2,16 +2,17 @@
 
 /* Base styles from defaultTheme.base */
 .theme-ref-classic {
-  --md-primary-color: #000000;
+  --mpe-primary-color: #000000;
+  font-size: var(--mpe-font-size);
   text-align: left;
   line-height: 1.75;
 }
 
 /* Block styles from defaultTheme.block */
-.theme-ref-classic h1 {
+.theme-ref-classic .mpe-heading-1 {
   display: table;
   padding: 0 1em;
-  border-bottom: 2px solid var(--md-primary-color);
+  border-bottom: 2px solid var(--mpe-primary-color);
   margin: 2em auto 1em;
   color: hsl(var(--foreground));
   font-size: 1.2em;
@@ -19,20 +20,20 @@
   text-align: center;
 }
 
-.theme-ref-classic h2 {
+.theme-ref-classic .mpe-heading-2 {
   display: table;
   padding: 0 0.2em;
   margin: 4em auto 2em;
   color: #fff;
-  background: var(--md-primary-color);
+  background: var(--mpe-primary-color);
   font-size: 1.2em;
   font-weight: bold;
   text-align: center;
 }
 
-.theme-ref-classic h3 {
+.theme-ref-classic .mpe-heading-3 {
   padding-left: 8px;
-  border-left: 3px solid var(--md-primary-color);
+  border-left: 3px solid var(--mpe-primary-color);
   margin: 2em 8px 0.75em 0;
   color: hsl(var(--foreground));
   font-size: 1.1em;
@@ -40,24 +41,24 @@
   line-height: 1.2;
 }
 
-.theme-ref-classic h4 {
+.theme-ref-classic .mpe-heading-4 {
   margin: 2em 8px 0.5em;
-  color: var(--md-primary-color);
+  color: var(--mpe-primary-color);
   font-size: 1em;
   font-weight: bold;
 }
 
-.theme-ref-classic h5 {
+.theme-ref-classic .mpe-heading-5 {
   margin: 1.5em 8px 0.5em;
-  color: var(--md-primary-color);
+  color: var(--mpe-primary-color);
   font-size: 1em;
   font-weight: bold;
 }
 
-.theme-ref-classic h6 {
+.theme-ref-classic .mpe-heading-6 {
   margin: 1.5em 8px 0.5em;
   font-size: 1em;
-  color: var(--md-primary-color);
+  color: var(--mpe-primary-color);
 }
 
 .theme-ref-classic p {
@@ -66,10 +67,14 @@
   color: hsl(var(--foreground));
 }
 
+.theme-ref-classic.mpe-use-indent p {
+  text-indent: var(--mpe-text-indent);
+}
+
 .theme-ref-classic blockquote {
   font-style: normal;
   padding: 1em;
-  border-left: 4px solid var(--md-primary-color);
+  border-left: 4px solid var(--mpe-primary-color);
   border-radius: 6px;
   color: rgba(0,0,0,0.5);
   background: var(--blockquote-background);
@@ -211,7 +216,7 @@
 }
 
 .theme-ref-classic strong {
-  color: var(--md-primary-color);
+  color: var(--mpe-primary-color);
   font-weight: bold;
   font-size: inherit;
 }
@@ -266,3 +271,112 @@
 .theme-ref-classic .mac-sign {
   display: flex;
 }
+
+/* GFM Alert Styles */
+.mpe-alert {
+  padding: 1em;
+  border-left: 0.25em solid;
+  border-radius: 0.25em;
+  margin-bottom: 1em;
+  background-color: var(--mpe-alert-background, #f6f8fa); /* Default light background */
+  color: var(--mpe-alert-text, #24292e); /* Default text color */
+}
+
+.mpe-alert-title {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+
+.mpe-alert-title svg {
+  margin-right: 0.5em;
+  fill: currentColor; /* Make SVG icon color match text color */
+  width: 1.2em;
+  height: 1.2em;
+}
+
+/* Specific alert variants */
+.mpe-alert-note {
+  border-color: #0969da;
+  background-color: #ddf4ff;
+  color: #051d4d;
+}
+.mpe-alert-note .mpe-alert-title { color: #0969da; }
+
+.mpe-alert-tip {
+  border-color: #2da44e;
+  background-color: #dafbe1;
+  color: #113417;
+}
+.mpe-alert-tip .mpe-alert-title { color: #2da44e; }
+
+.mpe-alert-important {
+  border-color: #8250df;
+  background-color: #fbefff;
+  color: #3a1d61;
+}
+.mpe-alert-important .mpe-alert-title { color: #8250df; }
+
+.mpe-alert-warning {
+  border-color: #d4a72c;
+  background-color: #fff8c5;
+  color: #4d3800;
+}
+.mpe-alert-warning .mpe-alert-title { color: #d4a72c; }
+
+.mpe-alert-caution {
+  border-color: #cf222e;
+  background-color: #ffebe9;
+  color: #4d0400;
+}
+.mpe-alert-caution .mpe-alert-title { color: #cf222e; }
+
+.mpe-alert-info {
+  border-color: #0969da;
+  background-color: #ddf4ff;
+  color: #051d4d;
+}
+.mpe-alert-info .mpe-alert-title { color: #0969da; }
+
+/* Dark mode adjustments for alerts */
+.dark .mpe-alert {
+  background-color: var(--mpe-alert-background-dark, #21262d);
+  color: var(--mpe-alert-text-dark, #c9d1d9);
+}
+
+.dark .mpe-alert-note {
+  background-color: #0c2d6b;
+  color: #58a6ff;
+}
+.dark .mpe-alert-note .mpe-alert-title { color: #58a6ff; }
+
+.dark .mpe-alert-tip {
+  background-color: #143d23;
+  color: #56d364;
+}
+.dark .mpe-alert-tip .mpe-alert-title { color: #56d364; }
+
+.dark .mpe-alert-important {
+  background-color: #3a1d61;
+  color: #bc8cff;
+}
+.dark .mpe-alert-important .mpe-alert-title { color: #bc8cff; }
+
+.dark .mpe-alert-warning {
+  background-color: #633c01;
+  color: #e3b341;
+}
+.dark .mpe-alert-warning .mpe-alert-title { color: #e3b341; }
+
+.dark .mpe-alert-caution {
+  background-color: #490202;
+  color: #ff7b72;
+}
+.dark .mpe-alert-caution .mpe-alert-title { color: #ff7b72; }
+
+.dark .mpe-alert-info {
+  background-color: #0c2d6b;
+  color: #58a6ff;
+}
+.dark .mpe-alert-info .mpe-alert-title { color: #58a6ff; }

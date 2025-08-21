@@ -66,11 +66,11 @@ async function deployPlugin() {
     try {
         await fs.promises.rm(deployDir, { recursive: true, force: true });
         await copyDir('Dist', deployDir);
-        console.log(`\n==================================================`);
-        console.log(`✅ Plugin Deployed!`);
+        console.log(`\n================================`);
+        console.log(` √√√√√√  Plugin Deployed!`);
         console.log(`   Source: Dist/`);
         console.log(`   Destination: ${deployDir}`);
-        console.log(`==================================================\n`);
+        console.log(`==================================\n`);
     } catch (err) {
         console.error('Error during deployment:', err);
     }

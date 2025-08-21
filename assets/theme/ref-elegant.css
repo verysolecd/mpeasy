@@ -2,47 +2,47 @@
 
 /* Styles from graceTheme.base */
 .theme-ref-elegant {
-  /* No base styles explicitly defined in graceTheme.base */
+  font-size: var(--mpe-font-size);
 }
 
 /* Block styles from graceTheme.block */
-.theme-ref-elegant h1 {
+.theme-ref-elegant .mpe-heading-1 {
   padding: 0.5em 1em;
-  border-bottom: 2px solid var(--md-primary-color);
+  border-bottom: 2px solid var(--mpe-primary-color);
   font-size: 1.4em;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
 }
 
-.theme-ref-elegant h2 {
+.theme-ref-elegant .mpe-heading-2 {
   padding: 0.3em 1em;
   border-radius: 8px;
   font-size: 1.3em;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
-.theme-ref-elegant h3 {
+.theme-ref-elegant .mpe-heading-3 {
   padding-left: 12px;
   font-size: 1.2em;
-  border-left: 4px solid var(--md-primary-color);
-  border-bottom: 1px dashed var(--md-primary-color);
+  border-left: 4px solid var(--mpe-primary-color);
+  border-bottom: 1px dashed var(--mpe-primary-color);
 }
 
-.theme-ref-elegant h4 {
+.theme-ref-elegant .mpe-heading-4 {
   font-size: 1.1em;
 }
 
-.theme-ref-elegant h5 {
+.theme-ref-elegant .mpe-heading-5 {
   font-size: 1em;
 }
 
-.theme-ref-elegant h6 {
+.theme-ref-elegant .mpe-heading-6 {
   font-size: 1em;
 }
 
 .theme-ref-elegant blockquote {
   font-style: italic;
   padding: 1em 1em 1em 2em;
-  border-left: 4px solid var(--md-primary-color);
+  border-left: 4px solid var(--mpe-primary-color);
   border-radius: 6px;
   color: rgba(0,0,0,0.6);
   box-shadow: 0 4px 6px rgba(0,0,0,0.05);
@@ -104,3 +104,116 @@
 .theme-ref-elegant .footnote {
   color: rgba(0,0,0,0.5);
 }
+
+.theme-ref-elegant.mpe-use-indent p {
+  text-indent: var(--mpe-text-indent);
+}
+
+/* GFM Alert Styles */
+.mpe-alert {
+  padding: 1em;
+  border-left: 0.25em solid;
+  border-radius: 0.25em;
+  margin-bottom: 1em;
+  background-color: var(--mpe-alert-background, #f6f8fa); /* Default light background */
+  color: var(--mpe-alert-text, #24292e); /* Default text color */
+}
+
+.mpe-alert-title {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: 0.5em;
+}
+
+.mpe-alert-title svg {
+  margin-right: 0.5em;
+  fill: currentColor; /* Make SVG icon color match text color */
+  width: 1.2em;
+  height: 1.2em;
+}
+
+/* Specific alert variants */
+.mpe-alert-note {
+  border-color: #0969da;
+  background-color: #ddf4ff;
+  color: #051d4d;
+}
+.mpe-alert-note .mpe-alert-title { color: #0969da; }
+
+.mpe-alert-tip {
+  border-color: #2da44e;
+  background-color: #dafbe1;
+  color: #113417;
+}
+.mpe-alert-tip .mpe-alert-title { color: #2da44e; }
+
+.mpe-alert-important {
+  border-color: #8250df;
+  background-color: #fbefff;
+  color: #3a1d61;
+}
+.mpe-alert-important .mpe-alert-title { color: #8250df; }
+
+.mpe-alert-warning {
+  border-color: #d4a72c;
+  background-color: #fff8c5;
+  color: #4d3800;
+}
+.mpe-alert-warning .mpe-alert-title { color: #d4a72c; }
+
+.mpe-alert-caution {
+  border-color: #cf222e;
+  background-color: #ffebe9;
+  color: #4d0400;
+}
+.mpe-alert-caution .mpe-alert-title { color: #cf222e; }
+
+.mpe-alert-info {
+  border-color: #0969da;
+  background-color: #ddf4ff;
+  color: #051d4d;
+}
+.mpe-alert-info .mpe-alert-title { color: #0969da; }
+
+/* Dark mode adjustments for alerts */
+.dark .mpe-alert {
+  background-color: var(--mpe-alert-background-dark, #21262d);
+  color: var(--mpe-alert-text-dark, #c9d1d9);
+}
+
+.dark .mpe-alert-note {
+  background-color: #0c2d6b;
+  color: #58a6ff;
+}
+.dark .mpe-alert-note .mpe-alert-title { color: #58a6ff; }
+
+.dark .mpe-alert-tip {
+  background-color: #143d23;
+  color: #56d364;
+}
+.dark .mpe-alert-tip .mpe-alert-title { color: #56d364; }
+
+.dark .mpe-alert-important {
+  background-color: #3a1d61;
+  color: #bc8cff;
+}
+.dark .mpe-alert-important .mpe-alert-title { color: #bc8cff; }
+
+.dark .mpe-alert-warning {
+  background-color: #633c01;
+  color: #e3b341;
+}
+.dark .mpe-alert-warning .mpe-alert-title { color: #e3b341; }
+
+.dark .mpe-alert-caution {
+  background-color: #490202;
+  color: #ff7b72;
+}
+.dark .mpe-alert-caution .mpe-alert-title { color: #ff7b72; }
+
+.dark .mpe-alert-info {
+  background-color: #0c2d6b;
+  color: #58a6ff;
+}
+.dark .mpe-alert-info .mpe-alert-title { color: #58a6ff; }

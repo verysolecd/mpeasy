@@ -1,6 +1,7 @@
 import type { RendererObject, Tokens } from 'marked';
 import type { ReadTimeResults } from 'reading-time';
 import type { IOpts } from '../types';
+import { generateDynamicStyles } from './dynamicStyles';
 import type { RendererAPI } from '../types';
 import gdscript from '@exercism/highlightjs-gdscript';
 import frontMatter from 'front-matter';
@@ -371,6 +372,8 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
     html = buildReadingTime(readingTimeResult) + html;
     html += buildFootnotes();
     html += buildAddition();
+    // Inject dynamic styles based on user settings
+    html += generateDynamicStyles(opts);
     if (getOpts().isMacCodeBlock) {
         html += `
         <style>

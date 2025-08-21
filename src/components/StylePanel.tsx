@@ -56,37 +56,13 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
     };
 
     return (
-        <div className="style-panel-container" style={{ marginBottom: '16px', padding: '0', width: '100%' }}>
-            <div className="style-panel-header" style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                backgroundColor: '#f5f5f5',
-                padding: '12px 16px',
-                borderRadius: '8px',
-                marginBottom: '8px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                cursor: 'pointer',
-                userSelect: 'none',
-                width: '100%',
-                boxSizing: 'border-box'
-            }} onClick={() => setIsCollapsed(!isCollapsed)}>
-                <h3 className="style-panel-title" style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#333' }}>
+        <div className="style-panel-container mpeasy-style-panel-container">
+            <div className="style-panel-header mpeasy-style-panel-header" onClick={() => setIsCollapsed(!isCollapsed)}>
+                <h3 className="style-panel-title mpeasy-style-panel-title">
                     样式与功能
                 </h3>
-                <div style={{
-                    width: '20px',
-                    height: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '50%',
-                    backgroundColor: '#fff',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                    transition: 'all 0.2s ease',
-                    transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
-                }}>
-                    <span style={{ fontSize: '12px', color: '#666' }}>∨</span>
+                <div className="mpeasy-style-panel-header-toggle" style={{ transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>
+                    <span className="mpeasy-style-panel-header-toggle-icon">∨</span>
                 </div>
             </div>
             {!isCollapsed && (
@@ -129,85 +105,37 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
 
                 <div className="style-panel-item-column" style={{ margin: '0 5px' }}>
                     <button
-                        type="button"
-                        style={{
-                            width: '100%',
-                            padding: '12px 16px',
-                            background: 'linear-gradient(45deg, #e6f3ff 25%, transparent 25%, transparent 50%, #e6f3ff 50%, #e6f3ff 75%, transparent 75%, transparent)',
-                            backgroundSize: '20px 20px',
-                            backgroundColor: '#f0f8ff',
-                            border: '1px solid #cce7ff',
-                            borderRadius: '12px 12px 0 0',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            color: '#007bff',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between'
-                        }}
-                        onClick={(e) => {
-                            const colorBox = e.currentTarget.nextElementSibling;
-                            if (colorBox) {
-                                colorBox.style.display = colorBox.style.display === 'none' ? 'block' : 'none';
-                                e.currentTarget.style.borderRadius = colorBox.style.display === 'none' ? '12px' : '12px 12px 0 0';
-                            }
-                        }}
-                    >
-                        <span>自定义主题色</span>
-                        <span style={{ fontSize: '12px' }}>▼</span>
-                    </button>
-                    <div style={{
-                        width: '100%',
-                        backgroundColor: '#e6f3ff',
-                        borderRadius: '0 0 12px 12px',
-                        padding: '16px',
-                        boxShadow: '0 2px 8px rgba(0, 123, 255, 0.15)',
-                        border: '1px solid #cce7ff',
-                        borderTop: 'none',
-                        boxSizing: 'border-box'
-                    }}>
+    type="button"
+    className="mpeasy-custom-color-button"
+    onClick={(e) => {
+        const colorBox = e.currentTarget.nextElementSibling;
+        if (colorBox) {
+            colorBox.style.display = colorBox.style.display === 'none' ? 'block' : 'none';
+            e.currentTarget.style.borderRadius = colorBox.style.display === 'none' ? '12px' : '12px 12px 0 0';
+        }
+    }}
+>
+    <span>自定义主题色</span>
+    <span className="mpeasy-custom-color-button-icon">▼</span>
+</button>
+                    <div className="mpeasy-custom-color-panel">
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
                             <input
                                 type="color"
                                 value={customColor}
                                 onChange={(e) => setCustomColor(e.target.value)}
-                                style={{
-                                    width: '30px',
-                                    height: '30px',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    marginRight: '8px',
-                                    cursor: 'pointer'
-                                }}
+                                className="mpeasy-color-picker-input"
                             />
                             <input
                                 type="text"
                                 value={customColor}
                                 onChange={(e) => setCustomColor(e.target.value)}
-                                style={{
-                                    width: '80px',
-                                    padding: '6px 10px',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '4px',
-                                    fontSize: '14px',
-                                    marginRight: '8px'
-                                }}
+                                className="mpeasy-color-text-input"
                             />
                             <button 
                                 type="button" 
                                 onClick={handleCustomColorApply} 
-                                style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#007bff',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    fontSize: '14px',
-                                    whiteSpace: 'nowrap'
-                                }}
+                                className="mpeasy-color-apply-button"
                             >
                                 确定
                             </button>
@@ -221,7 +149,7 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                                 {PRESET_COLORS.map(preset => (
                                     <div
                                         key={preset.name}
-                                        className={`color-preset-item ${opts.primaryColor === preset.color ? 'selected' : ''}`}
+                                        className={`color-preset-item mpeasy-color-preset-item ${opts.primaryColor === preset.color ? 'selected' : ''}`}
                                         onClick={() => handleValueChange('primaryColor', preset.color)}
                                         style={{
                                             display: 'flex',
@@ -234,7 +162,7 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                                         }}
                                     >
                                         <div 
-                                            className="color-swatch" 
+                                            className="color-swatch mpeasy-color-swatch" 
                                             style={{ 
                                                 backgroundColor: preset.color,
                                                 width: '20px',
@@ -244,7 +172,7 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                                                 border: '1px solid #ddd'
                                             }}
                                         ></div>
-                                        <span style={{ fontSize: '13px', color: '#333' }}>{preset.name}</span>
+                                        <span className="mpeasy-color-preset-name">{preset.name}</span>
                                     </div>
                                 ))}
                             </div>
