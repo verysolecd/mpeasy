@@ -69,14 +69,47 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                 <form className="style-panel-form" style={{ padding: '0 8px' }}>
                 <div className="style-panel-item">
                     <label>排版主题</label>
-                    <select
-                        value={opts.layoutThemeName || 'minimal'}
-                        onChange={(e) => handleValueChange('layoutThemeName', e.target.value)}
-                    >
-                        {layoutThemes.map(theme => (
-                            <option key={theme.name} value={theme.path}>{theme.name}</option>
-                        ))}
-                    </select>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            type="button"
+                            style={{
+                                padding: '4px 12px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                backgroundColor: opts.layoutThemeName === 'ref-classic' ? '#cce7ff' : '#fff'
+                            }}
+                            onClick={() => handleValueChange('layoutThemeName', 'ref-classic')}
+                        >
+                            经典
+                        </button>
+                        <button
+                            type="button"
+                            style={{
+                                padding: '4px 12px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                backgroundColor: opts.layoutThemeName === 'ref-elegant' ? '#cce7ff' : '#fff'
+                            }}
+                            onClick={() => handleValueChange('layoutThemeName', 'ref-elegant')}
+                        >
+                            优雅
+                        </button>
+                        <button
+                            type="button"
+                            style={{
+                                padding: '4px 12px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                backgroundColor: opts.layoutThemeName === 'ref-simple' ? '#cce7ff' : '#fff'
+                            }}
+                            onClick={() => handleValueChange('layoutThemeName', 'ref-simple')}
+                        >
+                            简洁
+                        </button>
+                    </div>
                 </div>
 
                 <div className="style-panel-item">

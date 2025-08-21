@@ -336,6 +336,16 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
         setOpts(updatedOpts);
         Object.assign(plugin.settings, updatedOpts);
         plugin.saveSettings();
+
+        if (iframeRef.current && iframeRef.current.contentDocument) {
+            const body = iframeRef.current.contentDocument.body;
+            if (newOpts.layoutThemeName) {
+                body.className = `theme-${newOpts.layoutThemeName}`;
+            }
+            if (newOpts.fontSize) {
+                body.style.fontSize = newOpts.fontSize;
+            }
+        }
     };
 
     useEffect(() => {
@@ -356,9 +366,7 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
 
                 const lessOptions = {
                     modifyVars: {
-                        '@primary-color': opts.primaryColor || '#007bff',
-                        '@layout-theme-name': `'${opts.layoutThemeName || 'default'}'`,
-                        '@code-theme-name': `'${opts.codeThemeName || 'default'}'`,
+                        '@primary-color': opts.primaryColor || '#007bff'
                     }
                 };
     
@@ -459,7 +467,7 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
                 scrollListenersRef.current.cleanUp();
             }
         };
-    }, [markdownContent, rendererApi, opts, plugin, customCss, mermaidPath, app.workspace, obsidianTheme]);
+    }, [markdownContent, rendererApi, plugin, customCss, mermaidPath, app.workspace, obsidianTheme]);
 
     return (
         <div className="mpeasy-view-container">

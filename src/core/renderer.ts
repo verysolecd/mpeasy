@@ -177,7 +177,10 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
   const renderer: RendererObject = {
     heading({ tokens, depth }: Tokens.Heading) {
       const text = this.parser.parseInline(tokens)
-      return `<h${depth} class="mpe-heading mpe-heading-${depth}" data-heading="true">${text}</h${depth}>`
+      if (depth === 2) {
+        return `<h2 style="text-align: center; line-height: 1.75; font-family: -apple-system-font,BlinkMacSystemFont, Helvetica Neue, PingFang SC, Hiragino Sans GB , Microsoft YaHei UI , Microsoft YaHei ,Arial,sans-serif; font-size: 16.8px; display: table; padding: 0 0.2em; margin: 4em auto 2em; background: var(--md-primary-color); font-weight: bold; color: #fff;">${text}</h2>`
+      }
+      return `<h${depth} data-heading="true">${text}</h${depth}>`
     },
 
     paragraph({ tokens }: Tokens.Paragraph): string {
