@@ -1,100 +1,17 @@
-/* #theme name: 经典 */
+/* assets/theme/ref-classic.css */
 
-/* <!-- <div id="output">...</div> --> */
-.theme-ref-classic #output {
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); /* from shadow-xl */
-  border-left: 1px solid #e5e7eb; /* from border-x-1, assuming a light gray border */
-  border-right: 1px solid #e5e7eb;
+/* Base styles from defaultTheme.base */
+.theme-ref-classic {
+  --md-primary-color: #000000;
+  text-align: left;
+  line-height: 1.75;
 }
 
-/* #name: 经典-自定义 */
-
-/* <!-- <a>...</a> --> */
-.theme-ref-classic a {
-  color: #576b95;
-}
-
-/* <!-- <div class="block-language-katex">...</div> <div class="block-language-math">...</div> --> */
-.theme-ref-classic .block-language-math,
-.theme-ref-classic .block-language-katex {
-  max-width: 100%;
-  overflow-x: auto;
-  padding: 0.5em 0;
-}
-
-/* <!-- <blockquote>...</blockquote> --> */
-.theme-ref-classic blockquote {
-  font-style: normal;
-  padding: 1em;
-  border-left: 4px solid var(--mpe-primary-color);
-  border-radius: 6px;
-  color: rgba(0,0,0,0.5);
-  background: var(--blockquote-background);
-  margin-bottom: 1em;
-}
-
-/* <!-- <blockquote><p>...</p></blockquote> --> */
-.theme-ref-classic blockquote p {
-  display: block;
-  font-size: 1em;
-  letter-spacing: 0.1em;
-  color: hsl(var(--foreground));
-}
-
-/* <!-- <code>...</code> --> */
-.theme-ref-classic code {
-  font-size: 90%;
-  color: #d14;
-  background: rgba(27,31,35,.05);
-  padding: 3px 5px;
-  border-radius: 4px;
-}
-
-/* <!-- <code class="HyperMD-code-block-bg">...</code> --> */
-.theme-ref-classic code.HyperMD-code-block-bg {
-  margin: 0;
-  white-space: nowrap;
-  font-size: 90%;
-  font-family: Menlo, Operator Mono, Consolas, Monaco, monospace;
-}
-
-/* <!-- <em>...</em> --> */
-.theme-ref-classic em {
-  font-style: italic;
-  font-size: inherit;
-}
-
-/* <!-- <figcaption>...</figcaption> --> */
-.theme-ref-classic figcaption {
-  text-align: center;
-  color: #888;
-  font-size: 0.8em;
-}
-
-/* <!-- <figure>...</figure> --> */
-.theme-ref-classic figure {
-  margin: 1.5em 8px;
-  color: hsl(var(--foreground));
-}
-
-/* <!-- <div class="footnote-ref">...</div> --> */
-.theme-ref-classic .footnote-ref {
-  font-size: 12px;
-  color: hsl(var(--foreground));
-}
-
-/* <!-- <div class="footnotes">...</div> --> */
-.theme-ref-classic .footnotes {
-  margin: 0.5em 8px;
-  font-size: 80%;
-  color: hsl(var(--foreground));
-}
-
-/* <!-- <h1>...</h1> --> */
+/* Block styles from defaultTheme.block */
 .theme-ref-classic h1 {
   display: table;
   padding: 0 1em;
-  border-bottom: 2px solid var(--mpe-primary-color);
+  border-bottom: 2px solid var(--md-primary-color);
   margin: 2em auto 1em;
   color: hsl(var(--foreground));
   font-size: 1.2em;
@@ -102,22 +19,20 @@
   text-align: center;
 }
 
-/* <!-- <h2>...</h2> --> */
 .theme-ref-classic h2 {
   display: table;
   padding: 0 0.2em;
   margin: 4em auto 2em;
   color: #fff;
-  background: var(--mpe-primary-color);
+  background: var(--md-primary-color);
   font-size: 1.2em;
   font-weight: bold;
   text-align: center;
 }
 
-/* <!-- <h3>...</h3> --> */
 .theme-ref-classic h3 {
   padding-left: 8px;
-  border-left: 3px solid var(--mpe-primary-color);
+  border-left: 3px solid var(--md-primary-color);
   margin: 2em 8px 0.75em 0;
   color: hsl(var(--foreground));
   font-size: 1.1em;
@@ -125,119 +40,81 @@
   line-height: 1.2;
 }
 
-/* <!-- <h4>...</h4> --> */
 .theme-ref-classic h4 {
   margin: 2em 8px 0.5em;
-  color: var(--mpe-primary-color);
+  color: var(--md-primary-color);
   font-size: 1em;
   font-weight: bold;
 }
 
-/* <!-- <h5>...</h5> --> */
 .theme-ref-classic h5 {
   margin: 1.5em 8px 0.5em;
-  color: var(--mpe-primary-color);
+  color: var(--md-primary-color);
   font-size: 1em;
   font-weight: bold;
 }
 
-/* <!-- <h6>...</h6> --> */
 .theme-ref-classic h6 {
   margin: 1.5em 8px 0.5em;
   font-size: 1em;
-  color: var(--mpe-primary-color);
+  color: var(--md-primary-color);
 }
 
-/* <!-- <hr> --> */
-.theme-ref-classic hr {
-  border-style: solid;
-  border-width: 2px 0 0;
-  border-color: rgba(0,0,0,0.1);
-  transform-origin: 0 0;
-  transform: scale(1, 0.5);
-  height: 0.4em;
-  margin: 1.5em 0;
-}
-
-/* <!-- <img> --> */
-.theme-ref-classic img {
-  display: block;
-  max-width: 100%;
-  margin: 0.1em auto 0.5em;
-  border-radius: 4px;
-}
-
-/* <!-- <li>...</li> --> */
-.theme-ref-classic li {
-  text-indent: -1em;
-  display: block;
-  margin: 0.2em 8px;
-  color: hsl(var(--foreground));
-}
-
-/* <!-- <div class="markdown-alert-title">...</div> --> */
-.theme-ref-classic .markdown-alert-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5em;
-  margin-bottom: 0.5em;
-}
-
-/* <!-- <div class="markdown-alert" data-callout="caution"><div class="markdown-alert-title">...</div></div> --> */
-.theme-ref-classic .markdown-alert[data-callout="caution"] .markdown-alert-title {
-  color: #e5534b;
-}
-
-/* <!-- <div class="markdown-alert" data-callout="important"><div class="markdown-alert-title">...</div></div> --> */
-.theme-ref-classic .markdown-alert[data-callout="important"] .markdown-alert-title {
-  color: #986ee2;
-}
-
-/* <!-- <div class="markdown-alert" data-callout="info"><div class="markdown-alert-title">...</div></div> --> */
-.theme-ref-classic .markdown-alert[data-callout="info"] .markdown-alert-title {
-  color: #93c5fd;
-}
-
-/* <!-- <div class="markdown-alert" data-callout="note"><div class="markdown-alert-title">...</div></div> --> */
-.theme-ref-classic .markdown-alert[data-callout="note"] .markdown-alert-title {
-  color: #478be6;
-}
-
-/* <!-- <div class="markdown-alert" data-callout="tip"><div class="markdown-alert-title">...</div></div> --> */
-.theme-ref-classic .markdown-alert[data-callout="tip"] .markdown-alert-title {
-  color: #57ab5a;
-}
-
-/* <!-- <div class="markdown-alert" data-callout="warning"><div class="markdown-alert-title">...</div></div> --> */
-.theme-ref-classic .markdown-alert[data-callout="warning"] .markdown-alert-title {
-  color: #c69026;
-}
-
-/* <!-- <div class="math math-inline">...</div> --> */
-.theme-ref-classic .math.math-inline {
-  display: inline-flex;
-  max-width: 100%;
-  overflow-x: auto;
-  padding-bottom: 5px;
-  vertical-align: middle;
-}
-
-/* <!-- <ol>...</ol> --> */
-.theme-ref-classic ol {
-  padding-left: 1em;
-  margin-left: 0;
-  color: hsl(var(--foreground));
-}
-
-/* <!-- <p>...</p> --> */
 .theme-ref-classic p {
   margin: 1.5em 8px;
   letter-spacing: 0.1em;
   color: hsl(var(--foreground));
 }
 
-/* <!-- <pre class="HyperMD-code-block">...</pre> --> */
-.theme-ref-classic pre.HyperMD-code-block {
+.theme-ref-classic blockquote {
+  font-style: normal;
+  padding: 1em;
+  border-left: 4px solid var(--md-primary-color);
+  border-radius: 6px;
+  color: rgba(0,0,0,0.5);
+  background: var(--blockquote-background);
+  margin-bottom: 1em;
+}
+
+.theme-ref-classic blockquote p {
+  display: block;
+  font-size: 1em;
+  letter-spacing: 0.1em;
+  color: hsl(var(--foreground));
+}
+
+.theme-ref-classic blockquote .blockquote_title {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.theme-ref-classic blockquote .blockquote_title_note {
+  color: #478be6;
+}
+
+.theme-ref-classic blockquote .blockquote_title_tip {
+  color: #57ab5a;
+}
+
+.theme-ref-classic blockquote .blockquote_title_info {
+  color: #93c5fd;
+}
+
+.theme-ref-classic blockquote .blockquote_title_important {
+  color: #986ee2;
+}
+
+.theme-ref-classic blockquote .blockquote_title_warning {
+  color: #c69026;
+}
+
+.theme-ref-classic blockquote .blockquote_title_caution {
+  color: #e5534b;
+}
+
+.theme-ref-classic pre {
   font-size: 90%;
   overflow-x: auto;
   border-radius: 8px;
@@ -246,14 +123,99 @@
   margin: 10px 8px;
 }
 
-/* <!-- <strong>...</strong> --> */
+.theme-ref-classic code {
+  margin: 0;
+  white-space: nowrap;
+  font-size: 90%;
+  font-family: Menlo, Operator Mono, Consolas, Monaco, monospace;
+}
+
+.theme-ref-classic img {
+  display: block;
+  max-width: 100%;
+  margin: 0.1em auto 0.5em;
+  border-radius: 4px;
+}
+
+.theme-ref-classic ol {
+  padding-left: 1em;
+  margin-left: 0;
+  color: hsl(var(--foreground));
+}
+
+.theme-ref-classic ul {
+  list-style: circle;
+  padding-left: 1em;
+  margin-left: 0;
+  color: hsl(var(--foreground));
+}
+
+.theme-ref-classic .footnotes {
+  margin: 0.5em 8px;
+  font-size: 80%;
+  color: hsl(var(--foreground));
+}
+
+.theme-ref-classic figure {
+  margin: 1.5em 8px;
+  color: hsl(var(--foreground));
+}
+
+.theme-ref-classic hr {
+  border-style: solid;
+  border-width: 2px 0 0;
+  border-color: rgba(0,0,0,0.1);
+  -webkit-transform-origin: 0 0;
+  -webkit-transform: scale(1, 0.5);
+  transform-origin: 0 0;
+  transform: scale(1, 0.5);
+  height: 0.4em;
+  margin: 1.5em 0;
+}
+
+.theme-ref-classic .block_katex {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.5em 0;
+}
+
+/* Inline styles from defaultTheme.inline */
+.theme-ref-classic .listitem {
+  text-indent: -1em;
+  display: block;
+  margin: 0.2em 8px;
+  color: hsl(var(--foreground));
+}
+
+.theme-ref-classic .codespan {
+  font-size: 90%;
+  color: #d14;
+  background: rgba(27,31,35,.05);
+  padding: 3px 5px;
+  border-radius: 4px;
+}
+
+.theme-ref-classic em {
+  font-style: italic;
+  font-size: inherit;
+}
+
+.theme-ref-classic a {
+  color: #576b95;
+}
+
+.theme-ref-classic .wx_link {
+  color: #576b95;
+  text-decoration: none;
+}
+
 .theme-ref-classic strong {
-  color: var(--mpe-primary-color);
+  color: var(--md-primary-color);
   font-weight: bold;
   font-size: inherit;
 }
 
-/* <!-- <table>...</table> --> */
 .theme-ref-classic table {
   border-collapse: collapse;
   text-align: center;
@@ -261,15 +223,11 @@
   color: hsl(var(--foreground));
 }
 
-/* <!-- <td>...</td> --> */
-.theme-ref-classic td {
-  border: 1px solid #dfdfdf;
-  padding: 0.25em 0.5em;
+.theme-ref-classic thead {
+  font-weight: bold;
   color: hsl(var(--foreground));
-  word-break: keep-all;
 }
 
-/* <!-- <th>...</th> --> */
 .theme-ref-classic th {
   border: 1px solid #dfdfdf;
   padding: 0.25em 0.5em;
@@ -278,16 +236,33 @@
   background: rgba(0, 0, 0, 0.05);
 }
 
-/* <!-- <thead>...</thead> --> */
-.theme-ref-classic thead {
-  font-weight: bold;
+.theme-ref-classic td {
+  border: 1px solid #dfdfdf;
+  padding: 0.25em 0.5em;
+  color: hsl(var(--foreground));
+  word-break: keep-all;
+}
+
+.theme-ref-classic .footnote {
+  font-size: 12px;
   color: hsl(var(--foreground));
 }
 
-/* <!-- <ul>...</ul> --> */
-.theme-ref-classic ul {
-  list-style: circle;
-  padding-left: 1em;
-  margin-left: 0;
-  color: hsl(var(--foreground));
+.theme-ref-classic figcaption {
+  text-align: center;
+  color: #888;
+  font-size: 0.8em;
+}
+
+.theme-ref-classic .inline_katex {
+  display: inline-flex;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 5px;
+  vertical-align: middle;
+}
+
+/* macCodeSvg related style */
+.theme-ref-classic .mac-sign {
+  display: flex;
 }

@@ -1,220 +1,79 @@
-/* MPEasy Base Stylesheet */
-/* This file combines the original default.css and common.css to create a single foundational stylesheet for all themes. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* --- From default.css --- */
-:root {
-    /* --- Default Theme Variables --- */
-    /* These are the default values, which can be overridden by specific theme files. */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
 
-    /* Primary Color */
-    --mpe-primary-color: #007bff;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
 
-    /* Base Typography */
-    --mpe-font-family: sans-serif;
-    --mpe-line-height: 1.6;
-    --mpe-text-color: #333333;
-    --mpe-text-color-dark: #dddddd;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
 
-    /* Headings */
-    --mpe-heading-font-family: var(--mpe-font-family);
-    --mpe-heading-font-weight: bold;
-    --mpe-heading-color: var(--mpe-text-color);
-    --mpe-heading-color-dark: var(--mpe-text-color-dark);
-    --mpe-heading-border-style: none;
-    --mpe-heading-padding-left: 0;
-    --mpe-heading-border-color: var(--mpe-primary-color);
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
 
-    /* Links */
-    --mpe-link-color: var(--mpe-primary-color);
-    --mpe-link-decoration: none;
-    --mpe-link-hover-decoration: underline;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
 
-    /* Blockquotes */
-    --mpe-blockquote-margin: 0.2em 0;
-    --mpe-blockquote-padding: 0 1em;
-    --mpe-blockquote-color: #6a737d;
-    --mpe-blockquote-color-dark: #999;
-    --mpe-blockquote-border: 0.25em solid #dfe2e5;
-    --mpe-blockquote-border-dark: 0.25em solid #555;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
 
-    /* Inline Code (codespan) */
-    --mpe-codespan-font-family: monospace;
-    --mpe-codespan-bg: #f5f5f5;
-    --mpe-codespan-bg-dark: #333;
-    --mpe-codespan-color: var(--mpe-text-color);
-    --mpe-codespan-color-dark: var(--mpe-text-color-dark);
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
 
-    /* Horizontal Rule */
-    --mpe-hr-border: 1px solid #eee;
-    --mpe-hr-border-dark: 1px solid #444;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border:0 0% 89.8%;
+    --input:0 0% 89.8%;
+    --ring:0 0% 3.9%;
+    --radius: 0.5rem;
+
+    --blockquote-background: #f7f7f7;
+  }
+
+  .dark {
+    --background:0 0% 3.9%;
+    --foreground:0 0% 98%;
+
+    --card:0 0% 3.9%;
+    --card-foreground:0 0% 98%;
+
+    --popover:0 0% 3.9%;
+    --popover-foreground:0 0% 98%;
+
+    --primary:0 0% 98%;
+    --primary-foreground:0 0% 9%;
+
+    --secondary:0 0% 14.9%;
+    --secondary-foreground:0 0% 98%;
+
+    --muted:0 0% 14.9%;
+    --muted-foreground:0 0% 63.9%;
+
+    --accent:0 0% 14.9%;
+    --accent-foreground:0 0% 98%;
+
+    --destructive:0 62.8% 30.6%;
+    --destructive-foreground:0 0% 98%;
+
+    --border:0 0% 14.9%;
+    --input:0 0% 14.9%;
+    --ring:0 0% 83.1%;
+
+    --blockquote-background: #212121;
+  }
 }
 
-/* --- Base Element Styling --- */
-
-.mpeasy-container {
-    font-family: var(--mpe-font-family);
-    line-height: var(--mpe-line-height);
-    color: var(--mpe-text-color);
-}
-.mpeasy-container.theme-dark {
-    color: var(--mpe-text-color-dark);
-}
-
-.mpeasy-container.mpe-use-indent .mpe-paragraph {
-    text-indent: 2em;
-}
-
-.mpe-paragraph {
-    margin-top: 0;
-    margin-bottom: 1em;
-}
-
-.mpe-heading {
-    font-family: var(--mpe-heading-font-family);
-    font-weight: var(--mpe-heading-font-weight);
-    color: var(--mpe-heading-color);
-    border-left: var(--mpe-heading-border-style);
-    border-color: var(--mpe-heading-border-color);
-    padding-left: var(--mpe-heading-padding-left);
-    margin-bottom: 0.5em;
-}
-.mpeasy-container.theme-dark .mpe-heading {
-    color: var(--mpe-heading-color-dark);
-}
-
-.mpe-heading-1 { font-size: 2em; }
-.mpe-heading-2 { font-size: 1.8em; }
-.mpe-heading-3 { font-size: 1.5em; }
-.mpe-heading-4, .mpe-heading-5, .mpe-heading-6 { font-size: 1.25em; }
-
-.mpe-blockquote {
-    margin: var(--mpe-blockquote-margin);
-    padding: var(--mpe-blockquote-padding);
-    color: var(--mpe-blockquote-color);
-    border-left: var(--mpe-blockquote-border);
-}
-.mpeasy-container.theme-dark .mpe-blockquote {
-    color: var(--mpe-blockquote-color-dark);
-    border-left: var(--mpe-blockquote-border-dark);
-}
-
-.mpe-hr {
-    border: none;
-    border-top: var(--mpe-hr-border);
-    margin: 2em 0;
-}
-.mpeasy-container.theme-dark .mpe-hr {
-    border-top: var(--mpe-hr-border-dark);
-}
-
-.mpe-link {
-    color: var(--mpe-link-color);
-    text-decoration: var(--mpe-link-decoration);
-}
-.mpe-link:hover {
-    text-decoration: var(--mpe-link-hover-decoration);
-}
-
-.mpe-strong { font-weight: bold; }
-.mpe-em { font-style: italic; }
-
-.mpe-codespan {
-    font-family: var(--mpe-codespan-font-family);
-    background-color: var(--mpe-codespan-bg);
-    color: var(--mpe-codespan-color);
-    padding: 2px 4px;
-    border-radius: 3px;
-}
-.mpeasy-container.theme-dark .mpe-codespan {
-    background-color: var(--mpe-codespan-bg-dark);
-    color: var(--mpe-codespan-color-dark);
-}
-
-/* List Styles */
-.mpe-list {
-    list-style-type: none;
-    padding-left: 20px;
-}
-
-.mpe-list-item {
-    margin-bottom: 0.5em;
-}
-
-/* --- Special Content Styling --- */
-
-/* Default code color for un-highlighted languages */
-.mpeasy-container.theme-light .hljs code {
-    color: var(--mpe-text-color);
-}
-.mpeasy-container.theme-dark .hljs code {
-    color: var(--mpe-text-color-dark);
-}
-
-/* Center Mermaid diagrams */
-pre.mermaid {
-  display: flex;
-  justify-content: center;
-}
-
-/* --- From common.css --- */
-/* Common styles for high-priority overrides */
-
-/* Indent Style - Applied when enabled in settings */
-.mpeasy-container.mpe-use-indent .mpe-paragraph {
-    text-indent: 2em !important;
-}
-
-/* Mermaid Diagram Styles */
-.mermaid svg text,
-.mermaid svg tspan {
-    font-family: "Microsoft YaHei", "微软雅黑", sans-serif !important;
-    font-size: 14px !important;
-}
-
-/* GFM Alerts */
-.mpe-alert {
-    padding: 1em;
-    margin: 1em 0;
-    border-left: 4px solid;
-    border-radius: 6px;
-    background-color: rgba(0, 0, 0, 0.03);
-}
-
-.mpe-alert-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
-    font-weight: bold;
-    margin-bottom: 0.5em;
-}
-
-.mpe-alert-title svg {
-    fill: currentColor;
-}
-
-.mpe-alert-note { border-left-color: #478be6; }
-.mpe-alert-title-note { color: #478be6; }
-
-.mpe-alert-info { border-left-color: #93c5fd; }
-.mpe-alert-title-info { color: #93c5fd; }
-
-.mpe-alert-tip { border-left-color: #57ab5a; }
-.mpe-alert-title-tip { color: #57ab5a; }
-
-.mpe-alert-important { border-left-color: #986ee2; }
-.mpe-alert-title-important { color: #986ee2; }
-
-.mpe-alert-warning { border-left-color: #c69026; }
-.mpe-alert-title-warning { color: #c69026; }
-
-.mpe-alert-caution { border-left-color: #e5534b; }
-.mpe-alert-title-caution { color: #e5534b; }
-
-/* Citation (Footnote) Superscript */
-.mpe-link-cite sup {
-  vertical-align: super;
-  font-size: 0.8em;
-  display: inline-block;
-  line-height: 1;
-  margin-left: 2px;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
