@@ -1,7 +1,6 @@
 import type { RendererObject, Tokens } from 'marked';
 import type { ReadTimeResults } from 'reading-time';
-import type { IOpts } from '../types';
-import { generateDynamicStyles } from './dynamicStyles';
+import type { IOpts, Theme } from '../types';
 import type { RendererAPI } from '../types';
 import gdscript from '@exercism/highlightjs-gdscript';
 import frontMatter from 'front-matter';
@@ -14,6 +13,7 @@ import markedFootnotes from './MDFootnotes';
 import { MDKatex } from './MDKatex';
 import markedSlider from './MDSlider';
 import { markedToc } from './MDToc';
+import { themeMap } from './theme';
 
 hljs.registerLanguage(`gdscript`, gdscript)
 
@@ -22,41 +22,26 @@ marked.setOptions({
 })
 marked.use(markedSlider())
 
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, `&amp;`) // 转义 &
-    .replace(/</g, `&lt;`) // 转义 <
-    .replace(/>/g, `&gt;`) // 转义 >
-    .replace(/"/g, `&quot;`) // 转义 "
-    .replace(/'/g, `&#39;`) // 转义 '
-    .replace(/`/g, `&#96;`) // 转义 `
+function styleObjectToString(style: Record<string, string>): string {
+  return Object.entries(style).map(([key, value]) => `${key}: ${value}`).join(';');
 }
 
-function buildAddition(): string {
-  return `
-    <style>
-      .preview-wrapper pre::before {
-        position: absolute;
-        top: 0;
-        right: 0;
-        color: #ccc;
-        text-align: center;
-        font-size: 0.8em;
-        padding: 5px 10px 0;
-        line-height: 15px;
-        height: 15px;
-        font-weight: 600;
-      }
-    </style>
-  `
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, `&amp;`)
+    .replace(/</g, `&lt;`)
+    .replace(/>/g, `&gt;`)
+    .replace(/"/g, `&quot;`)
+    .replace(/'/g, `&#39;`)
+    .replace(/`/g, `&#96;`)
 }
 
 function buildFootnoteArray(footnotes: [number, string, string][]): string {
   return footnotes
     .map(([index, title, link]) =>
       link === title
-        ? `<code class="mpe-codespan">[${index}]</code>: <i style="word-break: break-all">${title}</i><br/>`
-        : `<code class="mpe-codespan">[${index}]</code> ${title}: <i style="word-break: break-all">${link}</i><br/>`,
+        ? `<code>[${index}]</code>: <i style="word-break: break-all">${title}</i><br/>`
+        : `<code>[${index}]</code> ${title}: <i style="word-break: break-all">${link}</i><br/>`,
     )
     .join(`
 `)
@@ -116,18 +101,6 @@ export function parseFrontMatterAndContent(markdownText: string): ParseResult {
 export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null): RendererAPI {
   const footnotes: [number, string, string][] = []
   let footnoteIndex: number = 0
-  const listOrderedStack: boolean[] = []
-  const listCounters: number[] = []
-
-  // 缓存常用值
-  const cache = {
-    lastOpts: opts,
-    hljsLanguages: new Set<string>()
-  };
-
-  function getOpts(): IOpts {
-    return opts
-  }
 
   function addFootnote(title: string, link: string): number {
     footnotes.push([++footnoteIndex, title, link])
@@ -142,7 +115,6 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
 
   function setOptions(newOpts: Partial<IOpts>): void {
     opts = { ...opts, ...newOpts }
-    cache.lastOpts = opts;
     marked.use(markedAlert({}))
     marked.use(
       MDKatex({ nonStandard: true }, ``, ``, getIframeWindow),
@@ -156,9 +128,12 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
     if (!readingTime.words) {
       return ``
     }
+    const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+    const blockquoteStyle = styleObjectToString(theme.block.blockquote);
+    const pStyle = styleObjectToString(theme.block.blockquote_p);
     return `
-      <blockquote class="mpe-blockquote">
-        <p class="mpe-paragraph mpe-blockquote-paragraph">字数 ${readingTime?.words}，阅读大约需 ${Math.ceil(readingTime?.minutes)} 分钟</p>
+      <blockquote style="${blockquoteStyle}">
+        <p style="${pStyle}">字数 ${readingTime?.words}，阅读大约需 ${Math.ceil(readingTime?.minutes)} 分钟</p>
       </blockquote>
     `
   }
@@ -167,36 +142,43 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
     if (!footnotes.length) {
       return ``
     }
+    const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+    const h4Style = styleObjectToString(theme.block.h4);
+    const pStyle = styleObjectToString(theme.block.footnotes);
 
     return (
-      `<h4 class="mpe-heading mpe-heading-4">引用链接</h4>`
-      + `<p class="mpe-paragraph mpe-footnotes">${buildFootnoteArray(footnotes)}</p>`
+      `<h4 style="${h4Style}">引用链接</h4>`
+      + `<p style="${pStyle}">${buildFootnoteArray(footnotes)}</p>`
     )
   }
 
   const renderer: RendererObject = {
     heading({ tokens, depth }: Tokens.Heading) {
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const style = styleObjectToString(theme.block[`h${depth}` as keyof Theme['block']]);
       const text = this.parser.parseInline(tokens)
-      if (depth === 2) {
-        return `<h2 style="text-align: center; line-height: 1.75; font-family: -apple-system-font,BlinkMacSystemFont, Helvetica Neue, PingFang SC, Hiragino Sans GB , Microsoft YaHei UI , Microsoft YaHei ,Arial,sans-serif; font-size: 16.8px; display: table; padding: 0 0.2em; margin: 4em auto 2em; background: var(--md-primary-color); font-weight: bold; color: #fff;">${text}</h2>`
-      }
-      return `<h${depth} data-heading="true">${text}</h${depth}>`
+      return `<h${depth} style="${style}">${text}</h${depth}>`
     },
 
     paragraph({ tokens }: Tokens.Paragraph): string {
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const style = styleObjectToString(theme.block.p);
       const text = this.parser.parseInline(tokens)
       const isFigureImage = text.includes(`<figure`) && text.includes(`<img`)
       const isEmpty = text.trim() === ``
       if (isFigureImage || isEmpty) {
         return text
       }
-      return `<p class="mpe-paragraph">${text}</p>`
+      return `<p style="${style}">${text}</p>`
     },
 
     blockquote({ tokens }: Tokens.Blockquote): string {
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const blockquoteStyle = styleObjectToString(theme.block.blockquote);
+      const pStyle = styleObjectToString(theme.block.blockquote_p);
       let text = this.parser.parse(tokens)
-      text = text.replace(/<p>/g, `<p>`)
-      return `<blockquote>${text}</blockquote>`
+      text = text.replace(/<p>/g, `<p style="${pStyle}">`)
+      return `<blockquote style="${blockquoteStyle}">${text}</blockquote>`
     },
 
     code({ text, lang = `` }: Tokens.Code): string {
@@ -207,77 +189,43 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
       const langText = lang.split(` `)[0]
       const language = hljs.getLanguage(langText) ? langText : `plaintext`
 
-      // 缓存语言检查
-      if (!cache.hljsLanguages.has(language)) {
-        cache.hljsLanguages.add(language);
-      }
-
-      // 优化高亮处理
       let highlighted = hljs.highlight(text, { language }).value
       highlighted = highlighted.replace(/\t/g, `    `)
       highlighted = highlighted.replace(/\r?\n/g, `<br/>`)
       highlighted = highlighted
         .replace(/(>[^<]+)|(^[^<]+)/g, str => str.replace(/\s/g, `&nbsp;`))
 
-      const isShowLineNumbers = lang.includes(`=l`) || opts.codeLineNumbers
       const isShowMacStyleBar = lang.includes(`=b`) || opts.isMacCodeBlock
-      const isShowCopyButton = lang.includes(`=c`) || opts.codeCopy
-
-      // 使用模板字符串优化性能
-      const preClasses = `hljs mpe-code-pre language-${language}${isShowLineNumbers ? ' line-numbers' : ''}${isShowMacStyleBar ? ' mac-style' : ''}`;
-      const codeClasses = `language-${language}`;
-
-      let additionalHtml = '';
-
-      if (isShowLineNumbers) {
-        const lines = text.split('\n');
-        const lineNumbers = lines.map((_, i) => `<span class="line-number">${i+1}</span>`).join('<br/>');
-        additionalHtml += `<div class="mpe-line-numbers">${lineNumbers}</div>`;
-      }
-
       const macBar = isShowMacStyleBar ? `<span class="mac-sign" style="padding: 10px 14px 0;">${macCodeSvg}</span>` : '';
-      const copyButton = isShowCopyButton
-        ? `<button class="mpe-copy-button" data-clipboard-text="${escapeHtml(text)}">📋</button>`
-        : '';
+      
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const preStyle = styleObjectToString(theme.block.code_pre);
+      const codeStyle = styleObjectToString(theme.block.code);
 
-      return `<pre class="${preClasses}">
-        <div class="mpe-code-header">${macBar}${copyButton}</div>
-        <code class="${codeClasses}">${highlighted}</code>
-        ${additionalHtml}
-      </pre>`.replace(/\s{2,}/g, ' ');
+      return `<pre style="${preStyle}">
+        <div class="mpe-code-header">${macBar}</div>
+        <code style="${codeStyle}">${highlighted}</code>
+      </pre>`
     },
 
     codespan({ text }: Tokens.Codespan): string {
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const style = styleObjectToString(theme.inline.codespan);
       const escapedText = escapeHtml(text)
-      return `<code class="mpe-codespan">${escapedText}</code>`
+      return `<code style="${style}">${escapedText}</code>`
     },
 
-    list({ ordered, items, start = 1 }: Tokens.List) {
-      listOrderedStack.push(ordered)
-      listCounters.push(Number(start))
-
-      const html = items
-        .map(item => this.listitem(item))
-        .join(``)
-
-      listOrderedStack.pop()
-      listCounters.pop()
-
-      const listClass = ordered ? `mpe-list mpe-list-ordered` : `mpe-list mpe-list-unordered`;
+    list({ ordered, items }: Tokens.List) {
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const style = styleObjectToString(ordered ? theme.block.ol : theme.block.ul);
       const tag = ordered ? `ol` : `ul`;
-      return `<${tag} class="${listClass}">${html}</${tag}>`
+      const body = items.map(item => this.listitem(item)).join('');
+      return `<${tag} style="${style}">${body}</${tag}>`;
     },
 
     listitem(token: Tokens.ListItem) {
-      const ordered = listOrderedStack[listOrderedStack.length - 1]
-      const idx = listCounters[listCounters.length - 1]!
-
-      listCounters[listCounters.length - 1] = idx + 1
-
-      const prefix = ordered
-        ? `${idx}. `
-        : `• `
-
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const style = styleObjectToString(theme.inline.listitem);
       let content: string
       try {
         content = this.parser.parseInline(token.tokens)
@@ -288,69 +236,88 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
           .replace(/^<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/, `$1`)
       }
 
-      return `<li class="mpe-list-item">${prefix}${content}</li>`
+      return `<li style="${style}">${content}</li>`
     },
 
     image({ href, title, text }: Tokens.Image): string {
-      const subText = `<figcaption class="mpe-figcaption">${transform(opts.legend!, text, title)}</figcaption>`
-      return `<figure class="mpe-figure"><img class="mpe-image" src="${href}" title="${title}" alt="${text}"/></figure>`
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const figureStyle = styleObjectToString(theme.block.figure);
+      const imgStyle = styleObjectToString(theme.block.image);
+      const figcaptionStyle = styleObjectToString(theme.inline.figcaption);
+      const subText = `<figcaption style="${figcaptionStyle}">${transform(opts.legend!, text, title)}</figcaption>`
+      return `<figure style="${figureStyle}"><img style="${imgStyle}" src="${href}" title="${title}" alt="${text}"/>${subText}</figure>`
     },
 
     link({ href, title, text, tokens }: Tokens.Link): string {
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
       const parsedText = this.parser.parseInline(tokens)
       if (/^https?:\/\/mp\.weixin\.qq\.com/.test(href)) {
-        return `<a class="mpe-link mpe-link-wx" href="${href}" title="${title || text}">${parsedText}</a>`
+        const style = styleObjectToString(theme.inline.wx_link);
+        return `<a style="${style}" href="${href}" title="${title || text}">${parsedText}</a>`
       }
       if (href === text) {
         return parsedText
       }
       if (opts.isCiteStatus) {
         const ref = addFootnote(title || text, href)
-        return `<span class="mpe-link mpe-link-cite">${parsedText}<sup>[${ref}]</sup></span>`
+        return `<span>${parsedText}<sup>[${ref}]</sup></span>`
       }
-      return `<span class="mpe-link">${parsedText}</span>`
+      const style = styleObjectToString(theme.inline.link);
+      return `<span style="${style}">${parsedText}</span>`
     },
 
     strong({ tokens }: Tokens.Strong): string {
-      return `<strong class="mpe-strong">${this.parser.parseInline(tokens)}</strong>`
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const style = styleObjectToString(theme.inline.strong);
+      return `<strong style="${style}">${this.parser.parseInline(tokens)}</strong>`
     },
 
     em({ tokens }: Tokens.Em): string {
-      return `<em class="mpe-em">${this.parser.parseInline(tokens)}</em>`
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const style = styleObjectToString(theme.inline.em);
+      return `<em style="${style}">${this.parser.parseInline(tokens)}</em>`
     },
 
     table({ header, rows }: Tokens.Table): string {
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const tableStyle = styleObjectToString(theme.inline.table);
+      const theadStyle = styleObjectToString(theme.inline.thead);
+
       const headerRow = header
         .map((cell) => {
-          const text = this.parser.parseInline(cell.tokens)
-          return `<th class="mpe-table-header-cell">${text}</th>`
+          return this.tablecell(cell.tokens, true);
         })
         .join(``)
       const body = rows
         .map((row) => {
           const rowContent = row
-            .map(cell => this.tablecell(cell))
+            .map(cell => this.tablecell(cell.tokens, false))
             .join(``)
-          return `<tr class="mpe-table-row">${rowContent}</tr>`
+          return `<tr>${rowContent}</tr>`
         })
         .join(``)
       return `
-        <section class="mpe-table-wrapper">
-          <table class="mpe-table">
-            <thead class="mpe-table-header">${headerRow}</thead>
-            <tbody class="mpe-table-body">${body}</tbody>
+        <section>
+          <table style="${tableStyle}">
+            <thead style="${theadStyle}"><tr>${headerRow}</tr></thead>
+            <tbody>${body}</tbody>
           </table>
         </section>
       `
     },
 
-    tablecell(token: Tokens.TableCell): string {
-      const text = this.parser.parseInline(token.tokens)
-      return `<td class="mpe-table-cell">${text}</td>`
+    tablecell(tokens: Tokens.TableCell['tokens'], isHeader: boolean): string {
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const style = styleObjectToString(isHeader ? theme.inline.th : theme.inline.td);
+      const text = this.parser.parseInline(tokens)
+      const tag = isHeader ? 'th' : 'td';
+      return `<${tag} style="${style}">${text}</${tag}>`
     },
 
     hr(_: Tokens.Hr): string {
-      return `<hr/>`
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      const style = styleObjectToString(theme.block.hr);
+      return `<hr style="${style}"/>`
     },
   }
 
@@ -364,9 +331,9 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
   marked.use(markedFootnotes())
 
   function createContainer(content: string) {
-    const themeClass = opts.obsidianTheme ? `theme-${opts.obsidianTheme}` : '';
-    const indentClass = opts.isUseIndent ? 'mpe-use-indent' : '';
-    return `<section class="mpeasy-container ${themeClass} ${indentClass}">${content}</section>`;
+    const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+    const style = styleObjectToString(theme.base);
+    return `<section style="${style}">${content}</section>`;
   }
 
   async function parse(markdown: string): Promise<string> {
@@ -374,49 +341,12 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
     let html = marked.parse(markdownContent) as string;
     html = buildReadingTime(readingTimeResult) + html;
     html += buildFootnotes();
-    html += buildAddition();
-    // Inject dynamic styles based on user settings
-    html += generateDynamicStyles(opts);
-    if (getOpts().isMacCodeBlock) {
-        html += `
-        <style>
-          .hljs.mpe-code-pre > .mac-sign {
-            display: flex;
-          }
-        </style>
-      `
-    }
-    html += `
-    <style>
-      .mpe-code-pre {
-        padding: 0 !important;
-        border-radius: 6px;
-        margin: 1em 0;
-      }
-
-      .hljs.mpe-code-pre code {
-        display: -webkit-box;
-        padding: 20px;
-        overflow-x: auto;
-        text-indent: 0;
-      }
-      h2.mpe-heading strong.mpe-strong {
-        color: inherit !important;
-      }
-      
-    </style>
-  `
     return createContainer(html);
   }
 
   return {
-    buildAddition,
-    buildFootnotes,
     setOptions,
     reset,
-    parseFrontMatterAndContent,
-    buildReadingTime,
-    getOpts,
     parse,
   }
 }

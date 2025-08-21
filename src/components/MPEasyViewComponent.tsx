@@ -1,8 +1,6 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { App, Notice, TFile, MarkdownView, normalizePath, requestUrl } from 'obsidian';
-import juice from 'juice';
-import less from 'less';
 import Header from './Header';
 import StylePanel from './StylePanel';
 import WeChatArticleSettings from './WeChatArticleSettings';
@@ -129,41 +127,15 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
     };
 
     const getStyledHtml = async (forUpload: boolean): Promise<string | null> => {
-        return new Promise(async (resolve) => {
-            if (!rendererApi) {
-                new Notice('渲染器尚未准备好。');
-                return resolve(null);
-            }
+        if (!rendererApi) {
+            new Notice('渲染器尚未准备好。');
+            return null;
+        }
 
-            const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-            const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
-            console.log('MPEasy Rendered HTML (getStyledHtml):', parsedHtml);
-
-            const htmlWithImages = await processLocalImages(parsedHtml, plugin, !forUpload);
-
-            const themeLess = await app.vault.adapter.read(`${plugin.manifest.dir}/assets/less/theme.less`);
-            const appLess = await app.vault.adapter.read(`${plugin.manifest.dir}/assets/less/app.less`);
-            const allLess = themeLess + '\n' + appLess;
-
-            const lessOptions = {
-                modifyVars: {
-                    '@primary-color': opts.primaryColor || '#007bff',
-                    '@layout-theme-name': `'${opts.layoutThemeName || 'default'}'`,
-                    '@code-theme-name': `'${opts.codeThemeName || 'default'}'`,
-                }
-            };
-
-            const compiledCss = (await less.render(allLess, lessOptions)).css;
-
-            const allCss = `${compiledCss}\n${customCss}`;
-
-            const juicedHtml = juice.inlineContent(htmlWithImages, allCss, {
-                inlinePseudoElements: true,
-                preserveImportant: true,
-            });
-
-            resolve(juicedHtml);
-        });
+        const preprocessedMarkdown = preprocessMarkdown(markdownContent);
+        const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
+        const htmlWithImages = await processLocalImages(parsedHtml, plugin, !forUpload);
+        return `<style>${customCss}</style>${htmlWithImages}`;
     };
 
     const handleCopy = async () => {
@@ -184,13 +156,13 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
 
     const handleUpload = async () => {
         console.log('MPEasy: 开始上传流程');
-        const { yamlData, markdownContent: content } = parseFrontMatterAndContent(markdownContent);
+        const { yamlData } = parseFrontMatterAndContent(markdownContent);
         const title = (yamlData.title as string) || file.basename;
         
         let bannerField = (yamlData.banner as string) || '';
         
         if (!bannerField) {
-            const bannerMatch = markdownContent.match(/^banner:\s*(!\[.*?\]\(.*?\)|!\[\[.*?\]\]|[^\n]+)/m);
+            const bannerMatch = markdownContent.match(/^banner:\s*(!\[.*?\]\(.*\)|!\[\[.*?\]\]|[^\n]+)/m);
             if (bannerMatch) {
                 bannerField = bannerMatch[1].trim();
             }
@@ -336,16 +308,6 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
         setOpts(updatedOpts);
         Object.assign(plugin.settings, updatedOpts);
         plugin.saveSettings();
-
-        if (iframeRef.current && iframeRef.current.contentDocument) {
-            const body = iframeRef.current.contentDocument.body;
-            if (newOpts.layoutThemeName) {
-                body.className = `theme-${newOpts.layoutThemeName}`;
-            }
-            if (newOpts.fontSize) {
-                body.style.fontSize = newOpts.fontSize;
-            }
-        }
     };
 
     useEffect(() => {
@@ -357,20 +319,7 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
 
                 const preprocessedMarkdown = preprocessMarkdown(markdownContent);
                 const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
-                console.log('MPEasy Rendered HTML:', parsedHtml);
                 const previewHtml = await processLocalImages(parsedHtml, plugin, true);
-                
-                const themeLess = await app.vault.adapter.read(`${plugin.manifest.dir}/assets/less/theme.less`);
-                const appLess = await app.vault.adapter.read(`${plugin.manifest.dir}/assets/less/app.less`);
-                const allLess = themeLess + '\n' + appLess;
-
-                const lessOptions = {
-                    modifyVars: {
-                        '@primary-color': opts.primaryColor || '#007bff'
-                    }
-                };
-    
-                const compiledCss = (await less.render(allLess, lessOptions)).css;
 
                 const iframe = iframeRef.current;
                 if (!iframe) return;
@@ -379,9 +328,9 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
                     <html>
                     <head>
                         <meta charset="UTF-8">
-                        <style>${compiledCss}\n${customCss}</style>
+                        <style>${customCss}</style>
                     </head>
-                    <body class="theme-${opts.layoutThemeName || 'default'}" style="font-size: ${opts.fontSize || '16px'};">
+                    <body>
                         <section id="output">${previewHtml}</section>
                         <script src="${mermaidPath}"></script>
                         <script src="${mathjaxPath}"></script>
@@ -467,7 +416,7 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
                 scrollListenersRef.current.cleanUp();
             }
         };
-    }, [markdownContent, rendererApi, plugin, customCss, mermaidPath, app.workspace, obsidianTheme]);
+    }, [markdownContent, rendererApi, opts, plugin, customCss, mermaidPath, app.workspace, obsidianTheme]);
 
     return (
         <div className="mpeasy-view-container">

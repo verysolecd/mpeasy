@@ -1,105 +1,351 @@
-import type { PropertiesHyphen } from 'csstype';
-import type { Block, ExtendedProperties, Inline, Theme } from '../types';
+import type { IConfigOption } from '../types';
+import { themeOptions } from './theme';
 
-export function customizeTheme(theme: Theme, options: {
-  fontSize?: number
-  color?: string
-}) {
-  const newTheme = JSON.parse(JSON.stringify(theme))
-  const { fontSize, color } = options
-  if (fontSize) {
-    for (let i = 1; i <= 6; i++) {
-      const v = newTheme.block[`h${i}`][`font-size`]
-      newTheme.block[`h${i}`][`font-size`] = `${fontSize * Number.parseFloat(v)}px`
-    }
-  }
-  if (color) {
-    newTheme.base[`--md-primary-color`] = color
-  }
-  return newTheme as Theme
-}
+export const fontFamilyOptions: IConfigOption[] = [
+  {
+    label: `无衬线`,
+    value: `-apple-system-font,BlinkMacSystemFont, Helvetica Neue, PingFang SC, Hiragino Sans GB , Microsoft YaHei UI , Microsoft YaHei ,Arial,sans-serif`,
+    desc: `字体123Abc`,
+  },
+  {
+    label: `衬线`,
+    value: `Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif`,
+    desc: `字体123Abc`,
+  },
+  {
+    label: `等宽`,
+    value: `Menlo, Monaco, 'Courier New', monospace`,
+    desc: `字体123Abc`,
+  },
+]
 
-export function customCssWithTemplate(jsonString: Partial<Record<Block | Inline, PropertiesHyphen>>, color: string, theme: Theme) {
-  const newTheme = customizeTheme(theme, { color })
+export const fontSizeOptions: IConfigOption[] = [
+  {
+    label: `14px`,
+    value: `14px`,
+    desc: `更小`,
+  },
+  {
+    label: `15px`,
+    value: `15px`,
+    desc: `稍小`,
+  },
+  {
+    label: `16px`,
+    value: `16px`,
+    desc: `推荐`,
+  },
+  {
+    label: `17px`,
+    value: `17px`,
+    desc: `稍大`,
+  },
+  {
+    label: `18px`,
+    value: `18px`,
+    desc: `更大`,
+  },
+]
 
-  const mergeProperties = <T extends Block | Inline = Block>(target: Record<T, PropertiesHyphen>, source: Partial<Record<Block | Inline, PropertiesHyphen>>, keys: T[]) => {
-    keys.forEach((key) => {
-      if (source[key]) {
-        target[key] = Object.assign(target[key] || {}, source[key])
-      }
-    })
-  }
+export const colorOptions: IConfigOption[] = [
+  {
+    label: `经典蓝`,
+    value: `#0F4C81`,
+    desc: `稳重冷静`,
+  },
+  {
+    label: `翡翠绿`,
+    value: `#009874`,
+    desc: `自然平衡`,
+  },
+  {
+    label: `活力橘`,
+    value: `#FA5151`,
+    desc: `热情活力`,
+  },
+  {
+    label: `柠檬黄`,
+    value: `#FECE00`,
+    desc: `明亮温暖`,
+  },
+  {
+    label: `薰衣紫`,
+    value: `#92617E`,
+    desc: `优雅神秘`,
+  },
+  {
+    label: `天空蓝`,
+    value: `#55C9EA`,
+    desc: `清爽自由`,
+  },
+  {
+    label: `玫瑰金', color: '#B76E79' },
+    { name: '橄榄绿', color: '#556B2F' },
+    { name: '石墨黑', color: '#333333' },
+    { name: '雾烟灰', color: '#A9A9A9' },
+    { name: '樱花粉', color: '#FFB7C5' },
+];
 
-  const blockKeys: Block[] = [
-    `container`,
-    `h1`,
-    `h2`,
-    `h3`,
-    `h4`,
-    `h5`,
-    `h6`,
-    `code`,
-    `code_pre`,
-    `p`,
-    `hr`,
-    `blockquote`,
-    `blockquote_p`,
-    `image`,
-    `ul`,
-    `ol`,
-    `block_katex`,
-  ]
-  const inlineKeys: Inline[] = [`listitem`, `codespan`, `link`, `wx_link`, `strong`, `table`, `thead`, `td`, `footnote`, `figcaption`, `em`, `inline_katex`]
+const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCodeBlockCss, setCustomCodeBlockCss, onSaveCustomCss }: StylePanelProps) => {
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [layoutThemes, setLayoutThemes] = useState<{ name: string; path: string }[]>([]);
+    const [codeBlockThemes, setCodeBlockThemes] = useState<{ name: string; path: string }[]>([]);
+    const [customStyles, setCustomStyles] = useState<{ name: string; path: string }[]>([]);
+    const [customColor, setCustomColor] = useState(opts.primaryColor || '#007bff');
 
-  mergeProperties(newTheme.block, jsonString, blockKeys)
-  mergeProperties(newTheme.inline, jsonString, inlineKeys)
-  return newTheme
-}
+    useEffect(() => {
+        if (app) {
+            getLayoutThemes(app).then(themes => setLayoutThemes(themes));
+            getCodeBlockThemes(app).then(themes => setCodeBlockThemes(themes));
+            getCustomStyles(app).then(styles => setCustomStyles(styles));
+        }
+        setCustomColor(opts.primaryColor || '#007bff');
+    }, [opts.primaryColor, app]);
 
-export function css2json(css: string): Partial<Record<Block | Inline, PropertiesHyphen>> {
-  // 去除所有 CSS 注释
-  css = css.replace(/\/\*[\s\S]*?\*\//g, ``)
+    const handleValueChange = (key: keyof MPEasySettings, value: any) => {
+        onOptsChange({ [key]: value });
+    };
 
-  const json: Partial<Record<Block | Inline, PropertiesHyphen>> = {}
+    const handleCustomColorApply = () => {
+        handleValueChange('primaryColor', customColor);
+    };
 
-  // 辅助函数：将声明数组转换为对象
-  const toObject = (array: any[]) =>
-    array.reduce<{ [k: string]: string }>((obj, item) => {
-      const [property, ...value] = item.split(`:`).map((part: string) => part.trim())
-      if (property)
-        obj[property] = value.join(`:`)
-      return obj
-    }, {})
+    return (
+        <div className="style-panel-container mpeasy-style-panel-container">
+            <div className="style-panel-header mpeasy-style-panel-header" onClick={() => setIsCollapsed(!isCollapsed)}>
+                <h3 className="style-panel-title mpeasy-style-panel-title">
+                    样式与功能
+                </h3>
+                <div className="mpeasy-style-panel-header-toggle" style={{ transform: isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)' }}>
+                    <span className="mpeasy-style-panel-header-toggle-icon">∨</span>
+                </div>
+            </div>
+            {!isCollapsed && (
+                <form className="style-panel-form" style={{ padding: '0 8px' }}>
+                <div className="style-panel-item">
+                    <label>排版主题</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                            type="button"
+                            style={{
+                                padding: '4px 12px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                backgroundColor: opts.layoutThemeName === 'ref-classic' ? '#cce7ff' : '#fff'
+                            }}
+                            onClick={() => handleValueChange('layoutThemeName', 'ref-classic')}
+                        >
+                            经典
+                        </button>
+                        <button
+                            type="button"
+                            style={{
+                                padding: '4px 12px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                backgroundColor: opts.layoutThemeName === 'ref-elegant' ? '#cce7ff' : '#fff'
+                            }}
+                            onClick={() => handleValueChange('layoutThemeName', 'ref-elegant')}
+                        >
+                            优雅
+                        </button>
+                        <button
+                            type="button"
+                            style={{
+                                padding: '4px 12px',
+                                border: '1px solid #ccc',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                backgroundColor: opts.layoutThemeName === 'ref-simple' ? '#cce7ff' : '#fff'
+                            }}
+                            onClick={() => handleValueChange('layoutThemeName', 'ref-simple')}
+                        >
+                            简洁
+                        </button>
+                    </div>
+                </div>
 
-  while (css.includes(`{`) && css.includes(`}`)) {
-    const lbracket = css.indexOf(`{`)
-    const rbracket = css.indexOf(`}`)
+                <div className="style-panel-item">
+                    <label>代码块主题</label>
+                    <select
+                        value={opts.codeThemeName || 'atom-one-dark'}
+                        onChange={(e) => handleValueChange('codeThemeName', e.target.value)}
+                    >
+                        {codeBlockThemes.map(theme => (
+                            <option key={theme.name} value={theme.path}>{theme.name}</option>
+                        ))}
+                    </select>
+                </div>
 
-    // 获取声明块并转换为对象
-    const declarations = css.substring(lbracket + 1, rbracket)
-      .split(`;`)
-      .map(e => e.trim())
-      .filter(Boolean)
+                <div className="style-panel-item">
+                    <label>自定义样式</label>
+                    <select
+                        value={opts.customStyleName || 'none'}
+                        onChange={(e) => handleValueChange('customStyleName', e.target.value)}
+                    >
+                        {customStyles.map(style => (
+                            <option key={style.name} value={style.path}>{style.name}</option>
+                        ))}
+                    </select>
+                </div>
 
-    // 获取选择器并去除空格
-    const selectors = css.substring(0, lbracket)
-      .split(`,`)
-      .map(selector => selector.trim()) as (Block | Inline)[]
+                <div className="style-panel-item-column" style={{ margin: '0 5px' }}>
+                    <button
+    type="button"
+    className="mpeasy-custom-color-button"
+    onClick={(e) => {
+        const colorBox = e.currentTarget.nextElementSibling;
+        if (colorBox) {
+            colorBox.style.display = colorBox.style.display === 'none' ? 'block' : 'none';
+            e.currentTarget.style.borderRadius = colorBox.style.display === 'none' ? '12px' : '12px 12px 0 0';
+        }
+    }}
+>
+    <span>自定义主题色</span>
+    <span className="mpeasy-custom-color-button-icon">▼</span>
+</button>
+                    <div className="mpeasy-custom-color-panel">
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
+                            <input
+                                type="color"
+                                value={customColor}
+                                onChange={(e) => setCustomColor(e.target.value)}
+                                className="mpeasy-color-picker-input"
+                            />
+                            <input
+                                type="text"
+                                value={customColor}
+                                onChange={(e) => setCustomColor(e.target.value)}
+                                className="mpeasy-color-text-input"
+                            />
+                            <button 
+                                type="button" 
+                                onClick={handleCustomColorApply} 
+                                className="mpeasy-color-apply-button"
+                            >
+                                确定
+                            </button>
+                        </div>
+                        
+                        <div style={{
+                            borderTop: '1px solid #cce7ff',
+                            paddingTop: '12px'
+                        }}>
+                            <div className="color-preset-grid">
+                                {PRESET_COLORS.map(preset => (
+                                    <div
+                                        key={preset.name}
+                                        className={`color-preset-item mpeasy-color-preset-item ${opts.primaryColor === preset.color ? 'selected' : ''}`}
+                                        onClick={() => handleValueChange('primaryColor', preset.color)}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            padding: '6px 8px',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            backgroundColor: opts.primaryColor === preset.color ? '#cce7ff' : 'transparent'
+                                        }}
+                                    >
+                                        <div 
+                                            className="color-swatch mpeasy-color-swatch" 
+                                            style={{ 
+                                                backgroundColor: preset.color,
+                                                width: '20px',
+                                                height: '20px',
+                                                borderRadius: '50%',
+                                                marginRight: '8px',
+                                                border: '1px solid #ddd'
+                                            }}
+                                        ></div>
+                                        <span className="mpeasy-color-preset-name">{preset.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    const declarationObj = toObject(declarations)
+                <div className="style-panel-item">
+                    <label>字体大小</label>
+                    <Combobox
+                        options={['13px', '14px', '15px', '16px', '17px', '18px', '20px', '22px', '24px']}
+                        value={opts.fontSize || '16px'}
+                        onChange={(newValue) => handleValueChange('fontSize', newValue)}
+                        placeholder="例如: 16px"
+                    />
+                </div>
 
-    // 将声明对象关联到相应的选择器
-    selectors.forEach((selector) => {
-      json[selector] = { ...(json[selector] || {}), ...declarationObj }
-    })
+                <div className="style-panel-item">
+                    <label>图注显示</label>
+                    <select
+                        value={opts.legend || 'alt'}
+                        onChange={(e) => handleValueChange('legend', e.target.value)}
+                    >
+                        <option value="alt">图片下方显示 alt</option>
+                        <option value="title">图片下方显示 title</option>
+                        <option value="none">不显示</option>
+                    </select>
+                </div>
 
-    // 处理下一个声明块
-    css = css.slice(rbracket + 1).trim()
-  }
+                <div className="style-panel-item">
+                    <label>首行缩进</label>
+                    <input
+                        type="checkbox"
+                        checked={opts.isUseIndent || false}
+                        onChange={(e) => handleValueChange('isUseIndent', e.target.checked)}
+                    />
+                </div>
 
-  return json
-}
+                <div className="style-panel-item">
+                    <label>Mac 代码块</label>
+                    <input
+                        type="checkbox"
+                        checked={opts.isMacCodeBlock || false}
+                        onChange={(e) => handleValueChange('isMacCodeBlock', e.target.checked)}
+                    />
+                </div>
 
-export function getStyleString(style: ExtendedProperties): string {
-  return Object.entries(style ?? {}).map(([key, value]) => `${key}: ${value}`).join(`; `)
-}
+                <div className="style-panel-item">
+                    <label>文末引用</label>
+                    <input
+                        type="checkbox"
+                        checked={opts.isCiteStatus || false}
+                        onChange={(e) => handleValueChange('isCiteStatus', e.target.checked)}
+                    />
+                </div>
+
+                <div className="style-panel-item">
+                    <label>字数统计</label>
+                    <input
+                        type="checkbox"
+                        checked={opts.isCountStatus || false}
+                        onChange={(e) => handleValueChange('isCountStatus', e.target.checked)}
+                    />
+                </div>
+
+                <div className="style-panel-item">
+                    <label>启用自定义 CSS</label>
+                    <input
+                        type="checkbox"
+                        checked={opts.useCustomCSS || false}
+                        onChange={(e) => handleValueChange('useCustomCSS', e.target.checked)}
+                    />
+                </div>
+
+                <div className="style-panel-item-column">
+                    <label>自定义CSS</label>
+                    <CssEditor value={customCss} onChange={setCustomCss} />
+                    <button type="button" onClick={onSaveCustomCss}>保存自定义CSS</button>
+                </div>
+
+                
+            </form>
+            )}
+        </div>
+    );
+};
+
+export default StylePanel;
