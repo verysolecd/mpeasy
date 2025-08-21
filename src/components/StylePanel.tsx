@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import type { IOpts, MPEasySettings } from '../types';
-import { getLayoutThemes, getCodeBlockThemes, getCustomStyles } from '../utils';
+import { getLayoutThemes, getCodeBlockThemes } from '../utils';
 import Combobox from './Combobox';
 import { App } from 'obsidian';
 import CssEditor from './CssEditor';
@@ -31,15 +31,16 @@ const PRESET_COLORS = [
 
 const StylePanel = ({ settings, onSettingsChange, app, customCss, setCustomCss, onSaveCustomCss }: StylePanelProps) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isWeChatSettingsCollapsed, setIsWeChatSettingsCollapsed] = useState(false); // Added this line
     const [layoutThemes, setLayoutThemes] = useState<{ name: string; path: string }[]>([]);
     const [codeBlockThemes, setCodeBlockThemes] = useState<{ name: string; path: string }[]>([]);
-    const [customStyles, setCustomStyles] = useState<{ name: string; path: string }[]>([]);
+    
 
     useEffect(() => {
         if (app) {
             getLayoutThemes(app).then(themes => setLayoutThemes(themes));
             getCodeBlockThemes(app).then(themes => setCodeBlockThemes(themes));
-            getCustomStyles(app).then(styles => setCustomStyles(styles));
+            
         }
     }, [app]);
 
@@ -53,6 +54,52 @@ const StylePanel = ({ settings, onSettingsChange, app, customCss, setCustomCss, 
 
     return (
         <div className="style-panel-container mpeasy-style-panel-container">
+
+<div className="wechat-article-settings-container">
+                    <div className="wechat-article-settings-header" onClick={() => setIsWeChatSettingsCollapsed(!isWeChatSettingsCollapsed)}>
+                        <h3 className="wechat-article-settings-title">
+                            公众号文章设置
+                        </h3>
+                        <div className="wechat-article-settings-toggle" style={{
+                            transform: isWeChatSettingsCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+                        }}>
+                            <span className="wechat-article-settings-toggle-icon">∨</span>
+                        </div>
+                    </div>
+                    {!isWeChatSettingsCollapsed && (
+                        <form className="style-panel-form">
+                        <div className="style-panel-item">
+                            <label>开启评论</label>
+                            <input
+                                type="checkbox"
+                                checked={settings.enableComments}
+                                onChange={(e) => onSettingsChange({ enableComments: e.target.checked })}
+                            />
+                        </div>
+
+                        <div className="style-panel-item">
+                            <label>仅粉丝可评论</label>
+                            <input
+                                type="checkbox"
+                                checked={settings.onlyFansCanComment}
+                                onChange={(e) => onSettingsChange({ onlyFansCanComment: e.target.checked })}
+                            />
+                        </div>
+                    </form>
+                    )}
+                </div>
+
+
+
+
+
+
+
+
+
+
+
+
             <div className="style-panel-header mpeasy-style-panel-header" onClick={() => setIsCollapsed(!isCollapsed)}>
                 <h3 className="style-panel-title mpeasy-style-panel-title">
                     样式与功能
@@ -120,17 +167,7 @@ const StylePanel = ({ settings, onSettingsChange, app, customCss, setCustomCss, 
                     </select>
                 </div>
 
-                <div className="style-panel-item">
-                    <label>自定义样式</label>
-                    <select
-                        value={settings.customStyleName || 'none'}
-                        onChange={(e) => onSettingsChange({ customStyleName: e.target.value })}
-                    >
-                        {customStyles.map(style => (
-                            <option key={style.name} value={style.path}>{style.name}</option>
-                        ))}
-                    </select>
-                </div>
+                
 
                 <div className="style-panel-item-column" style={{ margin: '0 5px' }}>
                     <button
@@ -202,6 +239,8 @@ const StylePanel = ({ settings, onSettingsChange, app, customCss, setCustomCss, 
                     </div>
                 </div>
 
+                
+
                 <div className="style-panel-item">
                     <label>字体大小</label>
                     <Combobox
@@ -267,15 +306,7 @@ const StylePanel = ({ settings, onSettingsChange, app, customCss, setCustomCss, 
                         checked={settings.useCustomCSS || false}
                         onChange={(e) => onSettingsChange({ useCustomCSS: e.target.checked })}
                     />
-                </div>
-
-                <div className="style-panel-item-column">
-                    <label>自定义CSS</label>
-                    <CssEditor value={customCss} onChange={setCustomCss} />
-                    <button type="button" onClick={onSaveCustomCss}>保存自定义CSS</button>
-                </div>
-
-                
+                </div>                
             </form>
             )}
         </div>

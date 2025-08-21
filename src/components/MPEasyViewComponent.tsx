@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { App, Notice, TFile, MarkdownView, normalizePath, requestUrl } from 'obsidian';
 import Header from './Header';
 import StylePanel from './StylePanel';
-import WeChatArticleSettings from './WeChatArticleSettings';
 import { initRenderer, parseFrontMatterAndContent } from '../core/renderer';
 import type { RendererAPI, IOpts } from '../types';
 import { UploadModal } from './UploadModal';
@@ -382,7 +381,6 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
                     />
                 </div>
                 <div className="mpeasy-right-panel">
-                    <WeChatArticleSettings settings={settings} onSettingsChange={onSettingsChange} />
                     <StylePanel
                         settings={settings}
                         onSettingsChange={onSettingsChange}

@@ -50,7 +50,7 @@
 
 /* Style Panel Styles */
 .style-panel-container {
-    padding: 10px;
+    padding: 10px 0;
     border-left: 1px solid var(--background-modifier-border);
 }
 
@@ -86,6 +86,56 @@
 .style-panel-form select,
 .style-panel-form input {
     max-width: 60%;
+}
+
+/* Styles for Style Panel Header (matching WeChat settings button) */
+.mpeasy-style-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--background-secondary); /* Use Obsidian variable for consistency */
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.mpeasy-style-panel-header-toggle {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--background-primary); /* Use Obsidian variable */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    transition: all 0.2s ease;
+}
+
+.mpeasy-style-panel-header-toggle-icon {
+    font-size: 12px;
+    color: var(--text-muted); /* Use Obsidian variable */
+}
+
+.mpeasy-style-panel-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-normal); /* Use Obsidian variable */
+}
+
+/* Styles for Custom Color Panel with shadow */
+.mpeasy-custom-color-panel {
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    background-color: var(--background-secondary);
+    margin-top: 8px;
+    width: 100%;
 }
 
 /* Combobox Styles */
@@ -224,4 +274,53 @@
 
 .custom-color-apply-btn {
     /* Standard button styles will apply */
+}
+
+/* WeChat Article Settings Styles */
+.wechat-article-settings-container {
+    margin-bottom: 16px;
+    padding: 0;
+}
+
+.wechat-article-settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f5f5f5;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wechat-article-settings-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.wechat-article-settings-toggle {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    transition: all 0.2s ease;
+}
+
+.wechat-article-settings-toggle-icon {
+    font-size: 12px;
+    color: #666;
+}
+
+.style-panel-form {
+    padding: 0 8px;
 }
