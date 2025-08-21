@@ -2,7 +2,9 @@ import { ItemView, WorkspaceLeaf, Editor, TFile } from "obsidian";
 import * as React from "react";
 import { createRoot, Root } from "react-dom/client";
 import MPEasyViewComponent from "./MPEasyViewComponent";
-import type MPEasyPlugin from "./main";
+import type MPEasyPlugin from "../main";
+import { MPEasySettings } from "src/settings";
+
 
 export const VIEW_TYPE_MPEASY = "mpeasy-preview-view";
 
@@ -15,6 +17,15 @@ export class MPEasyView extends ItemView {
         super(leaf);
         this.plugin = plugin;
     }
+
+    // Method to update settings and re-render
+    updateSettings = async (newSettings: Partial<MPEasySettings>) => {
+        this.plugin.settings = { ...this.plugin.settings, ...newSettings };
+        await this.plugin.saveSettings();
+        if (this.linkedFile) {
+            this.renderComponent(this.linkedFile);
+        }
+    };
 
     // This method will be called by the React component to update the view content
     renderComponent = (file: TFile) => {
@@ -32,6 +43,7 @@ export class MPEasyView extends ItemView {
             app: this.app, 
             plugin: this.plugin,
             settings: this.plugin.settings,
+            onSettingsChange: this.updateSettings, // Pass the updater function
             customCss: this.plugin.customCss,
             mermaidPath: mermaidPath,
             mathjaxPath: mathjaxPath,

@@ -1,17 +1,14 @@
 import * as React from 'react';
 import { useState } from 'react';
-import type { IOpts } from '../types';
+import type { MPEasySettings } from '../settings';
 
 interface WeChatArticleSettingsProps {
-    opts: Partial<IOpts>;
-    onOptsChange: (newOpts: Partial<IOpts>) => void;
+    settings: MPEasySettings;
+    onSettingsChange: (newSettings: Partial<MPEasySettings>) => void;
 }
 
-const WeChatArticleSettings = ({ opts, onOptsChange }: WeChatArticleSettingsProps) => {
+const WeChatArticleSettings = ({ settings, onSettingsChange }: WeChatArticleSettingsProps) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const handleValueChange = (key: keyof IOpts, value: any) => {
-        onOptsChange({ [key]: value });
-    };
 
     return (
         <div className="wechat-article-settings-container" style={{ marginBottom: '16px', padding: '0' }}>
@@ -53,17 +50,17 @@ const WeChatArticleSettings = ({ opts, onOptsChange }: WeChatArticleSettingsProp
                     <label>开启评论</label>
                     <input
                         type="checkbox"
-                        checked={opts.enableComments !== false}
-                        onChange={(e) => handleValueChange('enableComments', e.target.checked)}
+                        checked={settings.enableComments}
+                        onChange={(e) => onSettingsChange({ enableComments: e.target.checked })}
                     />
                 </div>
 
                 <div className="style-panel-item">
-                    <label>允许所有人评论</label>
+                    <label>仅粉丝可评论</label>
                     <input
                         type="checkbox"
-                        checked={opts.onlyFansCanComment !== false}
-                        onChange={(e) => handleValueChange('onlyFansCanComment', e.target.checked)}
+                        checked={settings.onlyFansCanComment}
+                        onChange={(e) => onSettingsChange({ onlyFansCanComment: e.target.checked })}
                     />
                 </div>
             </form>

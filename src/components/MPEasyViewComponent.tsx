@@ -12,71 +12,28 @@ import { processLocalImages } from '../core/htmlPostProcessor';
 import type MPEasyPlugin from '../../main';
 import { preprocessMarkdown } from '../utils';
 
+import { MPEasySettings } from '../settings';
+
 interface MPEasyViewProps {
     file: TFile;
     app: App;
     plugin: MPEasyPlugin;
+    settings: MPEasySettings;
+    onSettingsChange: (newSettings: Partial<MPEasySettings>) => void;
     customCss: string;
     mermaidPath: string;
     mathjaxPath: string;
 }
 
-const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MPEasyViewProps) => {
+const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, mermaidPath, mathjaxPath }: MPEasyViewProps) => {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const [rendererApi, setRendererApi] = useState<RendererAPI | null>(null);
     const [markdownContent, setMarkdownContent] = useState('');
-    const [customCss, setCustomCss] = useState(plugin.settings.customCss);
+    const [customCss, setCustomCss] = useState(settings.customCss);
     const [obsidianTheme, setObsidianTheme] = useState<'light' | 'dark'>('light');
     const scrollListenersRef = useRef<{ cleanUp: () => void } | null>(null);
 
-    const [opts, setOpts] = useState<Partial<IOpts>>({
-        layoutThemeName: plugin.settings.layoutThemeName,
-        fontSize: plugin.settings.fontSize,
-        isUseIndent: plugin.settings.isUseIndent,
-        primaryColor: plugin.settings.primaryColor,
-        legend: plugin.settings.legend,
-        isMacCodeBlock: plugin.settings.isMacCodeBlock,
-        isCiteStatus: plugin.settings.isCiteStatus,
-        isCountStatus: plugin.settings.isCountStatus,
-        codeThemeName: plugin.settings.codeThemeName,
-        customStyleName: plugin.settings.customStyleName,
-        enableComments: plugin.settings.enableComments,
-        onlyFansCanComment: plugin.settings.onlyFansCanComment,
-    });
-
-    useEffect(() => {
-        setOpts(prevOpts => ({
-            ...prevOpts,
-            layoutThemeName: plugin.settings.layoutThemeName,
-            codeThemeName: plugin.settings.codeThemeName,
-            customStyleName: plugin.settings.customStyleName,
-            fontSize: plugin.settings.fontSize,
-            primaryColor: plugin.settings.primaryColor,
-            isUseIndent: plugin.settings.isUseIndent,
-            legend: plugin.settings.legend,
-            isMacCodeBlock: plugin.settings.isMacCodeBlock,
-            isCiteStatus: plugin.settings.isCiteStatus,
-            isCountStatus: plugin.settings.isCountStatus,
-            enableComments: plugin.settings.enableComments,
-            onlyFansCanComment: plugin.settings.onlyFansCanComment,
-            customCss: plugin.settings.customCss,
-        }));
-        setCustomCss(plugin.settings.customCss);
-    }, [
-        plugin.settings.layoutThemeName,
-        plugin.settings.codeThemeName,
-        plugin.settings.customStyleName,
-        plugin.settings.fontSize,
-        plugin.settings.primaryColor,
-        plugin.settings.isUseIndent,
-        plugin.settings.legend,
-        plugin.settings.isMacCodeBlock,
-        plugin.settings.isCiteStatus,
-        plugin.settings.isCountStatus,
-        plugin.settings.enableComments,
-        plugin.settings.onlyFansCanComment,
-        plugin.settings.customCss,
-    ]);
+    
 
     useEffect(() => {
         const getTheme = () => document.body.classList.contains('theme-dark') ? 'dark' : 'light';
@@ -99,7 +56,7 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
     useEffect(() => {
         if (!iframeRef.current) return;
         const initialOpts: Partial<IOpts> = {
-            ...opts,
+            ...settings,
             layoutThemeName: plugin.settings.layoutThemeName,
             codeThemeName: plugin.settings.codeThemeName,
             customCSS: customCss,
@@ -113,9 +70,9 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
 
     useEffect(() => {
         if (rendererApi) {
-            rendererApi.setOptions({ ...opts, obsidianTheme: obsidianTheme });
+            rendererApi.setOptions({ ...settings, obsidianTheme: obsidianTheme });
         }
-    }, [opts, rendererApi, obsidianTheme]);
+    }, [settings, rendererApi, obsidianTheme]);
 
     const handleRefresh = () => {
         if (file) {
@@ -298,17 +255,11 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
     };
 
     const handleSaveCustomCss = () => {
-        plugin.settings.customCss = customCss;
-        plugin.saveSettings();
+        onSettingsChange({ customCss: customCss });
         new Notice('自定义CSS已保存!');
     };
 
-    const handleOptsChange = (newOpts: Partial<IOpts>) => {
-        const updatedOpts = { ...opts, ...newOpts };
-        setOpts(updatedOpts);
-        Object.assign(plugin.settings, updatedOpts);
-        plugin.saveSettings();
-    };
+    
 
     useEffect(() => {
         if (!rendererApi || !iframeRef.current || !markdownContent) return;
@@ -416,7 +367,7 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
                 scrollListenersRef.current.cleanUp();
             }
         };
-    }, [markdownContent, rendererApi, opts, plugin, customCss, mermaidPath, app.workspace, obsidianTheme]);
+    }, [markdownContent, rendererApi, settings, plugin, customCss, mermaidPath, app.workspace, obsidianTheme]);
 
     return (
         <div className="mpeasy-view-container">
@@ -431,10 +382,10 @@ const MPEasyViewComponent = ({ file, app, plugin, mermaidPath, mathjaxPath }: MP
                     />
                 </div>
                 <div className="mpeasy-right-panel">
-                    <WeChatArticleSettings opts={opts} onOptsChange={handleOptsChange} />
+                    <WeChatArticleSettings settings={settings} onSettingsChange={onSettingsChange} />
                     <StylePanel
-                        opts={opts}
-                        onOptsChange={handleOptsChange}
+                        settings={settings}
+                        onSettingsChange={onSettingsChange}
                         app={app}
                         customCss={customCss}
                         setCustomCss={setCustomCss}

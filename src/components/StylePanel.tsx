@@ -7,13 +7,11 @@ import { App } from 'obsidian';
 import CssEditor from './CssEditor';
 
 interface StylePanelProps {
-    opts: Partial<IOpts>;
-    onOptsChange: (newOpts: Partial<MPEasySettings>) => void;
+    settings: MPEasySettings;
+    onSettingsChange: (newSettings: Partial<MPEasySettings>) => void;
     app: App;
     customCss: string;
     setCustomCss: (css: string) => void;
-    customCodeBlockCss: string;
-    setCustomCodeBlockCss: (css: string) => void;
     onSaveCustomCss: () => void;
 }
 
@@ -31,12 +29,11 @@ const PRESET_COLORS = [
     { name: '樱花粉', color: '#FFB7C5' },
 ];
 
-const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCodeBlockCss, setCustomCodeBlockCss, onSaveCustomCss }: StylePanelProps) => {
+const StylePanel = ({ settings, onSettingsChange, app, customCss, setCustomCss, onSaveCustomCss }: StylePanelProps) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [layoutThemes, setLayoutThemes] = useState<{ name: string; path: string }[]>([]);
     const [codeBlockThemes, setCodeBlockThemes] = useState<{ name: string; path: string }[]>([]);
     const [customStyles, setCustomStyles] = useState<{ name: string; path: string }[]>([]);
-    const [customColor, setCustomColor] = useState(opts.primaryColor || '#007bff');
 
     useEffect(() => {
         if (app) {
@@ -44,8 +41,7 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
             getCodeBlockThemes(app).then(themes => setCodeBlockThemes(themes));
             getCustomStyles(app).then(styles => setCustomStyles(styles));
         }
-        setCustomColor(opts.primaryColor || '#007bff');
-    }, [opts.primaryColor, app]);
+    }, [app]);
 
     const handleValueChange = (key: keyof MPEasySettings, value: any) => {
         onOptsChange({ [key]: value });
@@ -77,9 +73,9 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                                 border: '1px solid #ccc',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
-                                backgroundColor: opts.layoutThemeName === 'ref-classic' ? '#cce7ff' : '#fff'
+                                backgroundColor: settings.layoutThemeName === 'ref-classic' ? '#cce7ff' : '#fff'
                             }}
-                            onClick={() => handleValueChange('layoutThemeName', 'ref-classic')}
+                            onClick={() => onSettingsChange({ layoutThemeName: 'ref-classic' })}
                         >
                             经典
                         </button>
@@ -90,9 +86,9 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                                 border: '1px solid #ccc',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
-                                backgroundColor: opts.layoutThemeName === 'ref-elegant' ? '#cce7ff' : '#fff'
+                                backgroundColor: settings.layoutThemeName === 'ref-elegant' ? '#cce7ff' : '#fff'
                             }}
-                            onClick={() => handleValueChange('layoutThemeName', 'ref-elegant')}
+                            onClick={() => onSettingsChange({ layoutThemeName: 'ref-elegant' })}
                         >
                             优雅
                         </button>
@@ -103,9 +99,9 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                                 border: '1px solid #ccc',
                                 borderRadius: '4px',
                                 cursor: 'pointer',
-                                backgroundColor: opts.layoutThemeName === 'ref-simple' ? '#cce7ff' : '#fff'
+                                backgroundColor: settings.layoutThemeName === 'ref-simple' ? '#cce7ff' : '#fff'
                             }}
-                            onClick={() => handleValueChange('layoutThemeName', 'ref-simple')}
+                            onClick={() => onSettingsChange({ layoutThemeName: 'ref-simple' })}
                         >
                             简洁
                         </button>
@@ -115,8 +111,8 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                 <div className="style-panel-item">
                     <label>代码块主题</label>
                     <select
-                        value={opts.codeThemeName || 'atom-one-dark'}
-                        onChange={(e) => handleValueChange('codeThemeName', e.target.value)}
+                        value={settings.codeThemeName || 'atom-one-dark'}
+                        onChange={(e) => onSettingsChange({ codeThemeName: e.target.value })}
                     >
                         {codeBlockThemes.map(theme => (
                             <option key={theme.name} value={theme.path}>{theme.name}</option>
@@ -127,8 +123,8 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                 <div className="style-panel-item">
                     <label>自定义样式</label>
                     <select
-                        value={opts.customStyleName || 'none'}
-                        onChange={(e) => handleValueChange('customStyleName', e.target.value)}
+                        value={settings.customStyleName || 'none'}
+                        onChange={(e) => onSettingsChange({ customStyleName: e.target.value })}
                     >
                         {customStyles.map(style => (
                             <option key={style.name} value={style.path}>{style.name}</option>
@@ -138,40 +134,33 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
 
                 <div className="style-panel-item-column" style={{ margin: '0 5px' }}>
                     <button
-    type="button"
-    className="mpeasy-custom-color-button"
-    onClick={(e) => {
-        const colorBox = e.currentTarget.nextElementSibling;
-        if (colorBox) {
-            colorBox.style.display = colorBox.style.display === 'none' ? 'block' : 'none';
-            e.currentTarget.style.borderRadius = colorBox.style.display === 'none' ? '12px' : '12px 12px 0 0';
-        }
-    }}
->
-    <span>自定义主题色</span>
-    <span className="mpeasy-custom-color-button-icon">▼</span>
-</button>
+                        type="button"
+                        className="mpeasy-custom-color-button"
+                        onClick={(e) => {
+                            const colorBox = e.currentTarget.nextElementSibling;
+                            if (colorBox) {
+                                colorBox.style.display = colorBox.style.display === 'none' ? 'block' : 'none';
+                                e.currentTarget.style.borderRadius = colorBox.style.display === 'none' ? '12px' : '12px 12px 0 0';
+                            }
+                        }}
+                    >
+                        <span>自定义主题色</span>
+                        <span className="mpeasy-custom-color-button-icon">▼</span>
+                    </button>
                     <div className="mpeasy-custom-color-panel">
                         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
                             <input
                                 type="color"
-                                value={customColor}
-                                onChange={(e) => setCustomColor(e.target.value)}
+                                value={settings.primaryColor}
+                                onChange={(e) => onSettingsChange({ primaryColor: e.target.value })}
                                 className="mpeasy-color-picker-input"
                             />
                             <input
                                 type="text"
-                                value={customColor}
-                                onChange={(e) => setCustomColor(e.target.value)}
+                                value={settings.primaryColor}
+                                onChange={(e) => onSettingsChange({ primaryColor: e.target.value })}
                                 className="mpeasy-color-text-input"
                             />
-                            <button 
-                                type="button" 
-                                onClick={handleCustomColorApply} 
-                                className="mpeasy-color-apply-button"
-                            >
-                                确定
-                            </button>
                         </div>
                         
                         <div style={{
@@ -182,8 +171,8 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                                 {PRESET_COLORS.map(preset => (
                                     <div
                                         key={preset.name}
-                                        className={`color-preset-item mpeasy-color-preset-item ${opts.primaryColor === preset.color ? 'selected' : ''}`}
-                                        onClick={() => handleValueChange('primaryColor', preset.color)}
+                                        className={`color-preset-item mpeasy-color-preset-item ${settings.primaryColor === preset.color ? 'selected' : ''}`}
+                                        onClick={() => onSettingsChange({ primaryColor: preset.color })}
                                         style={{
                                             display: 'flex',
                                             alignItems: 'center',
@@ -191,7 +180,7 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                                             borderRadius: '6px',
                                             cursor: 'pointer',
                                             transition: 'all 0.2s ease',
-                                            backgroundColor: opts.primaryColor === preset.color ? '#cce7ff' : 'transparent'
+                                            backgroundColor: settings.primaryColor === preset.color ? '#cce7ff' : 'transparent'
                                         }}
                                     >
                                         <div 
@@ -217,8 +206,8 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                     <label>字体大小</label>
                     <Combobox
                         options={['13px', '14px', '15px', '16px', '17px', '18px', '20px', '22px', '24px']}
-                        value={opts.fontSize || '16px'}
-                        onChange={(newValue) => handleValueChange('fontSize', newValue)}
+                        value={settings.fontSize || '16px'}
+                        onChange={(newValue) => onSettingsChange({ fontSize: newValue })}
                         placeholder="例如: 16px"
                     />
                 </div>
@@ -226,8 +215,8 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                 <div className="style-panel-item">
                     <label>图注显示</label>
                     <select
-                        value={opts.legend || 'alt'}
-                        onChange={(e) => handleValueChange('legend', e.target.value)}
+                        value={settings.legend || 'alt'}
+                        onChange={(e) => onSettingsChange({ legend: e.target.value })}
                     >
                         <option value="alt">图片下方显示 alt</option>
                         <option value="title">图片下方显示 title</option>
@@ -239,8 +228,8 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                     <label>首行缩进</label>
                     <input
                         type="checkbox"
-                        checked={opts.isUseIndent || false}
-                        onChange={(e) => handleValueChange('isUseIndent', e.target.checked)}
+                        checked={settings.isUseIndent || false}
+                        onChange={(e) => onSettingsChange({ isUseIndent: e.target.checked })}
                     />
                 </div>
 
@@ -248,8 +237,8 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                     <label>Mac 代码块</label>
                     <input
                         type="checkbox"
-                        checked={opts.isMacCodeBlock || false}
-                        onChange={(e) => handleValueChange('isMacCodeBlock', e.target.checked)}
+                        checked={settings.isMacCodeBlock || false}
+                        onChange={(e) => onSettingsChange({ isMacCodeBlock: e.target.checked })}
                     />
                 </div>
 
@@ -257,8 +246,8 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                     <label>文末引用</label>
                     <input
                         type="checkbox"
-                        checked={opts.isCiteStatus || false}
-                        onChange={(e) => handleValueChange('isCiteStatus', e.target.checked)}
+                        checked={settings.isCiteStatus || false}
+                        onChange={(e) => onSettingsChange({ isCiteStatus: e.target.checked })}
                     />
                 </div>
 
@@ -266,8 +255,8 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                     <label>字数统计</label>
                     <input
                         type="checkbox"
-                        checked={opts.isCountStatus || false}
-                        onChange={(e) => handleValueChange('isCountStatus', e.target.checked)}
+                        checked={settings.isCountStatus || false}
+                        onChange={(e) => onSettingsChange({ isCountStatus: e.target.checked })}
                     />
                 </div>
 
@@ -275,8 +264,8 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                     <label>启用自定义 CSS</label>
                     <input
                         type="checkbox"
-                        checked={opts.useCustomCSS || false}
-                        onChange={(e) => handleValueChange('useCustomCSS', e.target.checked)}
+                        checked={settings.useCustomCSS || false}
+                        onChange={(e) => onSettingsChange({ useCustomCSS: e.target.checked })}
                     />
                 </div>
 

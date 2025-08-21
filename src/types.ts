@@ -1,5 +1,6 @@
 import type { PropertiesHyphen } from 'csstype';
 import type { ReadTimeResults } from 'reading-time';
+import type { MPEasySettings } from './settings';
 
 
 type GFMBlock = `blockquote_note` | `blockquote_tip` | `blockquote_info` | `blockquote_important` | `blockquote_warning` | `blockquote_caution`
@@ -51,11 +52,11 @@ export type ThemeStyles = Record<Block | Inline, ExtendedProperties>
 
 // API returned by the renderer initializer
 export interface RendererAPI {
-    setOptions(newOpts: Partial<IOpts>): void;
+    setOptions(newSettings: Partial<MPEasySettings>): void;
     parseFrontMatterAndContent(content: string): { frontMatter: any; markdownContent: string; };
     parse(markdown: string): string | Promise<string>;
-    reset: (newOpts: Partial<IOpts>) => void;
-    getOpts: () => IOpts;
+    reset: (newSettings: Partial<MPEasySettings>) => void;
+    getSettings: () => MPEasySettings;
     buildReadingTime: (reading: ReadTimeResults) => string;
     buildFootnotes: () => string;
     buildAddition: () => string;

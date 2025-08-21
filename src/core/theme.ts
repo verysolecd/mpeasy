@@ -1,5 +1,13 @@
 import type { IConfigOption, Theme } from '../types';
-import { toMerged } from 'es-toolkit';
+import { toMerged, cloneDeep } from 'es-toolkit';
+
+export function buildTheme(themeName: keyof typeof themeMap, isUseIndent: boolean): Theme {
+  const theme = cloneDeep(themeMap[themeName] || themeMap.default);
+  if (isUseIndent) {
+    theme.block.p['text-indent'] = '2em';
+  }
+  return theme;
+}
 
 const defaultTheme: Theme = {
   base: {

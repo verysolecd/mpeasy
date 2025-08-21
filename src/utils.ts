@@ -1,6 +1,7 @@
 import { App } from 'obsidian';
 import juice from 'juice';
 import type { IOpts } from './types';
+import { MPEasySettings } from './settings';
 
 // Note: Much of the original content of this file was related to a legacy
 // inline-style generation system and has been removed as part of a major
@@ -77,41 +78,14 @@ export async function getCodeBlockThemes(app: App): Promise<{ name: string; path
     return getThemes(app, 'codestyle');
 }
 
-/**
- * Dynamically reads the available custom styles from the assets/style directory.
- * @param app - The Obsidian App instance, used to access the vault.
- * @returns A promise that resolves to an array of style objects.
- */
-export async function getCustomStyles(app: App): Promise<{ name: string; path: string }[]> {
-    const styleDir = `${app.vault.configDir}/plugins/obsidian-mpeasy/assets/style`;
-    try {
-        const files = await app.vault.adapter.list(styleDir);
-        const stylePromises = files.files
-            .filter(file => file.endsWith('.css') && !file.endsWith('.min.css'))
-            .map(async (filePath) => {
-                const fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
-                const stylePath = fileName.replace('.css', '');
-                const fileContent = await app.vault.adapter.read(filePath);
-                const match = fileContent.match(/\/\*\s*#name:\s*(.*?)\s*\*\//);
-                const styleName = match ? match[1] : stylePath;
-                return { name: styleName, path: stylePath };
-            });
 
-        const styles = await Promise.all(stylePromises);
-        styles.unshift({ name: '无', path: 'none' });
-        return styles;
-    } catch (error) {
-        console.error(`Failed to read styles from assets/style:`, error);
-        return [{ name: '无', path: 'none' }]; // Fallback
-    }
-}
 
 // 缓存正则表达式
 const variableRegex = /var\((--[\w-]+)(?:,\s*([^)]+))?\)/g;
 const rootVarRegex = /:root\s*\{([^}]+)\}/g;
 const cssVarRegex = /--[\w-]+:\s*([^;]+)/g;
 
-export function resolveCssVariables(css: string, opts: Partial<IOpts>): string {
+export function resolveCssVariables(css: string, settings: Partial<MPEasySettings>): string {
     const variables: { [key: string]: string } = {};
 
     // 一次性提取所有变量定义
@@ -125,14 +99,9 @@ export function resolveCssVariables(css: string, opts: Partial<IOpts>): string {
     }
 
     // 应用设置覆盖
-    if (opts.primaryColor) {
-        variables['--mpe-primary-color'] = opts.primaryColor;
+    if (settings.primaryColor) {
+        variables['--mpe-primary-color'] = settings.primaryColor;
     }
-
-    // 单次替换所有变量
-    return css.replace(variableRegex, (match, varName, fallback) => 
-        variables[varName] || fallback || match
-    );
 }
 
 // Simple XOR encryption
@@ -162,4 +131,4 @@ export function decrypt(encryptedText: string, key: string): string {
     } catch (e) {
         return encryptedText;
     }
-}
+    }
