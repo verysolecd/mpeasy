@@ -4,15 +4,13 @@ import type { IOpts, MPEasySettings } from '../types';
 import { getLayoutThemes, getCodeBlockThemes } from '../utils';
 import Combobox from './Combobox';
 import { App } from 'obsidian';
-import CssEditor from './CssEditor';
+
 
 interface StylePanelProps {
     settings: MPEasySettings;
     onSettingsChange: (newSettings: Partial<MPEasySettings>) => void;
     app: App;
-    customCss: string;
-    setCustomCss: (css: string) => void;
-    onSaveCustomCss: () => void;
+    
 }
 
 const PRESET_COLORS = [
@@ -29,7 +27,7 @@ const PRESET_COLORS = [
     { name: '樱花粉', color: '#FFB7C5' },
 ];
 
-const StylePanel = ({ settings, onSettingsChange, app, customCss, setCustomCss, onSaveCustomCss }: StylePanelProps) => {
+const StylePanel = ({ settings, onSettingsChange, app }: StylePanelProps) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isWeChatSettingsCollapsed, setIsWeChatSettingsCollapsed] = useState(false); // Added this line
     const [layoutThemes, setLayoutThemes] = useState<{ name: string; path: string }[]>([]);
@@ -268,7 +266,10 @@ const StylePanel = ({ settings, onSettingsChange, app, customCss, setCustomCss, 
                     <input
                         type="checkbox"
                         checked={settings.isUseIndent || false}
-                        onChange={(e) => onSettingsChange({ isUseIndent: e.target.checked })}
+                        onChange={(e) => {
+                            onSettingsChange({ isUseIndent: e.target.checked });
+                            console.log('StylePanel: isUseIndent changed to', e.target.checked);
+                        }}
                     />
                 </div>
 

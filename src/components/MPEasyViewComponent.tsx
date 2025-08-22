@@ -70,6 +70,7 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
     useEffect(() => {
         if (rendererApi) {
             rendererApi.setOptions({ ...settings, obsidianTheme: obsidianTheme });
+            console.log('MPEasyViewComponent: settings.isUseIndent changed to', settings.isUseIndent);
         }
     }, [settings, rendererApi, obsidianTheme]);
 
@@ -278,7 +279,7 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
                     <html>
                     <head>
                         <meta charset="UTF-8">
-                        <style>${customCss}</style>
+                        <style>${rendererApi.getStyles()}${customCss}</style>
                     </head>
                     <body>
                         <section id="output">${previewHtml}</section>
@@ -304,6 +305,7 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
                 `;
 
                 iframe.srcdoc = fullHtml;
+                console.log('MPEasy: fullHtml content:', fullHtml);
                 console.log(`MPEasy: Render prepared in ${performance.now() - startTime}ms`);
 
                 iframe.onload = () => {

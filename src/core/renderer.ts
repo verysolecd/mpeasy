@@ -114,11 +114,14 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
   }
 
   function setOptions(newOpts: Partial<IOpts>): void {
+    console.log('Renderer: setOptions called with newOpts.isUseIndent', newOpts.isUseIndent);
     opts = { ...opts, ...newOpts }
+    console.log('Renderer: opts.isUseIndent after update', opts.isUseIndent);
     marked.use(markedAlert({}))
     marked.use(
       MDKatex({ nonStandard: true }, ``, ``, getIframeWindow),
     )
+    marked.use({ renderer })
   }
 
   function buildReadingTime(readingTime: ReadTimeResults): string {
@@ -162,14 +165,20 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
 
     paragraph({ tokens }: Tokens.Paragraph): string {
       const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
-      const style = styleObjectToString(theme.block.p);
+      let style = styleObjectToString(theme.block.p);
+      if (opts.isUseIndent) {
+        className = 'mpeasy-indent';
+      } else {
+                style += ';text-indent: 0 !important;';
+      }
+      console.log('Renderer: paragraph function - opts.isUseIndent', opts.isUseIndent);
       const text = this.parser.parseInline(tokens)
       const isFigureImage = text.includes(`<figure`) && text.includes(`<img`)
       const isEmpty = text.trim() === ``
       if (isFigureImage || isEmpty) {
         return text
       }
-      return `<p style="${style}">${text}</p>`
+      return `<p class="${className}" style="${style}">${text}</p>`
     },
 
     blockquote({ tokens }: Tokens.Blockquote): string {
@@ -260,7 +269,8 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
       }
       if (opts.isCiteStatus) {
         const ref = addFootnote(title || text, href)
-        return `<span>${parsedText}<sup>[${ref}]</sup></span>`
+        const supStyle = styleObjectToString(theme.inline.sup);
+        return `<span>${parsedText}<sup style="${supStyle}">[${ref}]</sup></span>`
       }
       const style = styleObjectToString(theme.inline.link);
       return `<span style="${style}">${parsedText}</span>`
@@ -333,7 +343,7 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
   function createContainer(content: string) {
     const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
     const style = styleObjectToString(theme.base);
-    return `<section style="${style}">${content}</section>`;
+    return `<section style="${style}; --md-primary-color: ${opts.primaryColor};">${content}</section>`;
   }
 
   async function parse(markdown: string): Promise<string> {
@@ -348,5 +358,30 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
     setOptions,
     reset,
     parse,
+    getStyles: () => {
+      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
+      let fullStyle = '';
+
+      // Base styles
+      fullStyle += `section { ${styleObjectToString(theme.base)} }
+`;
+
+      // Block styles
+      for (const key in theme.block) {
+        if (Object.prototype.hasOwnProperty.call(theme.block, key)) {
+          fullStyle += `${key} { ${styleObjectToString(theme.block[key])} }
+`;
+        }
+      }
+
+      // Inline styles
+      for (const key in theme.inline) {
+        if (Object.prototype.hasOwnProperty.call(theme.inline, key)) {
+          fullStyle += `${key} { ${styleObjectToString(theme.inline[key])} }
+`;
+        }
+      }
+      return fullStyle;
+    }
   }
 }

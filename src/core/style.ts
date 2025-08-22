@@ -86,7 +86,7 @@ export const colorOptions: IConfigOption[] = [
     { name: '樱花粉', color: '#FFB7C5' },
 ];
 
-const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCodeBlockCss, setCustomCodeBlockCss, onSaveCustomCss }: StylePanelProps) => {
+const StylePanel = ({ opts, onOptsChange, app }: StylePanelProps) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [layoutThemes, setLayoutThemes] = useState<{ name: string; path: string }[]>([]);
     const [codeBlockThemes, setCodeBlockThemes] = useState<{ name: string; path: string }[]>([]);
@@ -335,11 +335,7 @@ const StylePanel = ({ opts, onOptsChange, app, customCss, setCustomCss, customCo
                     />
                 </div>
 
-                <div className="style-panel-item-column">
-                    <label>自定义CSS</label>
-                    <CssEditor value={customCss} onChange={setCustomCss} />
-                    <button type="button" onClick={onSaveCustomCss}>保存自定义CSS</button>
-                </div>
+                
 
                 
             </form>

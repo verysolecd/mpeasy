@@ -1,11 +1,12 @@
 import type { IConfigOption, Theme } from '../types';
 import { toMerged, cloneDeep } from 'es-toolkit';
 
-export function buildTheme(themeName: keyof typeof themeMap, isUseIndent: boolean): Theme {
+export function buildTheme(themeName: keyof typeof themeMap, isUseIndent: boolean, primaryColor: string): Theme {
   const theme = cloneDeep(themeMap[themeName] || themeMap.default);
   if (isUseIndent) {
     theme.block.p['text-indent'] = '2em';
   }
+  theme.base['--md-primary-color'] = primaryColor;
   return theme;
 }
 
@@ -247,7 +248,10 @@ const defaultTheme: Theme = {
       'margin': `0.2em 8px`,
       'color': `hsl(var(--foreground))`,
     },
-
+    sup: {
+      'vertical-align': 'super !important',
+      'font-size': 'smaller !important',
+    },
     codespan: {
       'font-size': `90%`,
       'color': `#d14`,
@@ -322,6 +326,9 @@ const defaultTheme: Theme = {
       'overflow-x': `auto`,
       'padding-bottom': `5px`,
       'vertical-align': `middle`,
+    },
+    'p.mpeasy-indent': {
+      'text-indent': '2em !important',
     },
   },
 }
