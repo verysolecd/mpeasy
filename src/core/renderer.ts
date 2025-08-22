@@ -169,7 +169,7 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
       if (opts.isUseIndent) {
         className = 'mpeasy-indent';
       } else {
-                style += ';text-indent: 0 !important;';
+        style += ';text-indent: 0 !important;';
       }
       console.log('Renderer: paragraph function - opts.isUseIndent', opts.isUseIndent);
       const text = this.parser.parseInline(tokens)
@@ -198,22 +198,17 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
       const langText = lang.split(` `)[0]
       const language = hljs.getLanguage(langText) ? langText : `plaintext`
 
-      let highlighted = hljs.highlight(text, { language }).value
-      highlighted = highlighted.replace(/\t/g, `    `)
-      highlighted = highlighted.replace(/\r?\n/g, `<br/>`)
-      highlighted = highlighted
-        .replace(/(>[^<]+)|(^[^<]+)/g, str => str.replace(/\s/g, `&nbsp;`))
+      const trimmedText = text.trim();
+      let highlighted = hljs.highlight(trimmedText, { language }).value;
+
+      highlighted = highlighted.replace(/\r?\n/g, `<br/>`);
 
       const isShowMacStyleBar = lang.includes(`=b`) || opts.isMacCodeBlock
-      const macBar = isShowMacStyleBar ? `<span class="mac-sign" style="padding: 10px 14px 0;">${macCodeSvg}</span>` : '';
-      
-      const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
-      const preStyle = styleObjectToString(theme.block.code_pre);
-      const codeStyle = styleObjectToString(theme.block.code);
+      const macBar = isShowMacStyleBar ? `<span class="mac-sign" style="padding: 0.5em 14px;">${macCodeSvg}</span>` : '';
+      const headerDiv = isShowMacStyleBar ? `<div class="mpe-code-header">${macBar}</div>` : '';
 
-      return `<pre style="${preStyle}">
-        <div class="mpe-code-header">${macBar}</div>
-        <code style="${codeStyle}">${highlighted}</code>
+      return `<pre>
+        <code class="hljs">${headerDiv}${highlighted}</code>
       </pre>`
     },
 

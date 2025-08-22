@@ -31,6 +31,21 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
     const [customCss, setCustomCss] = useState(settings.customCss);
     const [obsidianTheme, setObsidianTheme] = useState<'light' | 'dark'>('light');
     const scrollListenersRef = useRef<{ cleanUp: () => void } | null>(null);
+    const [codeThemeCss, setCodeThemeCss] = useState('');
+
+    useEffect(() => {
+        if (settings.codeThemeName) {
+            const cssPath = normalizePath(`${plugin.manifest.dir}/assets/codestyle/${settings.codeThemeName}.css`);
+            console.log('Loading code theme from:', cssPath); // Log the path
+            app.vault.adapter.read(cssPath).then(css => {
+                console.log('Code theme CSS loaded:', css.substring(0, 100)); // Log first 100 chars of CSS
+                setCodeThemeCss(css);
+            }).catch(err => {
+                console.error(`Failed to load code theme CSS: ${cssPath}`, err);
+                new Notice(`加载代码主题样式失败: ${settings.codeThemeName}`);
+            });
+        }
+    }, [settings.codeThemeName, app.vault.adapter, plugin.manifest.dir]);
 
     
 
@@ -84,15 +99,32 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
     };
 
     const getStyledHtml = async (forUpload: boolean): Promise<string | null> => {
-        if (!rendererApi) {
-            new Notice('渲染器尚未准备好。');
+        if (!rendererApi || !iframeRef.current?.contentDocument) {
+            new Notice('渲染器或预览尚未准备好。');
             return null;
         }
 
-        const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-        const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
-        const htmlWithImages = await processLocalImages(parsedHtml, plugin, !forUpload);
-        return `<style>${customCss}</style>${htmlWithImages}`;
+        // Get the fully rendered HTML from the iframe
+        const renderedOutput = iframeRef.current.contentDocument.getElementById('output');
+        if (!renderedOutput) {
+            new Notice('无法找到渲染后的内容。');
+            return null;
+        }
+        
+        // Clone the node to avoid modifying the live preview
+        const outputClone = renderedOutput.cloneNode(true) as HTMLElement;
+
+        // Process local images for upload if necessary
+        const finalHtmlContent = await processLocalImages(outputClone.outerHTML, plugin, !forUpload);
+
+        // Consolidate all styles
+        const styles = `
+            <style>${codeThemeCss}</style>
+            <style>${rendererApi.getStyles()}</style>
+            <style>${customCss}</style>
+        `;
+
+        return `${styles}${finalHtmlContent}`;
     };
 
     const handleCopy = async () => {
@@ -279,6 +311,7 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
                     <html>
                     <head>
                         <meta charset="UTF-8">
+                        <style>${codeThemeCss}</style>                        
                         <style>${rendererApi.getStyles()}${customCss}</style>
                     </head>
                     <body>
@@ -368,7 +401,7 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
                 scrollListenersRef.current.cleanUp();
             }
         };
-    }, [markdownContent, rendererApi, settings, plugin, customCss, mermaidPath, app.workspace, obsidianTheme]);
+    }, [markdownContent, rendererApi, settings, plugin, customCss, mermaidPath, app.workspace, obsidianTheme, codeThemeCss]);
 
     return (
         <div className="mpeasy-view-container">

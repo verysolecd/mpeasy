@@ -171,13 +171,14 @@ const defaultTheme: Theme = {
     },
 
     // 代码块
-    code_pre: {
+        code_pre: {
       'font-size': `90%`,
       'overflow-x': `auto`,
       'border-radius': `8px`,
       'padding': `1em`,
       'line-height': `1.5`,
       'margin': `10px 8px`,
+      'text-indent': `0 !important`,
     },
 
     // 行内代码
@@ -186,6 +187,7 @@ const defaultTheme: Theme = {
       'white-space': `nowrap`,
       'font-size': `90%`,
       'font-family': `Menlo, Operator Mono, Consolas, Monaco, monospace`,
+      'text-indent': `0 !important`,
     },
 
     // 图片
