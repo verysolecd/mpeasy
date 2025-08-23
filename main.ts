@@ -3,14 +3,18 @@ import { MPEasyView, VIEW_TYPE_MPEASY } from './src/components/view';
 import { MPEasySettings, DEFAULT_SETTINGS } from './src/settings';
 import { MPEasySettingTab } from './src/setting-tab';
 import { encrypt, decrypt } from './src/utils';
+import { RendererService } from './src/core/RendererService';
 
 export default class MPEasyPlugin extends Plugin {
     settings: MPEasySettings;
     styleEl: HTMLElement;
+    rendererService: RendererService;
 
     async onload() {
         console.log('正在加载 MPEasy 插件');
         await this.loadSettings();
+
+        this.rendererService = new RendererService(this);
 
         this.addSettingTab(new MPEasySettingTab(this.app, this));
 
