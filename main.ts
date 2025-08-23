@@ -1,7 +1,7 @@
 import { Plugin } from 'obsidian';
 import { MPEasyView, VIEW_TYPE_MPEASY } from './src/components/view';
-import { MPEasySettings, DEFAULT_SETTINGS } from './src/settings';
-import { MPEasySettingTab } from './src/setting-tab';
+import { MPEasySettings, DEFAULT_SETTINGS } from './src/sets/settings';
+import { MPEasySettingTab } from './src/sets/setting-tab';
 import { encrypt, decrypt } from './src/utils';
 
 export default class MPEasyPlugin extends Plugin {

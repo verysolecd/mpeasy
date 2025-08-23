@@ -91,7 +91,8 @@ const defaultTheme: Theme = {
       'border-radius': `6px`,
       'color': `rgba(0,0,0,0.5)`,
       'background': `var(--blockquote-background)`,
-      'margin-bottom': `1em`,
+      'margin-top': `0`,
+      'margin-bottom': `0`,
     },
 
     // 引用内容
