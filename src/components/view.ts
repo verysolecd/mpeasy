@@ -44,7 +44,7 @@ export class MPEasyView extends ItemView {
             plugin: this.plugin,
             settings: this.plugin.settings,
             onSettingsChange: this.updateSettings, // Pass the updater function
-            customCss: this.plugin.settings.customCss,
+            customCss: this.plugin.customCss,
             mermaidPath: mermaidPath,
             mathjaxPath: mathjaxPath,
         });
