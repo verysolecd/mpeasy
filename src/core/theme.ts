@@ -25,7 +25,7 @@ const defaultTheme: Theme = {
       'border-bottom': `2px solid var(--md-primary-color)`,
       'margin': `2em auto 1em`,
       'color': `hsl(var(--foreground))`,
-      'font-size': `1.2em`,
+      'font-size': `1.6em`,
       'font-weight': `bold`,
       'text-align': `center`,
     },
@@ -37,7 +37,7 @@ const defaultTheme: Theme = {
       'margin': `4em auto 2em`,
       'color': `#fff`,
       'background': `var(--md-primary-color)`,
-      'font-size': `1.2em`,
+      'font-size': `1.5em`,
       'font-weight': `bold`,
       'text-align': `center`,
     },
@@ -48,7 +48,7 @@ const defaultTheme: Theme = {
       'border-left': `3px solid var(--md-primary-color)`,
       'margin': `2em 8px 0.75em 0`,
       'color': `hsl(var(--foreground))`,
-      'font-size': `1.1em`,
+      'font-size': `1.4em`,
       'font-weight': `bold`,
       'line-height': `1.2`,
     },
@@ -57,7 +57,7 @@ const defaultTheme: Theme = {
     h4: {
       'margin': `2em 8px 0.5em`,
       'color': `var(--md-primary-color)`,
-      'font-size': `1em`,
+      'font-size': `1.3em`,
       'font-weight': `bold`,
     },
 
@@ -65,14 +65,14 @@ const defaultTheme: Theme = {
     h5: {
       'margin': `1.5em 8px 0.5em`,
       'color': `var(--md-primary-color)`,
-      'font-size': `1em`,
+      'font-size': `1.2em`,
       'font-weight': `bold`,
     },
 
     // 六级标题
     h6: {
       'margin': `1.5em 8px 0.5em`,
-      'font-size': `1em`,
+      'font-size': `1.1em`,
       'color': `var(--md-primary-color)`,
     },
 
@@ -171,14 +171,13 @@ const defaultTheme: Theme = {
     },
 
     // 代码块
-        code_pre: {
+    code_pre: {
       'font-size': `90%`,
       'overflow-x': `auto`,
       'border-radius': `8px`,
       'padding': `1em`,
       'line-height': `1.5`,
       'margin': `10px 8px`,
-      'text-indent': `0 !important`,
     },
 
     // 行内代码
@@ -187,7 +186,6 @@ const defaultTheme: Theme = {
       'white-space': `nowrap`,
       'font-size': `90%`,
       'font-family': `Menlo, Operator Mono, Consolas, Monaco, monospace`,
-      'text-indent': `0 !important`,
     },
 
     // 图片
@@ -254,6 +252,7 @@ const defaultTheme: Theme = {
       'vertical-align': 'super !important',
       'font-size': 'smaller !important',
     },
+
     codespan: {
       'font-size': `90%`,
       'color': `#d14`,
@@ -329,9 +328,6 @@ const defaultTheme: Theme = {
       'padding-bottom': `5px`,
       'vertical-align': `middle`,
     },
-    'p.mpeasy-indent': {
-      'text-indent': '2em !important',
-    },
   },
 }
 
@@ -343,34 +339,34 @@ const graceTheme = toMerged(defaultTheme, {
     'h1': {
       'padding': `0.5em 1em`,
       'border-bottom': `2px solid var(--md-primary-color)`,
-      'font-size': `1.4em`,
+      'font-size': `1.8em`,
       'text-shadow': `2px 2px 4px rgba(0,0,0,0.1)`,
     },
 
     'h2': {
       'padding': `0.3em 1em`,
       'border-radius': `8px`,
-      'font-size': `1.3em`,
+      'font-size': `1.6em`,
       'box-shadow': `0 4px 6px rgba(0,0,0,0.1)`,
     },
 
     'h3': {
       'padding-left': `12px`,
-      'font-size': `1.2em`,
+      'font-size': `1.4em`,
       'border-left': `4px solid var(--md-primary-color)`,
       'border-bottom': `1px dashed var(--md-primary-color)`,
     },
 
     'h4': {
-      'font-size': `1.1em`,
+      'font-size': `1.2em`,
     },
 
     'h5': {
-      'font-size': `1em`,
+      'font-size': `1.1em`,
     },
 
     'h6': {
-      'font-size': `1em`,
+      'font-size': `1.0em`,
     },
 
     'p': {
@@ -485,20 +481,20 @@ const simpleTheme = toMerged(defaultTheme, {
     container: {},
     h1: {
       'padding': `0.5em 1em`,
-      'font-size': `1.4em`,
+      'font-size': `1.8em`,
       'text-shadow': `1px 1px 3px rgba(0,0,0,0.05)`,
     },
 
     h2: {
       'padding': `0.3em 1.2em`,
-      'font-size': `1.3em`,
+      'font-size': `1.6em`,
       'border-radius': `8px 24px 8px 24px`,
       'box-shadow': `0 2px 6px rgba(0,0,0,0.06)`,
     },
 
     h3: {
       'padding-left': `12px`,
-      'font-size': `1.2em`,
+      'font-size': `1.4em`,
       'border-radius': `6px`,
       'line-height': `2.4em`,
       'border-left': `4px solid var(--md-primary-color)`,
@@ -509,15 +505,17 @@ const simpleTheme = toMerged(defaultTheme, {
     },
 
     h4: {
-      'font-size': `1.1em`,
+      'font-size': `1.2em`,
       'border-radius': `6px`,
     },
 
     h5: {
+      'font-size': `1.1em`,
       'border-radius': `6px`,
     },
 
     h6: {
+      'font-size': `1.0em`,
       'border-radius': `6px`,
     },
 

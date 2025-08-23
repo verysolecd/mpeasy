@@ -31,7 +31,7 @@ function escapeHtml(text: string): string {
     .replace(/&/g, `&amp;`)
     .replace(/</g, `&lt;`)
     .replace(/>/g, `&gt;`)
-    .replace(/"/g, `&quot;`)
+    .replace(/'/g, `&quot;`)
     .replace(/'/g, `&#39;`)
     .replace(/`/g, `&#96;`)
 }
@@ -166,6 +166,7 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
     paragraph({ tokens }: Tokens.Paragraph): string {
       const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
       let style = styleObjectToString(theme.block.p);
+      let className = ''; // Declare and initialize className
       if (opts.isUseIndent) {
         className = 'mpeasy-indent';
       } else {
@@ -338,7 +339,7 @@ export function initRenderer(opts: IOpts, getIframeWindow: () => Window | null):
   function createContainer(content: string) {
     const theme = themeMap[opts.layoutThemeName as keyof typeof themeMap] || themeMap.default;
     const style = styleObjectToString(theme.base);
-    return `<section style="${style}; --md-primary-color: ${opts.primaryColor};">${content}</section>`;
+    return `<section style="${style}; --md-primary-color: ${opts.primaryColor}; font-size: ${opts.fontSize};">${content}</section>`;
   }
 
   async function parse(markdown: string): Promise<string> {

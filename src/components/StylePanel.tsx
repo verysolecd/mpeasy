@@ -30,6 +30,7 @@ const PRESET_COLORS = [
 const StylePanel = ({ settings, onSettingsChange, app }: StylePanelProps) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isWeChatSettingsCollapsed, setIsWeChatSettingsCollapsed] = useState(false); // Added this line
+    const [isColorSettingsCollapsed, setIsColorSettingsCollapsed] = useState(true);
     const [layoutThemes, setLayoutThemes] = useState<{ name: string; path: string }[]>([]);
     const [codeBlockThemes, setCodeBlockThemes] = useState<{ name: string; path: string }[]>([]);
     
@@ -165,80 +166,6 @@ const StylePanel = ({ settings, onSettingsChange, app }: StylePanelProps) => {
                     </select>
                 </div>
 
-                
-
-                <div className="style-panel-item-column" style={{ margin: '0 5px' }}>
-                    <button
-                        type="button"
-                        className="mpeasy-custom-color-button"
-                        onClick={(e) => {
-                            const colorBox = e.currentTarget.nextElementSibling;
-                            if (colorBox) {
-                                colorBox.style.display = colorBox.style.display === 'none' ? 'block' : 'none';
-                                e.currentTarget.style.borderRadius = colorBox.style.display === 'none' ? '12px' : '12px 12px 0 0';
-                            }
-                        }}
-                    >
-                        <span>自定义主题色</span>
-                        <span className="mpeasy-custom-color-button-icon">▼</span>
-                    </button>
-                    <div className="mpeasy-custom-color-panel">
-                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
-                            <input
-                                type="color"
-                                value={settings.primaryColor}
-                                onChange={(e) => onSettingsChange({ primaryColor: e.target.value })}
-                                className="mpeasy-color-picker-input"
-                            />
-                            <input
-                                type="text"
-                                value={settings.primaryColor}
-                                onChange={(e) => onSettingsChange({ primaryColor: e.target.value })}
-                                className="mpeasy-color-text-input"
-                            />
-                        </div>
-                        
-                        <div style={{
-                            borderTop: '1px solid #cce7ff',
-                            paddingTop: '12px'
-                        }}>
-                            <div className="color-preset-grid">
-                                {PRESET_COLORS.map(preset => (
-                                    <div
-                                        key={preset.name}
-                                        className={`color-preset-item mpeasy-color-preset-item ${settings.primaryColor === preset.color ? 'selected' : ''}`}
-                                        onClick={() => onSettingsChange({ primaryColor: preset.color })}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            padding: '6px 8px',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            backgroundColor: settings.primaryColor === preset.color ? '#cce7ff' : 'transparent'
-                                        }}
-                                    >
-                                        <div 
-                                            className="color-swatch mpeasy-color-swatch" 
-                                            style={{ 
-                                                backgroundColor: preset.color,
-                                                width: '20px',
-                                                height: '20px',
-                                                borderRadius: '50%',
-                                                marginRight: '8px',
-                                                border: '1px solid #ddd'
-                                            }}
-                                        ></div>
-                                        <span className="mpeasy-color-preset-name">{preset.name}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                
-
                 <div className="style-panel-item">
                     <label>字体大小</label>
                     <Combobox
@@ -248,6 +175,8 @@ const StylePanel = ({ settings, onSettingsChange, app }: StylePanelProps) => {
                         placeholder="例如: 16px"
                     />
                 </div>
+
+                
 
                 <div className="style-panel-item">
                     <label>图注显示</label>
@@ -307,7 +236,77 @@ const StylePanel = ({ settings, onSettingsChange, app }: StylePanelProps) => {
                         checked={settings.useCustomCSS || false}
                         onChange={(e) => onSettingsChange({ useCustomCSS: e.target.checked })}
                     />
-                </div>                
+                </div>
+
+                <div className="style-panel-item" style={{ margin: '0 -8px' }}>
+                    <div className="custom-color-settings-container" style={{ width: '100%' }}>
+                        <div className="wechat-article-settings-header" onClick={() => setIsColorSettingsCollapsed(!isColorSettingsCollapsed)}>
+                            <h3 className="wechat-article-settings-title">
+                                自定义主题色
+                            </h3>
+                            <div className="wechat-article-settings-toggle" style={{
+                                transform: isColorSettingsCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+                            }}>
+                                <span className="wechat-article-settings-toggle-icon">∨</span>
+                            </div>
+                        </div>
+                        {!isColorSettingsCollapsed && (
+                            <div className="mpeasy-custom-color-panel" style={{ padding: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
+                                    <input
+                                        type="color"
+                                        value={settings.primaryColor}
+                                        onChange={(e) => onSettingsChange({ primaryColor: e.target.value })}
+                                        className="mpeasy-color-picker-input"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={settings.primaryColor}
+                                        onChange={(e) => onSettingsChange({ primaryColor: e.target.value })}
+                                        className="mpeasy-color-text-input"
+                                    />
+                                </div>
+                                
+                                <div style={{
+                                    borderTop: '1px solid #cce7ff',
+                                    paddingTop: '12px'
+                                }}>
+                                    <div className="color-preset-grid">
+                                        {PRESET_COLORS.map(preset => (
+                                            <div
+                                                key={preset.name}
+                                                className={`color-preset-item mpeasy-color-preset-item ${settings.primaryColor === preset.color ? 'selected' : ''}`}
+                                                onClick={() => onSettingsChange({ primaryColor: preset.color })}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    padding: '6px 8px',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease',
+                                                    backgroundColor: settings.primaryColor === preset.color ? '#cce7ff' : 'transparent'
+                                                }}
+                                            >
+                                                <div 
+                                                    className="color-swatch mpeasy-color-swatch" 
+                                                    style={{ 
+                                                        backgroundColor: preset.color,
+                                                        width: '20px',
+                                                        height: '20px',
+                                                        borderRadius: '50%',
+                                                        marginRight: '8px',
+                                                        border: '1px solid #ddd'
+                                                    }}
+                                                ></div>
+                                                <span className="mpeasy-color-preset-name">{preset.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </form>
             )}
         </div>

@@ -79,7 +79,7 @@ export default function markedFootnotes(): MarkedExtension {
           const content = fnMap.get(fnId) as MapContent
           if (!content) return token.raw;
           return `<sup style="color: var(--md-primary-color);">
-                    <a href="#fnDef-${fnId}" id="fnRef-${fnId}">[${content.index}]</a>
+                    <a href="#fnDef-${fnId}" id="fnRef-${fnId}">\[${content.index}\]</a>
                 </sup>`
         },
       },

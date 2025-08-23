@@ -17,7 +17,7 @@ export function preprocessMarkdown(markdown: string): string {
 // 缓存主题结果
 const themeCache = new Map<string, Promise<{ name: string; path: string }[]>>();
 
-async function getThemes(app: App, themeFolder: 'theme' | 'codestyle'): Promise<{ name: string; path: string }[]> {
+async function getThemes(app: App, themeFolder: 'less' | 'codestyle'): Promise<{ name: string; path: string }[]> {
     const cacheKey = `${app.vault.configDir}/plugins/obsidian-mpeasy/assets/${themeFolder}`;
     
     if (themeCache.has(cacheKey)) {
@@ -29,12 +29,14 @@ async function getThemes(app: App, themeFolder: 'theme' | 'codestyle'): Promise<
             const files = await app.vault.adapter.list(cacheKey);
             const themes: { name: string; path: string }[] = [];
             
+            const fileExtension = themeFolder === 'less' ? '.less' : '.css';
+
             // 并行读取所有文件
             const readPromises = files.files
-                .filter(file => file.endsWith('.css') && !file.endsWith('.min.css'))
+                .filter(file => file.endsWith(fileExtension) && !file.endsWith(`.min${fileExtension}`))
                 .map(async (filePath) => {
                     const fileName = filePath.substring(filePath.lastIndexOf('/') + 1);
-                    const themePath = fileName.replace('.css', '');
+                    const themePath = fileName.replace(fileExtension, '');
                     const fileContent = await app.vault.adapter.read(filePath);
                     const match = fileContent.match(/\/\*\s*#theme name:\s*(.*?)\s*\*\//);
                     const themeName = match ? match[1] : themePath;
@@ -45,9 +47,8 @@ async function getThemes(app: App, themeFolder: 'theme' | 'codestyle'): Promise<
             themes.push(...results);
             
             // Add a default option
-            if (themeFolder === 'theme') {
-                themes.unshift({ name: '默认', path: 'default' });
-            }
+            themes.unshift({ name: '默认', path: 'default' });
+            
             return themes;
         } catch (error) {
             console.error(`Failed to read themes from assets/${themeFolder}:`, error);
@@ -66,7 +67,7 @@ async function getThemes(app: App, themeFolder: 'theme' | 'codestyle'): Promise<
  * @returns A promise that resolves to an array of theme objects.
  */
 export async function getLayoutThemes(app: App): Promise<{ name: string; path: string }[]> {
-    return getThemes(app, 'theme');
+    return getThemes(app, 'less');
 }
 
 /**
