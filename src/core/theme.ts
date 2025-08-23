@@ -634,7 +634,40 @@ export const themeMap = {
   simple: simpleTheme,
 }
 
+export function generateStylesheet(theme: Theme, fontSize: string): string {
+  let css = '';
+
+  // Base styles
+  css += ':root {\n';
+  for (const key in theme.base) {
+    css += `  ${key}: ${theme.base[key]};\n`;
+  }
+  css += `  font-size: ${fontSize};\n`; // Apply font size to root
+  css += '}\n\n';
+
+  // Block styles
+  for (const blockKey in theme.block) {
+    css += `${blockKey} {\n`;
+    for (const prop in theme.block[blockKey]) {
+      css += `  ${prop}: ${theme.block[blockKey][prop]};\n`;
+    }
+    css += '}\n\n';
+  }
+
+  // Inline styles
+  for (const inlineKey in theme.inline) {
+    css += `${inlineKey} {\n`;
+    for (const prop in theme.inline[inlineKey]) {
+      css += `  ${prop}: ${theme.inline[inlineKey][prop]};\n`;
+    }
+    css += '}\n\n';
+  }
+
+  return css;
+}
+
 export const themeOptions: IConfigOption<keyof typeof themeMap>[] = [
+
   {
     label: `经典`,
     value: `default`,

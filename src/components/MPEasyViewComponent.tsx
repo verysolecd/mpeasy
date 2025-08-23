@@ -99,32 +99,19 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
     };
 
     const getStyledHtml = async (forUpload: boolean): Promise<string | null> => {
-        if (!rendererApi || !iframeRef.current?.contentDocument) {
-            new Notice('渲染器或预览尚未准备好。');
+        if (!rendererApi) {
+            new Notice('渲染器尚未准备好。');
             return null;
         }
 
-        // Get the fully rendered HTML from the iframe
-        const renderedOutput = iframeRef.current.contentDocument.getElementById('output');
-        if (!renderedOutput) {
-            new Notice('无法找到渲染后的内容。');
-            return null;
-        }
-        
-        // Clone the node to avoid modifying the live preview
-        const outputClone = renderedOutput.cloneNode(true) as HTMLElement;
+        // Re-parse the markdown content with inline styles
+        const preprocessedMarkdown = preprocessMarkdown(markdownContent);
+        let finalHtml = await rendererApi.parse(preprocessedMarkdown, true, codeThemeCss);
 
         // Process local images for upload if necessary
-        const finalHtmlContent = await processLocalImages(outputClone.outerHTML, plugin, !forUpload);
+        finalHtml = await processLocalImages(finalHtml, plugin, !forUpload);
 
-        // Consolidate all styles
-        const styles = `
-            <style>${codeThemeCss}</style>
-            <style>${rendererApi.getStyles()}</style>
-            <style>${customCss}</style>
-        `;
-
-        return `${styles}${finalHtmlContent}`;
+        return finalHtml;
     };
 
     const handleCopy = async () => {
@@ -301,7 +288,7 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
                 const startTime = performance.now();
 
                 const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-                const parsedHtml = await rendererApi.parse(preprocessedMarkdown);
+                const parsedHtml = await rendererApi.parse(preprocessedMarkdown, false, codeThemeCss);
                 const previewHtml = await processLocalImages(parsedHtml, plugin, true);
 
                 const iframe = iframeRef.current;
