@@ -34,6 +34,7 @@ customCodeBlockCss: string;
 }
 
 export const DEFAULT_SETTINGS: MPEasySettings = {
+
     wxAppId: '',
     wxSecret: '',
     wxToken: '',
@@ -49,10 +50,10 @@ export const DEFAULT_SETTINGS: MPEasySettings = {
     useCustomCSS: false,
     codeThemeName: 'atom-one-dark', // A popular default code theme
     customStyleName: 'none',
-    customCss: '',
-    
+    customCss: '',    
     encryptionPassword: '',
     defaultBanner: 'assets/images/banner.png',
     enableComments: true, // 默认允许评论
     onlyFansCanComment: true, // 默认允许所有人评论
+    customCodeBlockCss: '',
 };

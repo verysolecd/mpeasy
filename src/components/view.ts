@@ -2,8 +2,8 @@ import { ItemView, WorkspaceLeaf, Editor, TFile } from "obsidian";
 import * as React from "react";
 import { createRoot, Root } from "react-dom/client";
 import MPEasyViewComponent from "./MPEasyViewComponent";
-import type MPEasyPlugin from "../main";
-import { MPEasySettings } from "src/settings";
+import type MPEasyPlugin from "../../main";
+import { MPEasySettings } from "src//sets/settings";
 
 
 export const VIEW_TYPE_MPEASY = "mpeasy-preview-view";

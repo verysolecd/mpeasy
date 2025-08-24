@@ -1,5 +1,5 @@
 import {getBlobArrayBuffer, RequestUrlParam, Notice, requestUrl} from "obsidian";
-import type { MPEasySettings } from "../settings";
+import type { MPEasySettings } from "./settings";
 import type MPEasyPlugin from "../../main";
 
 async function ensureTokenValid(plugin: MPEasyPlugin): Promise<string> {

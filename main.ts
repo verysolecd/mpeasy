@@ -9,9 +9,8 @@ export default class MPEasyPlugin extends Plugin {
     styleEl: HTMLElement;
 
     async onload() {
-        console.log('正在加载 MPEasy 插件');
+        console.log('开始加载 MPEasy 插件');
         await this.loadSettings();
-
         this.addSettingTab(new MPEasySettingTab(this.app, this));
 
         this.styleEl = document.createElement('style');
@@ -82,8 +81,8 @@ export default class MPEasyPlugin extends Plugin {
                 this.settings.codeThemeName = loadedData.codeBlockTheme;
             }
             
-            delete this.settings.themeName;
-            delete this.settings.codeBlockTheme;
+            //delete this.settings.themeName;
+            // delete this.settings.codeBlockTheme;
         }
     }
 

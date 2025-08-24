@@ -1,7 +1,7 @@
 import { App } from 'obsidian';
 import juice from 'juice';
 import type { IOpts } from './types';
-import { MPEasySettings } from './settings';
+import { MPEasySettings } from './sets/settings';
 
 // Note: Much of the original content of this file was related to a legacy
 // inline-style generation system and has been removed as part of a major

@@ -10,8 +10,7 @@ import { wxAddDraft, wxUploadImage } from '../sets/weixin-api';
 import { processLocalImages } from '../core/htmlPostProcessor';
 import type MPEasyPlugin from '../../main';
 import { preprocessMarkdown } from '../utils';
-
-import { MPEasySettings } from '../settings';
+import { MPEasySettings } from '../sets/settings';
 
 interface MPEasyViewProps {
     file: TFile;
@@ -35,13 +34,13 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
 
     useEffect(() => {
         if (settings.codeThemeName) {
-            const cssPath = normalizePath(`${plugin.manifest.dir}/assets/codestyle/${settings.codeThemeName}.css`);
-            console.log('Loading code theme from:', cssPath); // Log the path
-            app.vault.adapter.read(cssPath).then(css => {
+            const codeThemeCssPath = normalizePath(`${plugin.manifest.dir}/assets/codestyle/${settings.codeThemeName}.css`);
+            console.log('Loading code theme from:', codeThemeCssPath); // Log the path
+            app.vault.adapter.read(codeThemeCssPath).then(css => {
                 console.log('Code theme CSS loaded:', css.substring(0, 100)); // Log first 100 chars of CSS
                 setCodeThemeCss(css);
             }).catch(err => {
-                console.error(`Failed to load code theme CSS: ${cssPath}`, err);
+                console.error(`Failed to load code theme CSS: ${codeThemeCssPath}`, err);
                 new Notice(`加载代码主题样式失败: ${settings.codeThemeName}`);
             });
         }

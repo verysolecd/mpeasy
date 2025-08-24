@@ -1,6 +1,6 @@
 import {MarkedExtension, Token, Tokens} from "marked";
 import {MarkdownView, requestUrl, TAbstractFile, TFile} from "obsidian";
-import {NMPSettings} from "../settings";
+import { MPEasySettings } from "./settings";
 // import {Extension} from "./extension";
 
 declare module 'obsidian' {

@@ -1,6 +1,6 @@
 import type { PropertiesHyphen } from 'csstype';
 import type { ReadTimeResults } from 'reading-time';
-import type { MPEasySettings } from './settings';
+import type { MPEasySettings } from './sets/settings';
 
 
 type GFMBlock = `blockquote_note` | `blockquote_tip` | `blockquote_info` | `blockquote_important` | `blockquote_warning` | `blockquote_caution`

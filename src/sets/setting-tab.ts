@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting, Notice, requestUrl } from "obsidian";
-import MPEasyPlugin from "./main";
+import MPEasyPlugin from "../../main";
 import { wxGetToken } from "./weixin-api";
 
 export class MPEasySettingTab extends PluginSettingTab {
