@@ -87,8 +87,8 @@ const defaultTheme: Theme = {
     blockquote: {
       'font-style': `normal`,
       'padding': `1em`,
-      'border-left': `4px solid var(--md-primary-color)`,
-      'border-radius': `6px`,
+      'border-left': `2px solid var(--md-primary-color)`,
+      'border-radius': `8px`,
       'color': `rgba(0,0,0,0.5)`,
       'background': `var(--blockquote-background)`,
       'margin-top': `0`,
@@ -99,7 +99,7 @@ const defaultTheme: Theme = {
     blockquote_p: {
       'display': `block`,
       'font-size': `1em`,
-      'letter-spacing': `0.1em`,
+      'letter-spacing': `0em`,
       'color': `hsl(var(--foreground))`,
     },
 
