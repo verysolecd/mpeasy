@@ -119,7 +119,7 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
             
             // 1. Preprocess and parse markdown to get the raw HTML body
             const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-            const parsedHtml = await rendererApi.parse(preprocessedMarkdown, false, codeThemeCss);
+            const parsedHtml = await marked.parse(preprocessedMarkdown) as string;
 
             // 2. Process images: upload for copy/upload, convert to base64 for preview
             const bodyHtml = await processLocalImages(parsedHtml, plugin, !forCopy);
