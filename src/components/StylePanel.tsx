@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
-import type { IOpts, MPEasySettings } from '../types';
+import type { IOpts } from '../shared/types';
+import type { MPEasySettings } from '../shared/types/settings';
 import { getLayoutThemes, getCodeBlockThemes } from '../utils';
 import Combobox from './Combobox';
 import { App } from 'obsidian';

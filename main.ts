@@ -1,6 +1,6 @@
 import { Plugin } from 'obsidian';
 import { MPEasyView, VIEW_TYPE_MPEASY } from './src/components/view';
-import { MPEasySettings, DEFAULT_SETTINGS } from './src/sets/settings';
+import { MPEasySettings, DEFAULT_SETTINGS } from './src/shared/types/settings';
 import { MPEasySettingTab } from './src/sets/setting-tab';
 import { encrypt, decrypt } from './src/utils';
 
@@ -11,7 +11,7 @@ export default class MPEasyPlugin extends Plugin {
     async onload() {
         console.log('开始加载 MPEasy 插件');
         await this.loadSettings();
-        this.addSettingTab(new MPEasySettingTab(this.app, this));
+                // this.addSettingTab(new MPEasySettingTab(this.app, this));
 
         this.styleEl = document.createElement('style');
         this.styleEl.id = 'mpeasy-styles';

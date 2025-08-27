@@ -1,14 +1,5 @@
-import type { IConfigOption, Theme } from '../types';
-import { toMerged, cloneDeep } from 'es-toolkit';
-
-export function buildTheme(themeName: keyof typeof themeMap, isUseIndent: boolean, primaryColor: string): Theme {
-  const theme = cloneDeep(themeMap[themeName] || themeMap.default);
-  if (isUseIndent) {
-    theme.block.p['text-indent'] = '2em';
-  }
-  theme.base['--md-primary-color'] = primaryColor;
-  return theme;
-}
+import type { IConfigOption, Theme } from '../types'
+import { toMerged } from 'es-toolkit'
 
 const defaultTheme: Theme = {
   base: {
@@ -25,7 +16,7 @@ const defaultTheme: Theme = {
       'border-bottom': `2px solid var(--md-primary-color)`,
       'margin': `2em auto 1em`,
       'color': `hsl(var(--foreground))`,
-      'font-size': `1.6em`,
+      'font-size': `1.2em`,
       'font-weight': `bold`,
       'text-align': `center`,
     },
@@ -37,7 +28,7 @@ const defaultTheme: Theme = {
       'margin': `4em auto 2em`,
       'color': `#fff`,
       'background': `var(--md-primary-color)`,
-      'font-size': `1.5em`,
+      'font-size': `1.2em`,
       'font-weight': `bold`,
       'text-align': `center`,
     },
@@ -48,7 +39,7 @@ const defaultTheme: Theme = {
       'border-left': `3px solid var(--md-primary-color)`,
       'margin': `2em 8px 0.75em 0`,
       'color': `hsl(var(--foreground))`,
-      'font-size': `1.4em`,
+      'font-size': `1.1em`,
       'font-weight': `bold`,
       'line-height': `1.2`,
     },
@@ -57,7 +48,7 @@ const defaultTheme: Theme = {
     h4: {
       'margin': `2em 8px 0.5em`,
       'color': `var(--md-primary-color)`,
-      'font-size': `1.3em`,
+      'font-size': `1em`,
       'font-weight': `bold`,
     },
 
@@ -65,14 +56,14 @@ const defaultTheme: Theme = {
     h5: {
       'margin': `1.5em 8px 0.5em`,
       'color': `var(--md-primary-color)`,
-      'font-size': `1.2em`,
+      'font-size': `1em`,
       'font-weight': `bold`,
     },
 
     // 六级标题
     h6: {
       'margin': `1.5em 8px 0.5em`,
-      'font-size': `1.1em`,
+      'font-size': `1em`,
       'color': `var(--md-primary-color)`,
     },
 
@@ -87,19 +78,18 @@ const defaultTheme: Theme = {
     blockquote: {
       'font-style': `normal`,
       'padding': `1em`,
-      'border-left': `2px solid var(--md-primary-color)`,
-      'border-radius': `8px`,
+      'border-left': `4px solid var(--md-primary-color)`,
+      'border-radius': `6px`,
       'color': `rgba(0,0,0,0.5)`,
       'background': `var(--blockquote-background)`,
-      'margin-top': `0`,
-      'margin-bottom': `0`,
+      'margin-bottom': `1em`,
     },
 
     // 引用内容
     blockquote_p: {
       'display': `block`,
       'font-size': `1em`,
-      'letter-spacing': `0em`,
+      'letter-spacing': `0.1em`,
       'color': `hsl(var(--foreground))`,
     },
 
@@ -249,10 +239,6 @@ const defaultTheme: Theme = {
       'margin': `0.2em 8px`,
       'color': `hsl(var(--foreground))`,
     },
-    sup: {
-      'vertical-align': 'super !important',
-      'font-size': 'smaller !important',
-    },
 
     codespan: {
       'font-size': `90%`,
@@ -340,34 +326,34 @@ const graceTheme = toMerged(defaultTheme, {
     'h1': {
       'padding': `0.5em 1em`,
       'border-bottom': `2px solid var(--md-primary-color)`,
-      'font-size': `1.8em`,
+      'font-size': `1.4em`,
       'text-shadow': `2px 2px 4px rgba(0,0,0,0.1)`,
     },
 
     'h2': {
       'padding': `0.3em 1em`,
       'border-radius': `8px`,
-      'font-size': `1.6em`,
+      'font-size': `1.3em`,
       'box-shadow': `0 4px 6px rgba(0,0,0,0.1)`,
     },
 
     'h3': {
       'padding-left': `12px`,
-      'font-size': `1.4em`,
+      'font-size': `1.2em`,
       'border-left': `4px solid var(--md-primary-color)`,
       'border-bottom': `1px dashed var(--md-primary-color)`,
     },
 
     'h4': {
-      'font-size': `1.2em`,
-    },
-
-    'h5': {
       'font-size': `1.1em`,
     },
 
+    'h5': {
+      'font-size': `1em`,
+    },
+
     'h6': {
-      'font-size': `1.0em`,
+      'font-size': `1em`,
     },
 
     'p': {
@@ -482,20 +468,20 @@ const simpleTheme = toMerged(defaultTheme, {
     container: {},
     h1: {
       'padding': `0.5em 1em`,
-      'font-size': `1.8em`,
+      'font-size': `1.4em`,
       'text-shadow': `1px 1px 3px rgba(0,0,0,0.05)`,
     },
 
     h2: {
       'padding': `0.3em 1.2em`,
-      'font-size': `1.6em`,
+      'font-size': `1.3em`,
       'border-radius': `8px 24px 8px 24px`,
       'box-shadow': `0 2px 6px rgba(0,0,0,0.06)`,
     },
 
     h3: {
       'padding-left': `12px`,
-      'font-size': `1.4em`,
+      'font-size': `1.2em`,
       'border-radius': `6px`,
       'line-height': `2.4em`,
       'border-left': `4px solid var(--md-primary-color)`,
@@ -506,17 +492,15 @@ const simpleTheme = toMerged(defaultTheme, {
     },
 
     h4: {
-      'font-size': `1.2em`,
-      'border-radius': `6px`,
-    },
-
-    h5: {
       'font-size': `1.1em`,
       'border-radius': `6px`,
     },
 
+    h5: {
+      'border-radius': `6px`,
+    },
+
     h6: {
-      'font-size': `1.0em`,
       'border-radius': `6px`,
     },
 
@@ -635,40 +619,7 @@ export const themeMap = {
   simple: simpleTheme,
 }
 
-export function generateStylesheet(theme: Theme, fontSize: string): string {
-  let css = '';
-
-  // Base styles
-  css += ':root {\n';
-  for (const key in theme.base) {
-    css += `  ${key}: ${theme.base[key]};\n`;
-  }
-  css += `  font-size: ${fontSize};\n`; // Apply font size to root
-  css += '}\n\n';
-
-  // Block styles
-  for (const blockKey in theme.block) {
-    css += `${blockKey} {\n`;
-    for (const prop in theme.block[blockKey]) {
-      css += `  ${prop}: ${theme.block[blockKey][prop]};\n`;
-    }
-    css += '}\n\n';
-  }
-
-  // Inline styles
-  for (const inlineKey in theme.inline) {
-    css += `${inlineKey} {\n`;
-    for (const prop in theme.inline[inlineKey]) {
-      css += `  ${prop}: ${theme.inline[inlineKey][prop]};\n`;
-    }
-    css += '}\n\n';
-  }
-
-  return css;
-}
-
 export const themeOptions: IConfigOption<keyof typeof themeMap>[] = [
-
   {
     label: `经典`,
     value: `default`,

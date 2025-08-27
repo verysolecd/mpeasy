@@ -1,25 +1,27 @@
 import type { MarkedExtension, Tokens } from 'marked'
+/**
+ * A marked extension to support footnotes syntax.
+ * Syntax:
+ *  This is a footnote reference[^1][^2].
+ *
+ *  [^1]: .....
+ *  [^2]: .....
+ */
 
 interface MapContent {
   index: number
   text: string
 }
+const fnMap = new Map<string, MapContent>()
 
-export default function markedFootnotes(): MarkedExtension {
-  // 将 fnMap 移入函数作用域，确保每个渲染器实例都有自己的状态
-  const fnMap = new Map<string, MapContent>()
-
+export function markedFootnotes(): MarkedExtension {
   return {
-    name: 'mpeasy-footnotes',
     extensions: [
       {
         name: `footnoteDef`,
         level: `block`,
         start(src: string) {
-          // 在每次解析开始时清空 map，以处理文件切换
-          if (src.match(/^\s*\[\^/)) {
-            fnMap.clear();
-          }
+          fnMap.clear()
           return src.match(/^\[\^/)?.index
         },
         tokenizer(src: string) {
@@ -39,7 +41,7 @@ export default function markedFootnotes(): MarkedExtension {
           return undefined
         },
         renderer(token: Tokens.Generic) {
-          const { index, text, fnId } = token as any;
+          const { index, text, fnId } = token
           const fnInner = `
                 <code>${index}.</code> 
                 <span>${text}</span> 
@@ -75,11 +77,10 @@ export default function markedFootnotes(): MarkedExtension {
           }
         },
         renderer(token: Tokens.Generic) {
-          const { fnId } = token as any;
-          const content = fnMap.get(fnId) as MapContent
-          if (!content) return token.raw;
+          const { fnId } = token
+          const { index } = fnMap.get(fnId) as MapContent
           return `<sup style="color: var(--md-primary-color);">
-                    <a href="#fnDef-${fnId}" id="fnRef-${fnId}">\[${content.index}\]</a>
+                    <a href="#fnDef-${fnId}" id="fnRef-${fnId}">\[${index}\]</a>
                 </sup>`
         },
       },

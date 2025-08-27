@@ -1,15 +1,13 @@
+import type { ThemeStyles } from '@md/shared/types'
 import type { MarkedExtension, Tokens } from 'marked'
-// 稍后我们会定义这些类型
-import type { ThemeStyles } from '../types'; 
-
+import { getStyleString } from '../utils'
 
 /**
  * A marked extension to support horizontal sliding images.
  * Syntax: <![alt1](url1),![alt2](url2),![alt3](url3)>
  */
-export default function markedSlider(options: { styles?: ThemeStyles } = {}): MarkedExtension {
+export function markedSlider(options: { styles?: ThemeStyles } = {}): MarkedExtension {
   return {
-    name: 'mpeasy-slider',
     extensions: [
       {
         name: `horizontalSlider`,
@@ -44,10 +42,13 @@ export default function markedSlider(options: { styles?: ThemeStyles } = {}): Ma
             const src = srcMatch[1] || ``
 
             const { styles } = options
-            const imgStyles = styles && (styles as any).image ? getStyleString((styles as any).image) : ``
+            const imgStyles = styles ? getStyleString(styles.image) : ``
 
             return { src, alt, imgStyles }
           })
+
+          // 使用微信公众号兼容的滑动容器布局
+          // 使用微信支持的section标签和特殊样式组合
 
           return `
             <section style="box-sizing: border-box; font-size: 16px;">
@@ -55,6 +56,7 @@ export default function markedSlider(options: { styles?: ThemeStyles } = {}): Ma
                 <section data-role="paragraph" style="margin: 0px auto; box-sizing: border-box; width: 100%;">
                   <section style="margin: 0px auto; text-align: center;">
                     <section style="display: inline-block; width: 100%;">
+                      <!-- 微信公众号支持的滑动图片容器 -->
                       <section style="overflow-x: scroll; -webkit-overflow-scrolling: touch; white-space: nowrap; width: 100%; text-align: center;">
                         ${images.map((img: { src: string, alt: string, imgStyles: string }, _index: number) => `<section style="display: inline-block; width: 100%; margin-right: 0; vertical-align: top;">
                           <img src="${img.src}" alt="${img.alt}" title="${img.alt}" style="${img.imgStyles}; width: 100%; height: auto; border-radius: 4px; vertical-align: top;"/>

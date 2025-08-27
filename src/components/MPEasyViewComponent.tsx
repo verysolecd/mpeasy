@@ -3,14 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 import { App, Notice, TFile, MarkdownView, normalizePath, requestUrl } from 'obsidian';
 import Header from './Header';
 import StylePanel from './StylePanel';
-import { initRenderer, parseFrontMatterAndContent } from '../core/renderer';
-import type { RendererAPI, IOpts } from '../types';
-import { UploadModal } from './UploadModal';
+import { themeMap } from '../shared/configs/theme';
+import { initRenderer } from '../core/renderer';
+import type { RendererAPI, IOpts } from '../shared/types';
 import { wxAddDraft, wxUploadImage } from '../sets/weixin-api';
 import { processLocalImages } from '../core/htmlPostProcessor';
 import type MPEasyPlugin from '../../main';
 import { preprocessMarkdown } from '../utils';
-import { MPEasySettings } from '../sets/settings';
+import { MPEasySettings } from '../shared/types/settings';
 
 interface MPEasyViewProps {
     file: TFile;
@@ -68,8 +68,13 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
 
     useEffect(() => {
         if (!iframeRef.current) return;
+
+        const themeName = plugin.settings.layoutThemeName as keyof typeof themeMap;
+        const selectedTheme = themeMap[themeName] || themeMap.default;
+
         const initialOpts: Partial<IOpts> = {
             ...settings,
+            theme: selectedTheme,
             layoutThemeName: plugin.settings.layoutThemeName,
             codeThemeName: plugin.settings.codeThemeName,
             customCSS: customCss,
@@ -83,7 +88,14 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
 
     useEffect(() => {
         if (rendererApi) {
-            rendererApi.setOptions({ ...settings, obsidianTheme: obsidianTheme });
+            const themeName = settings.layoutThemeName as keyof typeof themeMap;
+            const selectedTheme = themeMap[themeName] || themeMap.default;
+
+            rendererApi.setOptions({ 
+                ...settings, 
+                theme: selectedTheme, 
+                obsidianTheme: obsidianTheme 
+            });
             console.log('MPEasyViewComponent: settings.isUseIndent changed to', settings.isUseIndent);
         }
     }, [settings, rendererApi, obsidianTheme]);
@@ -97,41 +109,89 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
         }
     };
 
-    const getStyledHtml = async (forUpload: boolean): Promise<string | null> => {
+    const generateFinalHtml = async (forCopy: boolean): Promise<string | null> => {
         if (!rendererApi) {
             new Notice('渲染器尚未准备好。');
             return null;
         }
+        try {
+            const startTime = performance.now();
+            
+            // 1. Preprocess and parse markdown to get the raw HTML body
+            const preprocessedMarkdown = preprocessMarkdown(markdownContent);
+            const parsedHtml = await rendererApi.parse(preprocessedMarkdown, false, codeThemeCss);
 
-        // Re-parse the markdown content with inline styles
-        const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-        let finalHtml = await rendererApi.parse(preprocessedMarkdown, true, codeThemeCss);
+            // 2. Process images: upload for copy/upload, convert to base64 for preview
+            const bodyHtml = await processLocalImages(parsedHtml, plugin, !forCopy);
 
-        // Process local images for upload if necessary
-        finalHtml = await processLocalImages(finalHtml, plugin, !forUpload);
+            // 3. Assemble the full, self-contained HTML document
+            const finalHtml = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>${file.basename}</title>
+                    <style>${codeThemeCss}</style>
+                    <style>${rendererApi.getStyles()}${customCss}</style>
+                </head>
+                <body>
+                    <section id="output">${bodyHtml}</section>
+                    <script src="${mermaidPath}"></script>
+                    <script src="${mathjaxPath}"></script>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const promises = [];
+                            if (typeof mermaid !== 'undefined') {
+                                mermaid.initialize({ startOnLoad: false, theme: 'default' });
+                                promises.push(mermaid.run({ nodes: document.querySelectorAll('.mermaid') }));
+                            }
+                            if (typeof MathJax !== 'undefined' && MathJax.startup) {
+                                promises.push(MathJax.startup.promise.then(() => 
+                                    MathJax.typesetPromise(document.querySelectorAll('#output'))
+                                ));
+                            }
+                            Promise.all(promises).catch(console.warn);
+                        });
+                    </script>
+                </body>
+                </html>
+            `;
+            
+            console.log(`MPEasy: Final HTML generated in ${performance.now() - startTime}ms. For copy: ${forCopy}`);
+            return finalHtml;
 
-        return finalHtml;
+        } catch (error) {
+            console.error('Error during final HTML generation:', error);
+            new Notice('生成最终HTML时发生错误，请检查开发者控制台。');
+            return null;
+        }
     };
 
     const handleCopy = async () => {
-        new Notice('正在处理内容以便复制...');
-        const finalHtml = await getStyledHtml(false);
+        new Notice('正在生成内容以便复制...');
+        const finalHtml = await generateFinalHtml(true);
         if (finalHtml === null) {
             new Notice('处理失败，请重试。');
             return;
         }
-        const blob = new Blob([finalHtml], { type: 'text/html' });
-        const clipboardItem = new ClipboardItem({ 'text/html': blob });
-        navigator.clipboard.write([clipboardItem]).then(() => {
+        try {
+            const blob = new Blob([finalHtml], { type: 'text/html' });
+            const clipboardItem = new ClipboardItem({ 'text/html': blob });
+            await navigator.clipboard.write([clipboardItem]);
             new Notice('已成功复制到剪贴板！');
-        }, (err) => {
-            new Notice('复制失败: ' + err);
-        });
+        } catch (err) {
+            console.error('Failed to copy to clipboard:', err);
+            new Notice('复制失败: ' + err.message);
+        }
     };
 
     const handleUpload = async () => {
         console.log('MPEasy: 开始上传流程');
-        const { yamlData } = parseFrontMatterAndContent(markdownContent);
+        if (!rendererApi) {
+            new Notice('渲染器尚未准备好，无法上传。');
+            return;
+        }
+        const { yamlData } = rendererApi.parseFrontMatterAndContent(markdownContent);
         const title = (yamlData.title as string) || file.basename;
         
         let bannerField = (yamlData.banner as string) || '';
@@ -148,7 +208,7 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
         if (bannerField) {
             let extractedUrl = '';
             
-            const markdownMatch = bannerField.match(/!\s*?\[.*?\].*?\((.*?)\)/);
+            const markdownMatch = bannerField.match(/!\s*?\[.*?\][\s\S]*?\((.*?)\)/);
             if (markdownMatch) {
                 extractedUrl = markdownMatch[1];
             } else if (bannerField.startsWith('![[') && bannerField.endsWith(']]')) {
@@ -182,8 +242,9 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
             new Notice('正在处理内容和上传图片...');
             
             try {
-                const finalHtml = await getStyledHtml(true);
-                if (finalHtml === null) {
+                // For upload, we need images to be uploaded, so forCopy=true
+                const finalHtmlForUpload = await generateFinalHtml(true);
+                if (finalHtmlForUpload === null) {
                     new Notice('内容处理失败，请重试。');
                     return;
                 }
@@ -254,7 +315,7 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
                     author,
                     digest,
                     content_source_url,
-                    content: finalHtml,
+                    content: finalHtmlForUpload,
                     thumb_media_id,
                     need_open_comment: plugin.settings.enableComments ? 1 : 0,
                     only_fans_can_comment: plugin.settings.onlyFansCanComment ? 0 : 1,
@@ -277,108 +338,67 @@ const MPEasyViewComponent = ({ file, app, plugin, settings, onSettingsChange, me
         new Notice('自定义CSS已保存!');
     };
 
-    
-
     useEffect(() => {
         if (!rendererApi || !iframeRef.current || !markdownContent) return;
 
         const debounceTimeout = setTimeout(async () => {
-            try {
-                const startTime = performance.now();
+            const iframe = iframeRef.current;
+            if (!iframe) return;
 
-                const preprocessedMarkdown = preprocessMarkdown(markdownContent);
-                const parsedHtml = await rendererApi.parse(preprocessedMarkdown, false, codeThemeCss);
-                const previewHtml = await processLocalImages(parsedHtml, plugin, true);
+            // Generate the full HTML for preview (forCopy = false)
+            const fullHtml = await generateFinalHtml(false);
+            if (fullHtml === null) return;
 
-                const iframe = iframeRef.current;
-                if (!iframe) return;
+            iframe.srcdoc = fullHtml;
 
-                const fullHtml = `
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <style>${codeThemeCss}</style>                        
-                        <style>${rendererApi.getStyles()}${customCss}</style>
-                    </head>
-                    <body>
-                        <section id="output">${previewHtml}</section>
-                        <script src="${mermaidPath}"></script>
-                        <script src="${mathjaxPath}"></script>
-                        <script>
-                            document.addEventListener('DOMContentLoaded', () => {
-                                const promises = [];
-                                if (typeof mermaid !== 'undefined') {
-                                    mermaid.initialize({ startOnLoad: false, theme: 'default' });
-                                    promises.push(mermaid.run({ nodes: document.querySelectorAll('.mermaid') }));
-                                }
-                                if (typeof MathJax !== 'undefined' && MathJax.startup) {
-                                    promises.push(MathJax.startup.promise.then(() => 
-                                        MathJax.typesetPromise(document.querySelectorAll('#output'))
-                                    ));
-                                }
-                                Promise.all(promises).catch(console.warn);
-                            });
-                        </script>
-                    </body>
-                    </html>
-                `;
+            iframe.onload = () => {
+                if (scrollListenersRef.current) {
+                    scrollListenersRef.current.cleanUp();
+                }
 
-                iframe.srcdoc = fullHtml;
-                console.log('MPEasy: fullHtml content:', fullHtml);
-                console.log(`MPEasy: Render prepared in ${performance.now() - startTime}ms`);
+                const previewWindow = iframe.contentWindow;
+                const previewEl = iframe.contentDocument?.documentElement;
+                const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
+                if (!markdownView || !previewWindow || !previewEl) return;
 
-                iframe.onload = () => {
-                    if (scrollListenersRef.current) {
-                        scrollListenersRef.current.cleanUp();
-                    }
+                const editorEl = (markdownView.getMode() === 'preview')
+                    ? markdownView.containerEl.querySelector('.markdown-preview-view')
+                    : (markdownView.editor.cm as any).scrollDOM;
 
-                    const previewWindow = iframe.contentWindow;
-                    const previewEl = iframe.contentDocument?.documentElement;
-                    const markdownView = app.workspace.getActiveViewOfType(MarkdownView);
-                    if (!markdownView || !previewWindow || !previewEl) return;
+                if (!editorEl) return;
 
-                    const editorEl = (markdownView.getMode() === 'preview')
-                        ? markdownView.containerEl.querySelector('.markdown-preview-view')
-                        : (markdownView.editor.cm as any).scrollDOM;
+                let isSyncing = false;
 
-                    if (!editorEl) return;
-
-                    let isSyncing = false;
-
-                    const handleEditorScroll = () => {
-                        if (isSyncing) return;
-                        isSyncing = true;
-                        requestAnimationFrame(() => {
-                            const percentage = editorEl.scrollTop / Math.max(1, editorEl.scrollHeight - editorEl.clientHeight);
-                            previewEl.scrollTop = percentage * Math.max(1, previewEl.scrollHeight - previewEl.clientHeight);
-                            setTimeout(() => isSyncing = false, 50);
-                        });
-                    };
-
-                    const handlePreviewScroll = () => {
-                        if (isSyncing) return;
-                        isSyncing = true;
-                        requestAnimationFrame(() => {
-                            const percentage = previewEl.scrollTop / Math.max(1, previewEl.scrollHeight - previewEl.clientHeight);
-                            editorEl.scrollTop = percentage * Math.max(1, editorEl.scrollHeight - editorEl.clientHeight);
-                            setTimeout(() => isSyncing = false, 50);
-                        });
-                    };
-
-                    editorEl.addEventListener('scroll', handleEditorScroll, { passive: true });
-                    previewWindow.addEventListener('scroll', handlePreviewScroll, { passive: true });
-
-                    scrollListenersRef.current = { 
-                        cleanUp: () => {
-                            editorEl.removeEventListener('scroll', handleEditorScroll);
-                            previewWindow.removeEventListener('scroll', handlePreviewScroll);
-                        }
-                    };
+                const handleEditorScroll = () => {
+                    if (isSyncing) return;
+                    isSyncing = true;
+                    requestAnimationFrame(() => {
+                        const percentage = editorEl.scrollTop / Math.max(1, editorEl.scrollHeight - editorEl.clientHeight);
+                        previewEl.scrollTop = percentage * Math.max(1, previewEl.scrollHeight - previewEl.clientHeight);
+                        setTimeout(() => isSyncing = false, 50);
+                    });
                 };
-            } catch (error) {
-                console.error('Error during rendering:', error);
-                new Notice('渲染预览时发生错误，请检查开发者控制台。');
-            }
+
+                const handlePreviewScroll = () => {
+                    if (isSyncing) return;
+                    isSyncing = true;
+                    requestAnimationFrame(() => {
+                        const percentage = previewEl.scrollTop / Math.max(1, previewEl.scrollHeight - previewEl.clientHeight);
+                        editorEl.scrollTop = percentage * Math.max(1, editorEl.scrollHeight - editorEl.clientHeight);
+                        setTimeout(() => isSyncing = false, 50);
+                    });
+                };
+
+                editorEl.addEventListener('scroll', handleEditorScroll, { passive: true });
+                previewWindow.addEventListener('scroll', handlePreviewScroll, { passive: true });
+
+                scrollListenersRef.current = { 
+                    cleanUp: () => {
+                        editorEl.removeEventListener('scroll', handleEditorScroll);
+                        previewWindow.removeEventListener('scroll', handlePreviewScroll);
+                    }
+                };
+            };
         }, 150); 
 
         return () => {

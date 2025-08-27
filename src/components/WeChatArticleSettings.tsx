@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { MPEasySettings } from '../sets/settings';
+import type { MPEasySettings } from '../shared/types/settings';
 
 interface WeChatArticleSettingsProps {
     settings: MPEasySettings;

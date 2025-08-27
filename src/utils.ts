@@ -11,7 +11,7 @@ import { MPEasySettings } from './sets/settings';
 const wikilinkImageRegex = /!\[\[(.*?)\]\]/g;
 
 export function preprocessMarkdown(markdown: string): string {
-    return markdown.replace(wikilinkImageRegex, '[]($1)');
+    return markdown.replace(wikilinkImageRegex, '![]($1)');
 }
 
 // 缓存主题结果
