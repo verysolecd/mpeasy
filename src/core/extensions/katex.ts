@@ -11,23 +11,11 @@ const blockRule = /^\s{0,3}(\${1,2})[ \t]*\n([\s\S]+?)\n\s{0,3}\1[ \t]*(?:\n|$)/
 
 function createRenderer(display: boolean, inlineStyle: string, blockStyle: string) {
   return (token: any) => {
-    // @ts-expect-error MathJax is a global variable
-    window.MathJax.texReset()
-    // @ts-expect-error MathJax is a global variable
-    const mjxContainer = window.MathJax.tex2svg(token.text, { display })
-    const svg = mjxContainer.firstChild
-    const width = svg.style[`min-width`] || svg.getAttribute(`width`)
-    svg.removeAttribute(`width`)
-
-    svg.style = `max-width: 300vw !important; display: initial; flex-shrink: 0;`
-    svg.style.width = width
-
-    if (!display) {
-      return `<span ${inlineStyle}>${svg.outerHTML}</span>`
+    if (display) {
+      return `<section ${blockStyle}>${token.raw}</section>`;
     }
-
-    return `<section ${blockStyle}>${svg.outerHTML}</section>`
-  }
+    return `<span ${inlineStyle}>${token.raw}</span>`;
+  };
 }
 
 function inlineKatex(options: MarkedKatexOptions | undefined, renderer: any) {

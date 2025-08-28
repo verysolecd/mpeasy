@@ -393,6 +393,7 @@ export function initRenderer(opts: IOpts): RendererAPI {
     createContainer(content: string) {
       return styledContent(`container`, content, `section`)
     },
+    getStyles: () => ' ',
     getOpts,
   }
 }

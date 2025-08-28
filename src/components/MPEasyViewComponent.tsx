@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { marked } from 'marked';
 import { useEffect, useRef, useState } from 'react';
 import { App, Notice, TFile, MarkdownView, normalizePath, requestUrl } from 'obsidian';
 import Header from './Header';
