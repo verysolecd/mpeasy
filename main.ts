@@ -2,7 +2,7 @@ import { Plugin } from 'obsidian';
 import { MPEasyView, VIEW_TYPE_MPEASY } from './src/components/view';
 import { MPEasySettings, DEFAULT_SETTINGS } from './src/shared/types/settings';
 import { MPEasySettingTab } from './src/sets/setting-tab';
-import { encrypt, decrypt } from './src/utils';
+// import { encrypt, decrypt } from './src/utils';
 
 export default class MPEasyPlugin extends Plugin {
     settings: MPEasySettings;
@@ -11,7 +11,7 @@ export default class MPEasyPlugin extends Plugin {
     async onload() {
         console.log('开始加载 MPEasy 插件');
         await this.loadSettings();
-                // this.addSettingTab(new MPEasySettingTab(this.app, this));
+        this.addSettingTab(new MPEasySettingTab(this.app, this));
 
         this.styleEl = document.createElement('style');
         this.styleEl.id = 'mpeasy-styles';
@@ -67,11 +67,11 @@ export default class MPEasyPlugin extends Plugin {
         const loadedData = await this.loadData();
         this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
         
-        if (this.settings.encryptionPassword) {
-            this.settings.wxAppId = decrypt(this.settings.wxAppId, this.settings.encryptionPassword);
-            this.settings.wxSecret = decrypt(this.settings.wxSecret, this.settings.encryptionPassword);
-            this.settings.wxToken = decrypt(this.settings.wxToken, this.settings.encryptionPassword);
-        }
+        // if (this.settings.encryptionPassword) {
+        //     this.settings.wxAppId = decrypt(this.settings.wxAppId, this.settings.encryptionPassword);
+        //     this.settings.wxSecret = decrypt(this.settings.wxSecret, this.settings.encryptionPassword);
+        //     this.settings.wxToken = decrypt(this.settings.wxToken, this.settings.encryptionPassword);
+        // }
         
         if (loadedData) {
             if (loadedData.themeName && !loadedData.layoutThemeName) {
@@ -88,11 +88,11 @@ export default class MPEasyPlugin extends Plugin {
 
     async saveSettings() {
         const settingsToSave = { ...this.settings };
-        if (settingsToSave.encryptionPassword) {
-            settingsToSave.wxAppId = encrypt(settingsToSave.wxAppId, settingsToSave.encryptionPassword);
-            settingsToSave.wxSecret = encrypt(settingsToSave.wxSecret, settingsToSave.encryptionPassword);
-            settingsToSave.wxToken = encrypt(settingsToSave.wxToken, settingsToSave.encryptionPassword);
-        }
+        // if (settingsToSave.encryptionPassword) {
+        //     settingsToSave.wxAppId = encrypt(settingsToSave.wxAppId, settingsToSave.encryptionPassword);
+        //     settingsToSave.wxSecret = encrypt(settingsToSave.wxSecret, settingsToSave.encryptionPassword);
+        //     settingsToSave.wxToken = encrypt(settingsToSave.wxToken, settingsToSave.encryptionPassword);
+        // }
         await this.saveData(settingsToSave);
         this.refreshViews();
     }
