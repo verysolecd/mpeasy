@@ -37,7 +37,7 @@ export default class MpeasyPlugin extends Plugin {
         if (leaves.length > 0) {
             leaf = leaves[0];
         } else {
-            leaf = this.app.workspace.getLeaf(true);
+            leaf = this.app.workspace.getRightLeaf(false);
             await leaf.setViewState({ type: MPEASY_VIEW_TYPE, active: true });
         }
 

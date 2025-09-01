@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, TFile, Vault } from 'obsidian';
+import { ItemView, WorkspaceLeaf, TFile, Vault, normalizePath } from 'obsidian';
 import { createRoot, Root } from 'react-dom/client';
 import React from 'react';
 import App from '../view';
@@ -9,6 +9,7 @@ export class MpeasyView extends ItemView {
     private root: Root | null = null;
     private fileContent: string = '';
     private cssContent: string = '';
+    private availableCodeThemes: string[] = [];
 
     constructor(leaf: WorkspaceLeaf) {
         super(leaf);
@@ -25,7 +26,6 @@ export class MpeasyView extends ItemView {
     }
 
     async onOpen() {
-        // Use the stable contentEl for rendering
         this.contentEl.empty();
         this.contentEl.style.height = '100%';
         const rootEl = this.contentEl.createEl('div');
@@ -34,7 +34,7 @@ export class MpeasyView extends ItemView {
 
         this.root = createRoot(rootEl);
         
-        await this.loadCss();
+        await this.loadStyles();
 
         this.registerEvent(this.app.workspace.on('active-leaf-change', this.handleActiveLeafChange));
         this.registerEvent(this.app.vault.on('modify', this.onFileModified));
@@ -51,7 +51,6 @@ export class MpeasyView extends ItemView {
     }
 
     async onFileModified(file: TFile) {
-        // Only update if the modified file is the one we are viewing
         const activeFile = this.app.workspace.getActiveFile();
         if (file === activeFile) {
             this.updateContent(file);
@@ -67,26 +66,63 @@ export class MpeasyView extends ItemView {
         this.renderView();
     }
 
-    async loadCss() {
+    async loadStyles() {
+        const adapter = this.app.vault.adapter;
+        // Load main stylesheet
         const cssPath = `${this.app.vault.configDir}/plugins/mpeasy/styles.css`;
         try {
-            const adapter = this.app.vault.adapter;
             if (await adapter.exists(cssPath)) {
                 this.cssContent = await adapter.read(cssPath);
             } else {
                 console.error('MPEasy: styles.css not found!');
-                this.cssContent = ''; // Ensure it's a string
+                this.cssContent = '';
             }
         } catch (error) {
             console.error('MPEasy: Error loading styles.css', error);
         }
+
+        // Load available code block themes
+        const codeThemeDir = normalizePath(`${this.app.vault.configDir}/plugins/mpeasy/Dist/assets/codestyle`);
+        try {
+            if (await adapter.exists(codeThemeDir)) {
+                const result = await adapter.list(codeThemeDir);
+                this.availableCodeThemes = result.files.map(p => p.split('/').pop() || '').filter(n => n.endsWith('.css'));
+            } else {
+                console.error('MPEasy: Code style directory not found!');
+            }
+        } catch (error) {
+            console.error('MPEasy: Error listing code themes', error);
+        }
+    }
+
+    getCodeThemeUrl(themeFile: string): string {
+        const basePath = (this.app.vault.adapter as any).getBasePath();
+        const relativePath = normalizePath(`${this.app.vault.configDir}/plugins/mpeasy/assets/codestyle/${themeFile}`);
+        // Use a file system path and convert to a resource URL
+        const absolutePath = `${basePath}/${relativePath}`;
+        return this.app.vault.adapter.getResourcePath(absolutePath);
+    }
+
+    async getCodeThemeCss(themeFile: string): Promise<string> {
+        const path = normalizePath(`${this.app.vault.configDir}/plugins/mpeasy/Dist/assets/codestyle/${themeFile}`);
+        try {
+            if (await this.app.vault.adapter.exists(path)) {
+                return await this.app.vault.adapter.read(path);
+            }
+        } catch (error) {
+            console.error(`MPEasy: Could not read code theme css file: ${path}`, error);
+        }
+        return ''; // Return empty string if not found or error
     }
 
     renderView() {
         if (this.root) {
             const props = { 
                 fileContent: this.fileContent, 
-                cssContent: this.cssContent 
+                cssContent: this.cssContent,
+                availableCodeThemes: this.availableCodeThemes,
+                getCodeThemeUrl: this.getCodeThemeUrl.bind(this),
+                getCodeThemeCss: this.getCodeThemeCss.bind(this)
             };
             this.root.render(
                 <React.StrictMode>

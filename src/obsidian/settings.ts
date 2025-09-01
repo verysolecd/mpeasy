@@ -1,4 +1,3 @@
-
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import MpeasyPlugin from '../../main';
 
