@@ -16,7 +16,7 @@ function cleanDist() {
 function copyToDist() {
     const filesToCopy = [
         { src: 'manifest.json', dest: 'Dist/manifest.json' },
-        { src: 'styles.css', dest: 'Dist/styles.css' },
+        
         { src: 'README.md', dest: 'Dist/README.md' }
     ];
     filesToCopy.forEach(({ src, dest }) => {
