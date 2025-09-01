@@ -6,7 +6,7 @@ import { cloneDeep, toMerged } from 'es-toolkit'
 import frontMatter from 'front-matter'
 import hljs from 'highlight.js'
 import { marked } from 'marked'
-import mermaid from 'mermaid'
+
 import readingTime from 'reading-time'
 import { markedAlert, markedFootnotes, markedSlider, markedToc, MDKatex } from '../extensions'
 import { getStyleString } from '../utils'
@@ -143,7 +143,7 @@ export function initRenderer(opts: IOpts): RendererAPI {
   const footnotes: [number, string, string][] = []
   let footnoteIndex: number = 0
   let styleMapping: ThemeStyles = buildTheme(opts)
-  let codeIndex: number = 0
+  
   const listOrderedStack: boolean[] = []
   const listCounters: number[] = []
 
@@ -234,12 +234,8 @@ export function initRenderer(opts: IOpts): RendererAPI {
       return styledContent(`blockquote`, text)
     },
 
-    code({ text, lang = `` }: Tokens.Code): string {
+        code({ text, lang = `` }: Tokens.Code): string {
       if (lang.startsWith(`mermaid`)) {
-        clearTimeout(codeIndex)
-        codeIndex = setTimeout(() => {
-          mermaid.run()
-        }, 0) as any as number
         return `<pre class="mermaid">${text}</pre>`
       }
       const langText = lang.split(` `)[0]
