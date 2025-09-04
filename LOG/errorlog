@@ -1,0 +1,88 @@
+Error: Token with "list" type was not found.
+Please report this to https://github.com/markedjs/marked.
+    at hB.parseInline (plugin:obsidian-mpeasy:71:1105)
+    at hR.list (plugin:obsidian-mpeasy:2884:944)
+    at a.<computed> (plugin:obsidian-mpeasy:71:3549)
+    at hB.parse (plugin:obsidian-mpeasy:70:2105)
+    at parse (plugin:obsidian-mpeasy:70:1331)
+    at IXe.eval [as parse] (plugin:obsidian-mpeasy:71:5869)
+    at Function.kr [as parse] (plugin:obsidian-mpeasy:15:31)
+    at M7.render (plugin:obsidian-mpeasy:2884:2910)
+    at cqt (plugin:obsidian-mpeasy:2885:171)
+    at WP (plugin:obsidian-mpeasy:11:17080)
+iP @ plugin:obsidian-mpeasy:13
+plugin:obsidian-mpeasy:13 Uncaught Error: Token with "list" type was not found.
+Please report this to https://github.com/markedjs/marked.
+    at hB.parseInline (plugin:obsidian-mpeasy:71:1105)
+    at hR.list (plugin:obsidian-mpeasy:2884:944)
+    at a.<computed> (plugin:obsidian-mpeasy:71:3549)
+    at hB.parse (plugin:obsidian-mpeasy:70:2105)
+    at parse (plugin:obsidian-mpeasy:70:1331)
+    at IXe.eval [as parse] (plugin:obsidian-mpeasy:71:5869)
+    at Function.kr [as parse] (plugin:obsidian-mpeasy:15:31)
+    at M7.render (plugin:obsidian-mpeasy:2884:2910)
+    at cqt (plugin:obsidian-mpeasy:2885:171)
+    at WP (plugin:obsidian-mpeasy:11:17080)
+plugin:obsidian-mpeasy:2887 MPEasy: styles.css not found! Attempted to load from: .obsidian/plugins/mpeasy/styles.css
+loadStyles @ plugin:obsidian-mpeasy:2887
+plugin:obsidian-mpeasy:2887 MPEasy: Code style directory not found!
+loadStyles @ plugin:obsidian-mpeasy:2887
+plugin:obsidian-mpeasy:2803 Refused to load the stylesheet 'app://9f842f4722acbf34692e6f204b371546b67e/D:/GX-LLF/00-/onedrive/OB/OBvaults/MyVault/D:/GX-LLF/00-/onedrive/OB/OBvaults/MyVault/.obsidian/plugins/mpeasy/assets/codestyle/github.css?1756968166813' because it violates the following Content Security Policy directive: "style-src 'unsafe-inline' 'self' https://fonts.googleapis.com". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback.
+
+eval @ plugin:obsidian-mpeasy:2803
+plugin:obsidian-mpeasy:2803 Refused to load the stylesheet 'app://9f842f4722acbf34692e6f204b371546b67e/D:/GX-LLF/00-/onedrive/OB/OBvaults/MyVault/D:/GX-LLF/00-/onedrive/OB/OBvaults/MyVault/.obsidian/plugins/mpeasy/assets/codestyle/github.css?1756968166865' because it violates the following Content Security Policy directive: "style-src 'unsafe-inline' 'self' https://fonts.googleapis.com". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback.
+
+eval @ plugin:obsidian-mpeasy:2803
+plugin:obsidian-mpeasy:2803 Refused to load the stylesheet 'app://9f842f4722acbf34692e6f204b371546b67e/D:/GX-LLF/00-/onedrive/OB/OBvaults/MyVault/D:/GX-LLF/00-/onedrive/OB/OBvaults/MyVault/.obsidian/plugins/mpeasy/assets/codestyle/github.css?1756968172287' because it violates the following Content Security Policy directive: "style-src 'unsafe-inline' 'self' https://fonts.googleapis.com". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback.
+
+eval @ plugin:obsidian-mpeasy:2803
+plugin:obsidian-mpeasy:13 TypeError: Cannot read properties of undefined (reading 'split')
+Please report this to https://github.com/markedjs/marked.
+    at oqt (plugin:obsidian-mpeasy:2855:1702)
+    at hR.image (plugin:obsidian-mpeasy:2884:1197)
+    at a.<computed> (plugin:obsidian-mpeasy:71:3549)
+    at hB.parseInline (plugin:obsidian-mpeasy:71:785)
+    at hR.paragraph (plugin:obsidian-mpeasy:2881:136)
+    at a.<computed> (plugin:obsidian-mpeasy:71:3549)
+    at hB.parse (plugin:obsidian-mpeasy:70:2246)
+    at parse (plugin:obsidian-mpeasy:70:1331)
+    at IXe.eval [as parse] (plugin:obsidian-mpeasy:71:5869)
+    at Function.kr [as parse] (plugin:obsidian-mpeasy:15:31)
+iP @ plugin:obsidian-mpeasy:13
+plugin:obsidian-mpeasy:13 Uncaught TypeError: Cannot read properties of undefined (reading 'split')
+Please report this to https://github.com/markedjs/marked.
+    at oqt (plugin:obsidian-mpeasy:2855:1702)
+    at hR.image (plugin:obsidian-mpeasy:2884:1197)
+    at a.<computed> (plugin:obsidian-mpeasy:71:3549)
+    at hB.parseInline (plugin:obsidian-mpeasy:71:785)
+    at hR.paragraph (plugin:obsidian-mpeasy:2881:136)
+    at a.<computed> (plugin:obsidian-mpeasy:71:3549)
+    at hB.parse (plugin:obsidian-mpeasy:70:2246)
+    at parse (plugin:obsidian-mpeasy:70:1331)
+    at IXe.eval [as parse] (plugin:obsidian-mpeasy:71:5869)
+    at Function.kr [as parse] (plugin:obsidian-mpeasy:15:31)
+plugin:obsidian-mpeasy:13 TypeError: Cannot read properties of undefined (reading 'split')
+Please report this to https://github.com/markedjs/marked.
+    at oqt (plugin:obsidian-mpeasy:2855:1702)
+    at hR.image (plugin:obsidian-mpeasy:2884:1197)
+    at a.<computed> [as image] (plugin:obsidian-mpeasy:71:3549)
+    at hB.parseInline (plugin:obsidian-mpeasy:71:785)
+    at hR.paragraph (plugin:obsidian-mpeasy:2881:136)
+    at a.<computed> [as paragraph] (plugin:obsidian-mpeasy:71:3549)
+    at hB.parse (plugin:obsidian-mpeasy:70:2246)
+    at parse (plugin:obsidian-mpeasy:70:1331)
+    at IXe.eval [as parse] (plugin:obsidian-mpeasy:71:5869)
+    at Function.kr [as parse] (plugin:obsidian-mpeasy:15:31)
+iP @ plugin:obsidian-mpeasy:13
+plugin:obsidian-mpeasy:13 Uncaught TypeError: Cannot read properties of undefined (reading 'split')
+Please report this to https://github.com/markedjs/marked.
+    at oqt (plugin:obsidian-mpeasy:2855:1702)
+    at hR.image (plugin:obsidian-mpeasy:2884:1197)
+    at a.<computed> [as image] (plugin:obsidian-mpeasy:71:3549)
+    at hB.parseInline (plugin:obsidian-mpeasy:71:785)
+    at hR.paragraph (plugin:obsidian-mpeasy:2881:136)
+    at a.<computed> [as paragraph] (plugin:obsidian-mpeasy:71:3549)
+    at hB.parse (plugin:obsidian-mpeasy:70:2246)
+    at parse (plugin:obsidian-mpeasy:70:1331)
+    at IXe.eval [as parse] (plugin:obsidian-mpeasy:71:5869)
+    at Function.kr [as parse] (plugin:obsidian-mpeasy:15:31)

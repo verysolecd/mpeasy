@@ -1,0 +1,142 @@
+/* Wechat Theme - Comprehensive Styles */
+
+/* Basic Reset/Normalization */
+body, p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, pre, table, figure {
+    margin: 0;
+    padding: 0;
+}
+
+/* Typography */
+p {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 16px;
+    line-height: 1.75;
+    margin-bottom: 1em;
+    color: #3e3e3e;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    color: #2c2c2c;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: bold;
+}
+
+h1 {
+    font-size: 24px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0.2em;
+}
+h2 {
+    font-size: 22px;
+}
+h3 {
+    font-size: 20px;
+}
+h4 {
+    font-size: 18px;
+}
+h5 {
+    font-size: 16px;
+}
+h6 {
+    font-size: 14px;
+}
+
+strong {
+    font-weight: bold;
+}
+em {
+    font-style: italic;
+}
+del {
+    text-decoration: line-through;
+}
+a {
+    color: #1a73e8;
+    text-decoration: none;
+}
+
+/* Lists */
+ul, ol {
+    margin-bottom: 1em;
+    padding-left: 2em;
+}
+li {
+    margin-bottom: 0.5em;
+}
+
+/* Blockquote */
+blockquote {
+    border-left: 4px solid #ccc;
+    margin: 1.5em 0;
+    padding: 0.5em 1em;
+    color: #666;
+    background-color: #f9f9f9;
+}
+
+/* Code Blocks */
+pre {
+    background-color: #282c34;
+    color: #abb2bf;
+    border: 1px solid #3a3f4b;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-bottom: 1em;
+}
+code {
+    font-family: 'Consolas', 'Monaco', 'Andale Mono', 'Ubuntu Mono', monospace;
+    font-size: 0.9em;
+    display: block;
+    padding: 1em;
+}
+.code-block-header {
+    background-color: #21252b;
+    color: #abb2bf;
+    padding: 0.5em 1em;
+    border-bottom: 1px solid #3a3f4b;
+    font-size: 0.9em;
+}
+
+/* Images */
+figure {
+    margin: 1em 0;
+    text-align: center;
+}
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+figcaption {
+    font-size: 0.9em;
+    color: #777;
+    margin-top: 0.5em;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1em;
+}
+thead {
+    background-color: #f2f2f2;
+}
+tr {
+    border-bottom: 1px solid #ddd;
+}
+th, td {
+    padding: 0.8em;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+/* Horizontal Rule */
+hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 2em 0;
+}

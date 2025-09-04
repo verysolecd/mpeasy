@@ -67,12 +67,36 @@ async function deployPlugin() {
 }
 
 const buildPlugin = () => {
+    const cssStringPlugin = {
+        name: 'css-string',
+        setup(build) {
+            build.onResolve({ filter: /^css-string:/ }, args => {
+                return {
+                    path: args.path.slice('css-string:'.length),
+                    namespace: 'css-string',
+                    pluginData: {
+                        resolveDir: args.resolveDir,
+                    },
+                };
+            });
+
+            build.onLoad({ filter: /.*/, namespace: 'css-string' }, async args => {
+                const filePath = path.join(args.pluginData.resolveDir, args.path);
+                const content = await fs.promises.readFile(filePath, 'utf8');
+                return {
+                    contents: `export default ${JSON.stringify(content)};`,
+                    loader: 'js',
+                };
+            });
+        },
+    };
+
     const pluginConfig = {
         ...baseConfig,
         banner: {
             js: banner,
         },
-        entryPoints: ['main.ts'],
+        entryPoints: ['src/main.ts'],
         external: [
             'obsidian',
             'electron',
@@ -94,6 +118,7 @@ const buildPlugin = () => {
         outfile: 'Dist/main.js',
         loader: { '.ts': 'tsx' },
         plugins: [
+            cssStringPlugin,
             postcss({
                 plugins: [tailwindcss, autoprefixer],
             }),

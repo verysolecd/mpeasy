@@ -1,26 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* --- Dark Mode Definition --- */
-/* This is applied by ShadowView.tsx */
-.dark {
-  --bg-color: #0d1117;
-  --text-color: #c9d1d9;
-  --muted-text-color: #8b949e;
-  --border-color: #30363d;
-  --accent-color-legacy: #58a6ff;
-  --blockquote-bg: #161b22;
-  --code-bg: #161b22;
-}
-
-/* Basic markdown-body for dark mode */
-.markdown-body.dark {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-
-/* --- Link Conversion Styles --- */
-.footnotes { margin-top: 30px; padding-top: 15px; }
-.footnotes ol { font-size: 0.9em; color: var(--muted-text-color); }
