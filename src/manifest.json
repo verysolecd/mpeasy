@@ -1,0 +1,10 @@
+{
+    "id": "mpeasy",
+    "name": "MPEasy",
+    "version": "1.0.0",
+    "minAppVersion": "1.0.0",
+    "description": "移植自 refmd，提供强大的 Markdown 渲染和复制功能。",
+    "author": "Your Name",
+    "authorUrl": "",
+    "isDesktopOnly": false
+}

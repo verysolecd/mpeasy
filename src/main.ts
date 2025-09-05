@@ -1,47 +1,32 @@
-import { Plugin } from 'obsidian';
-import { MPEasyRenderView } from './view';
-import { VIEW_TYPE_MPEASY } from './constants';
-import { MPEasySettingTab } from './settings';
-import { MPEasySettings, DEFAULT_SETTINGS } from './types';
+import { Plugin, WorkspaceLeaf } from 'obsidian';
+import { MPEasyView, VIEW_TYPE_MPEASY } from './MPEasyView';
 
 export default class MPEasyPlugin extends Plugin {
-    settings: MPEasySettings;
 
     async onload() {
         console.log('Loading MPEasy Plugin');
 
-        await this.loadSettings();
-
-        this.addSettingTab(new MPEasySettingTab(this.app, this));
-
         this.registerView(
             VIEW_TYPE_MPEASY,
-            (leaf) => new MPEasyRenderView(leaf)
+            (leaf) => new MPEasyView(leaf)
         );
 
-        this.addRibbonIcon('file-text', 'MPEasy Renderer', () => {
+        this.addRibbonIcon('document', 'Open MPEasy Preview', () => {
             this.activateView();
         });
 
         this.addCommand({
-            id: 'open-mpeasy-renderer',
-            name: 'Open MPEasy Renderer',
+            id: 'open-mpeasy-preview',
+            name: 'Open MPEasy Preview',
             callback: () => {
                 this.activateView();
             },
         });
     }
 
-    async onunload() {
+    onunload() {
         console.log('Unloading MPEasy Plugin');
-    }
-
-    async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-    }
-
-    async saveSettings() {
-        await this.saveData(this.settings);
+        this.app.workspace.detachLeavesOfType(VIEW_TYPE_MPEASY);
     }
 
     async activateView() {
@@ -57,3 +42,4 @@ export default class MPEasyPlugin extends Plugin {
         );
     }
 }
+
