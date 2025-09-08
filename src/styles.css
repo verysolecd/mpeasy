@@ -1,1 +1,35 @@
 /* MPEasy styles will go here */
+
+.mpeasy-main-container {
+    display: flex;
+    height: 100%; /* Ensure it takes full height of its parent */
+    width: 100%; /* Ensure it takes full width */
+}
+
+.mpeasy-render-area {
+    flex-grow: 1; /* Takes up remaining space */
+    overflow-y: auto; /* Enable scrolling for content */
+    padding: 1em; /* Add some padding */
+    box-sizing: border-box; /* Include padding in width/height */
+}
+
+.mpeasy-side-panel {
+    width: 280px; /* Fixed width for the side panel */
+    flex-shrink: 0; /* Prevent it from shrinking */
+    overflow-y: auto; /* Enable scrolling for side panel content */
+    padding: 1em; /* Add some padding */
+    border-left: 1px solid var(--background-modifier-border); /* Visual separation */
+    box-sizing: border-box; /* Include padding in width/height */
+    background-color: var(--background-secondary); /* Slightly different background */
+}
+
+.mpeasy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1em;
+}
+
+.mpeasy-header h2 {
+    margin: 0;
+}

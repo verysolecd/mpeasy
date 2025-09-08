@@ -1,16 +1,46 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { MPEasyView, VIEW_TYPE_MPEASY } from './MPEasyView';
 
+// Define the settings interface
+interface MPEasySettings {
+    theme: string;
+    fontSize: string;
+    isUseIndent: boolean;
+    isUseJustify: boolean;
+    legend: string;
+    citeStatus: boolean;
+    countStatus: boolean;
+    isMacCodeBlock: boolean;
+}
+
+// Define default settings
+const DEFAULT_SETTINGS: MPEasySettings = {
+    theme: "default",
+    fontSize: "16px",
+    isUseIndent: false,
+    isUseJustify: false,
+    legend: "alt",
+    citeStatus: false,
+    countStatus: false,
+    isMacCodeBlock: true,
+};
+
 export default class MPEasyPlugin extends Plugin {
+    settings: MPEasySettings; // Declare settings property
 
     async onload() {
         console.log('Loading MPEasy Plugin');
 
+        // Load settings
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+
+        // Register the main preview view
         this.registerView(
             VIEW_TYPE_MPEASY,
-            (leaf) => new MPEasyView(leaf)
+            (leaf) => new MPEasyView(leaf, this) // Pass plugin instance
         );
 
+        // Ribbon icon for the main preview
         this.addRibbonIcon('document', 'Open MPEasy Preview', () => {
             this.activateView();
         });
