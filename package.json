@@ -4,7 +4,7 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "build": "esbuild src/main.ts --bundle --external:obsidian --format=cjs --target=es2020 --platform=node --outfile=dist/main.js && copy src\\manifest.json dist\\manifest.json && copy src\\styles.css dist\\styles.css"
+    "build": "node esbuild.config.mjs"
   },
   "keywords": [],
   "author": "",
