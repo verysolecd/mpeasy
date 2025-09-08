@@ -58,14 +58,18 @@ try {
   await esbuild.build({
     entryPoints: ['src/main.ts'],
     bundle: true,
-    external: ['obsidian'],
+        external: ['obsidian', 'stream', 'util'],
     format: 'cjs',
     target: 'es2020',
-    platform: 'node',
+    platform: 'browser',
     outfile: 'dist/main.js',
     sourcemap: isProd ? false : 'inline',
     treeShaking: true,
     plugins: [cleanAndDeployPlugin],
+    // React/JSX support
+    loader: {'.ts': 'ts', '.tsx': 'tsx'},
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment',
   });
   console.log('[esbuild] Build finished successfully.');
 } catch (e) {

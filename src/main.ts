@@ -1,9 +1,10 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { MPEasyView, VIEW_TYPE_MPEASY } from './MPEasyView';
+import { MPEasySettingTab } from './MPEasySettingTab'; // Import the new settings tab
 
 // Define the settings interface
 interface MPEasySettings {
-    theme: string;
+    theme: string; // Corresponds to layoutThemeName in stylePanlel.ts, but keeping original name for now
     fontSize: string;
     isUseIndent: boolean;
     isUseJustify: boolean;
@@ -11,6 +12,13 @@ interface MPEasySettings {
     citeStatus: boolean;
     countStatus: boolean;
     isMacCodeBlock: boolean;
+
+    // New settings from stylePanlel.ts
+    layoutThemeName: string;
+    codeThemeName: string;
+    customStyleName: string;
+    primaryColor: string;
+    useCustomCSS: boolean;
 }
 
 // Define default settings
@@ -23,6 +31,13 @@ const DEFAULT_SETTINGS: MPEasySettings = {
     citeStatus: false,
     countStatus: false,
     isMacCodeBlock: true,
+
+    // New defaults from stylePanlel.ts
+    layoutThemeName: "minimal",
+    codeThemeName: "atom-one-dark",
+    customStyleName: "none",
+    primaryColor: "#007bff",
+    useCustomCSS: false,
 };
 
 export default class MPEasyPlugin extends Plugin {
@@ -39,6 +54,9 @@ export default class MPEasyPlugin extends Plugin {
             VIEW_TYPE_MPEASY,
             (leaf) => new MPEasyView(leaf, this) // Pass plugin instance
         );
+
+        // Register the settings tab
+        this.addSettingTab(new MPEasySettingTab(this.app, this));
 
         // Ribbon icon for the main preview
         this.addRibbonIcon('document', 'Open MPEasy Preview', () => {
@@ -72,4 +90,5 @@ export default class MPEasyPlugin extends Plugin {
         );
     }
 }
+
 
