@@ -51,9 +51,8 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
     const [customStyles, setCustomStyles] = useState<{ name: string; path: string }[]>([]);
     const [customColor, setCustomColor] = useState(settings.primaryColor || '#007bff');
     const [collapsedSections, setCollapsedSections] = useState({
-        theme: false,
+        style: false,
         color: true,
-        typography: true,
         function: true,
     });
 
@@ -83,9 +82,9 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
             <h3 className="side-panel-view-title">样式与功能</h3>
             <form className="side-panel-view-form">
                 <CollapsibleSection
-                    title="主题设置"
-                    isCollapsed={collapsedSections.theme}
-                    onToggle={() => toggleSection('theme')}
+                    title="样式设置"
+                    isCollapsed={collapsedSections.style}
+                    onToggle={() => toggleSection('style')}
                 >
                     <div className="side-panel-view-item">
                         <label>排版主题</label>
@@ -121,6 +120,45 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                                 <option key={style.name} value={style.path}>{style.name}</option>
                             ))}
                         </select>
+                    </div>
+                    <div className="side-panel-view-item">
+                        <label>字体大小</label>
+                        <Combobox
+                            options={['13px', '14px', '15px', '16px', '17px', '18px', '20px', '22px', '24px']}
+                            value={settings.fontSize || '16px'}
+                            onChange={(newValue) => handleValueChange('fontSize', newValue)}
+                            placeholder="例如: 16px"
+                        />
+                    </div>
+
+                    <div className="side-panel-view-item">
+                        <label>图注显示</label>
+                        <select
+                            value={settings.legend || 'alt'}
+                            onChange={(e) => handleValueChange('legend', e.target.value)}
+                        >
+                            <option value="alt">图片下方显示 alt</option>
+                            <option value="title">图片下方显示 title</option>
+                            <option value="none">不显示</option>
+                        </select>
+                    </div>
+
+                    <div className="side-panel-view-item">
+                        <label>首行缩进</label>
+                        <input
+                            type="checkbox"
+                            checked={settings.isUseIndent || false}
+                            onChange={(e) => handleValueChange('isUseIndent', e.target.checked)}
+                        />
+                    </div>
+
+                    <div className="side-panel-view-item">
+                        <label>Mac 代码块</label>
+                        <input
+                            type="checkbox"
+                            checked={settings.isMacCodeBlock || false}
+                            onChange={(e) => handleValueChange('isMacCodeBlock', e.target.checked)}
+                        />
                     </div>
                 </CollapsibleSection>
 
@@ -162,52 +200,6 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                             />
                             <button type="button" onClick={handleCustomColorApply} className="custom-color-apply-btn">确定</button>
                         </div>
-                    </div>
-                </CollapsibleSection>
-
-                <CollapsibleSection
-                    title="排版设置"
-                    isCollapsed={collapsedSections.typography}
-                    onToggle={() => toggleSection('typography')}
-                >
-                    <div className="side-panel-view-item">
-                        <label>字体大小</label>
-                        <Combobox
-                            options={['13px', '14px', '15px', '16px', '17px', '18px', '20px', '22px', '24px']}
-                            value={settings.fontSize || '16px'}
-                            onChange={(newValue) => handleValueChange('fontSize', newValue)}
-                            placeholder="例如: 16px"
-                        />
-                    </div>
-
-                    <div className="side-panel-view-item">
-                        <label>图注显示</label>
-                        <select
-                            value={settings.legend || 'alt'}
-                            onChange={(e) => handleValueChange('legend', e.target.value)}
-                        >
-                            <option value="alt">图片下方显示 alt</option>
-                            <option value="title">图片下方显示 title</option>
-                            <option value="none">不显示</option>
-                        </select>
-                    </div>
-
-                    <div className="side-panel-view-item">
-                        <label>首行缩进</label>
-                        <input
-                            type="checkbox"
-                            checked={settings.isUseIndent || false}
-                            onChange={(e) => handleValueChange('isUseIndent', e.target.checked)}
-                        />
-                    </div>
-
-                    <div className="side-panel-view-item">
-                        <label>Mac 代码块</label>
-                        <input
-                            type="checkbox"
-                            checked={settings.isMacCodeBlock || false}
-                            onChange={(e) => handleValueChange('isMacCodeBlock', e.target.checked)}
-                        />
                     </div>
                 </CollapsibleSection>
 

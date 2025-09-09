@@ -45,6 +45,29 @@ const cleanAndDeployPlugin = {
         // Copy manifest and styles
         await fs.copyFile('src/manifest.json', path.join(targetPath, 'manifest.json'));
         await fs.copyFile('src/styles.css', path.join(targetPath, 'styles.css'));
+        
+        // Copy project assets
+        const assetsSource = 'assets';
+        const assetsDest = path.join(targetPath, 'assets');
+        console.log(`[esbuild] Copying project assets from ${assetsSource} to ${assetsDest}...`);
+        await fs.mkdir(assetsDest, { recursive: true });
+        await fs.cp(assetsSource, assetsDest, { recursive: true });
+
+        // Copy codestyles
+        const codestyleSource = 'node_modules/highlight.js/styles';
+        const codestyleDest = path.join(targetPath, 'assets/codestyle');
+        console.log(`[esbuild] Copying codestyles from ${codestyleSource} to ${codestyleDest}...`);
+        await fs.mkdir(codestyleDest, { recursive: true });
+        
+        const files = await fs.readdir(codestyleSource);
+        for (const file of files) {
+            if (file.endsWith('.css') && !file.endsWith('.min.css')) {
+                const sourceFile = path.join(codestyleSource, file);
+                const destFile = path.join(codestyleDest, file);
+                await fs.copyFile(sourceFile, destFile);
+            }
+        }
+
         console.log('[esbuild] Deploy complete.');
       } catch (err) {
         console.error('[esbuild] Failed to deploy:', err);

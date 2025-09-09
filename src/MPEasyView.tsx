@@ -91,6 +91,10 @@ export class MPEasyView extends ItemView {
         }
     }
 
+    public async rerender() {
+        await this.updateRenderedContent(this.plugin.settings);
+    }
+
     // New method to handle rendering based on current settings
     async updateRenderedContent(settings: MPEasyPlugin['settings']) {
         const defaultOpts = {
@@ -103,6 +107,7 @@ export class MPEasyView extends ItemView {
             citeStatus: settings.citeStatus,
             countStatus: settings.countStatus,
             isMacCodeBlock: settings.isMacCodeBlock,
+            primaryColor: settings.primaryColor,
             // Add other settings from MPEasySettings to defaultOpts as needed
         };
         const renderer = initRenderer(defaultOpts);
@@ -110,8 +115,18 @@ export class MPEasyView extends ItemView {
         const activeFile = this.app.workspace.getActiveFile();
         if (activeFile) {
             const markdownContent = await this.app.vault.read(activeFile);
-            const { html, readingTime } = renderMarkdown(markdownContent, renderer);
-            const finalHtml = postProcessHtml(html, readingTime, renderer);
+            let { html, readingTime } = renderMarkdown(markdownContent, renderer);
+            let finalHtml = postProcessHtml(html, readingTime, renderer);
+
+            if (settings.codeThemeName && settings.codeThemeName !== 'none') {
+                try {
+                    const codeThemeCss = await this.app.vault.adapter.read(settings.codeThemeName);
+                    finalHtml += `<style>${codeThemeCss}</style>`;
+                } catch (error) {
+                    console.error(`Error loading code block theme ${settings.codeThemeName}:`, error);
+                }
+            }
+
             this.contentDiv.innerHTML = finalHtml;
         } else {
             this.contentDiv.empty(); // Clear previous content

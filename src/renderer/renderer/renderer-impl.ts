@@ -16,9 +16,10 @@ marked.setOptions({
 })
 marked.use(markedSlider())
 
-function buildTheme({ theme: _theme, fonts, size, isUseIndent, isUseJustify }: IOpts): ThemeStyles {
+function buildTheme({ theme: _theme, fonts, size, isUseIndent, isUseJustify, primaryColor }: IOpts): ThemeStyles {
   const theme = cloneDeep(_theme)
   const base = toMerged(theme.base, {
+    '--md-primary-color': primaryColor,
     'font-family': fonts,
     'font-size': size,
   })
@@ -240,7 +241,7 @@ export function initRenderer(opts: IOpts): RendererAPI {
         codeIndex = setTimeout(() => {
           mermaid.run()
         }, 0) as any as number
-        return `<pre class="mermaid">${text}</pre>`
+        return `<div class="mermaid">${text}</div>`
       }
       const langText = lang.split(` `)[0]
       const language = hljs.getLanguage(langText) ? langText : `plaintext`

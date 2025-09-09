@@ -1,21 +1,35 @@
 import { App } from 'obsidian';
+import { themeOptions } from '../shared/configs/theme';
 
 // Placeholder for getLayoutThemes
 export async function getLayoutThemes(app: App): Promise<{ name: string; path: string }[]> {
-    console.warn("getLayoutThemes: Placeholder function called. Implement actual logic.");
-    return [
-        { name: 'minimal', path: 'minimal' },
-        { name: 'custom-layout-theme', path: 'custom-layout-theme' },
-    ];
+    return themeOptions.map(option => ({
+        name: option.label,
+        path: option.value,
+    }));
 }
 
-// Placeholder for getCodeBlockThemes
 export async function getCodeBlockThemes(app: App): Promise<{ name: string; path: string }[]> {
-    console.warn("getCodeBlockThemes: Placeholder function called. Implement actual logic.");
-    return [
-        { name: 'atom-one-dark', path: 'atom-one-dark' },
-        { name: 'github-light', path: 'github-light' },
-    ];
+    const plugin = app.plugins.getPlugin('mpeasy');
+    if (!plugin) {
+        console.error('MPEasy plugin not found.');
+        return [];
+    }
+    const pluginDir = plugin.manifest.dir;
+    const codestyleDir = `${pluginDir}/assets/codestyle`;
+
+    try {
+        const list = await app.vault.adapter.list(codestyleDir);
+        return list.files
+            .filter(file => file.endsWith('.css'))
+            .map(file => {
+                const name = file.split('/').pop()?.replace('.css', '') || '';
+                return { name, path: file };
+            });
+    } catch (error) {
+        console.error(`Error reading code block themes from ${codestyleDir}:`, error);
+        return [];
+    }
 }
 
 // Placeholder for getCustomStyles

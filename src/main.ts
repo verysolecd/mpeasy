@@ -78,16 +78,22 @@ export default class MPEasyPlugin extends Plugin {
     }
 
     async activateView() {
-        this.app.workspace.detachLeavesOfType(VIEW_TYPE_MPEASY);
-
-        await this.app.workspace.getRightLeaf(false).setViewState({
-            type: VIEW_TYPE_MPEASY,
-            active: true,
-        });
-
-        this.app.workspace.revealLeaf(
-            this.app.workspace.getLeavesOfType(VIEW_TYPE_MPEASY)[0]
-        );
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_MPEASY);
+        if (leaves.length > 0) {
+            const leaf = leaves[0];
+            const view = leaf.view as MPEasyView;
+            await view.rerender();
+            this.app.workspace.revealLeaf(leaf);
+        } else {
+            this.app.workspace.detachLeavesOfType(VIEW_TYPE_MPEASY);
+            await this.app.workspace.getRightLeaf(false).setViewState({
+                type: VIEW_TYPE_MPEASY,
+                active: true,
+            });
+            this.app.workspace.revealLeaf(
+                this.app.workspace.getLeavesOfType(VIEW_TYPE_MPEASY)[0]
+            );
+        }
     }
 }
 
