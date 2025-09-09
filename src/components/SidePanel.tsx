@@ -34,7 +34,7 @@ interface CollapsibleSectionProps {
 const CollapsibleSection = ({ title, children, isCollapsed, onToggle }: CollapsibleSectionProps) => {
     return (
         <div className={`collapsible-section ${isCollapsed ? 'collapsed' : ''}`}>
-            <button onClick={onToggle} className="collapsible-section-header">
+            <button type="button" onClick={onToggle} className="collapsible-section-header">
                 {title}
                 <span className="collapsible-section-icon"></span>
             </button>

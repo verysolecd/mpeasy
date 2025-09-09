@@ -146,3 +146,52 @@
 }
 
 /* --- End of Side Panel View Styles --- */
+
+/* Collapsible Section Styles */
+.collapsible-section {
+    margin-bottom: 10px;
+}
+
+.collapsible-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    text-align: left;
+}
+
+.collapsible-section:not(.collapsed) .collapsible-section-header {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.collapsible-section-header:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.collapsible-section-icon {
+    transition: transform 0.2s ease-in-out;
+}
+
+.collapsible-section.collapsed .collapsible-section-icon::before {
+    content: '▶'; /* Right-pointing triangle for collapsed state */
+}
+
+.collapsible-section:not(.collapsed) .collapsible-section-icon::before {
+    content: '▼'; /* Down-pointing triangle for expanded state */
+}
+
+.collapsible-section-content {
+    padding: 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    margin-top: -1px;
+}
