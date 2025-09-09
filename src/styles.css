@@ -194,4 +194,31 @@
     border-top: none;
     border-radius: 0 0 6px 6px;
     margin-top: -1px;
-}
+}  
+/* Action Buttons in Side Panel */  
+.side-panel-view-actions {  
+    display: flex;  
+    width: 100%;  
+    gap: 10px;  
+    margin-bottom: 15px;  
+}  
+  
+.side-panel-view-actions button {  
+    flex: 1;  
+    padding: 8px 4px;  
+    font-size: 0.9em;  
+    border: 1px solid var(--background-modifier-border);  
+    border-radius: 4px;  
+    background-color: var(--background-secondary-alt);  
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);  
+    cursor: pointer;  
+    transition: all 0.2s ease-in-out;  
+    text-align: center;  
+}  
+  
+.side-panel-view-actions button:hover {  
+    background-color: var(--background-modifier-hover);  
+    border-color: var(--text-accent);  
+    transform: translateY(-1px);  
+    box-shadow: 0 3px 6px rgba(0,0,0,0.2);  
+} 
