@@ -1,64 +1,28 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
 import { MPEasyView, VIEW_TYPE_MPEASY } from './MPEasyView';
-import { MPEasySettingTab } from './MPEasySettingTab'; // Import the new settings tab
+import { MPEasySettingTab } from './MPEasySettingTab';
+import { MPEasySettings, StyleSettings } from './shared/types/settings';
+import { DEFAULT_STYLE_SETTINGS } from './shared/configs/defaults';
 
-// Define the settings interface
-interface MPEasySettings {
-    theme: string; // Corresponds to layoutThemeName in stylePanlel.ts, but keeping original name for now
-    fontSize: string;
-    isUseIndent: boolean;
-    isUseJustify: boolean;
-    legend: string;
-    citeStatus: boolean;
-    countStatus: boolean;
-    isMacCodeBlock: boolean;
-
-    // New settings from stylePanlel.ts
-    layoutThemeName: string;
-    codeThemeName: string;
-    customStyleName: string;
-    primaryColor: string;
-    useCustomCSS: boolean;
-}
-
-// Define default settings
 const DEFAULT_SETTINGS: MPEasySettings = {
-    theme: "default",
-    fontSize: "16px",
-    isUseIndent: false,
-    isUseJustify: false,
-    legend: "alt",
-    citeStatus: false,
-    countStatus: false,
-    isMacCodeBlock: true,
-
-    // New defaults from stylePanlel.ts
-    layoutThemeName: "minimal",
-    codeThemeName: "atom-one-dark",
-    customStyleName: "none",
-    primaryColor: "#007bff",
-    useCustomCSS: false,
+    styleSettings: DEFAULT_STYLE_SETTINGS,
 };
 
 export default class MPEasyPlugin extends Plugin {
-    settings: MPEasySettings; // Declare settings property
+    settings: MPEasySettings;
 
     async onload() {
         console.log('Loading MPEasy Plugin');
 
-        // Load settings
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        await this.loadSettings();
 
-        // Register the main preview view
         this.registerView(
             VIEW_TYPE_MPEASY,
-            (leaf) => new MPEasyView(leaf, this) // Pass plugin instance
+            (leaf) => new MPEasyView(leaf, this)
         );
 
-        // Register the settings tab
         this.addSettingTab(new MPEasySettingTab(this.app, this));
 
-        // Ribbon icon for the main preview
         this.addRibbonIcon('document', 'Open MPEasy Preview', () => {
             this.activateView();
         });
@@ -95,6 +59,21 @@ export default class MPEasyPlugin extends Plugin {
             );
         }
     }
+
+    async loadSettings() {
+        const loadedData = await this.loadData();
+        // Deep merge to ensure new settings are applied
+        this.settings = {
+            ...DEFAULT_SETTINGS,
+            ...loadedData,
+            styleSettings: {
+                ...DEFAULT_SETTINGS.styleSettings,
+                ...(loadedData?.styleSettings || {}),
+            },
+        };
+    }
+
+    async saveSettings() {
+        await this.saveData(this.settings);
+    }
 }
-
-

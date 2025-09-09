@@ -1,137 +1,135 @@
-import { ItemView, WorkspaceLeaf } from 'obsidian';
+import { ItemView, WorkspaceLeaf, App } from 'obsidian';
 import { initRenderer } from './renderer/renderer/renderer-impl';
-import { themeMap, themeOptions } from './shared/configs/theme';
+import { themeMap } from './shared/configs/theme';
 import { renderMarkdown, postProcessHtml } from './renderer/utils/markdownHelpers';
 import { copyHtml } from './utils/clipboard';
-import MPEasyPlugin from './main'; // Import the plugin class for type hinting
-
+import MPEasyPlugin from './main';
 import * as React from 'react';
-import * as ReactDOM from 'react-dom/client'; // For React 18
-import SidePanel from './components/SidePanel'; // Import the React SidePanel component
+import * as ReactDOM from 'react-dom/client';
+import SidePanel from './components/SidePanel';
+import { StyleSettings } from './shared/types/settings';
 
 export const VIEW_TYPE_MPEASY = "mpeasy-view";
 
 export class MPEasyView extends ItemView {
-    plugin: MPEasyPlugin; // Declare plugin property
-    private contentDiv: HTMLElement; // Reference to the content div
-    private reactRoot: ReactDOM.Root; // Reference to the React root
+    plugin: MPEasyPlugin;
+    private contentDiv: HTMLElement;
+    private reactRoot: ReactDOM.Root;
+    private codeThemeStyleEl: HTMLStyleElement | null = null;
+    private customCSSStyleEl: HTMLStyleElement | null = null;
 
     constructor(leaf: WorkspaceLeaf, plugin: MPEasyPlugin) {
         super(leaf);
         this.plugin = plugin;
+        this.refreshView = this.refreshView.bind(this);
+        this.copyRenderedHtml = this.copyRenderedHtml.bind(this);
     }
 
-    getViewType() {
-        return VIEW_TYPE_MPEASY;
-    }
-
-    getDisplayText() {
-        return "MPEasy Preview";
-    }
+    getViewType() { return VIEW_TYPE_MPEASY; }
+    getDisplayText() { return "MPEasy Preview"; }
 
     async onOpen() {
         const container = this.containerEl.children[1];
         container.empty();
-        container.addClass("mpeasy-main-container"); // Add class for flexbox
+        container.addClass("mpeasy-main-container");
 
-        // --- Left (Render) Area ---
         const renderAreaDiv = container.createDiv({ cls: "mpeasy-render-area" });
         const headerDiv = renderAreaDiv.createDiv({ cls: "mpeasy-header" });
         headerDiv.createEl("h2", { text: "MPEasy Preview" });
-        const copyButton = headerDiv.createEl("button", { text: "Copy HTML" });
 
-        this.contentDiv = renderAreaDiv.createDiv(); // Assign to class property
-        this.contentDiv.id = "mpeasy-rendered-content";
+        this.contentDiv = renderAreaDiv.createDiv({ id: "mpeasy-rendered-content" });
         this.contentDiv.style.padding = "1em";
         this.contentDiv.style.overflowY = "auto";
 
-        // Initial render
-        await this.updateRenderedContent(this.plugin.settings);
+        this.codeThemeStyleEl = renderAreaDiv.createEl('style', { attr: { id: 'mpeasy-code-theme-style' } });
+        this.customCSSStyleEl = renderAreaDiv.createEl('style', { attr: { id: 'mpeasy-custom-css-style' } });
 
-        copyButton.onclick = async () => {
-            try {
-                await copyHtml(this.contentDiv.innerHTML);
-                copyButton.setText("Copied!");
-                setTimeout(() => copyButton.setText("Copy HTML"), 2000);
-            } catch (err) {
-                console.error("Failed to copy HTML: ", err);
-                copyButton.setText("Failed!");
-                setTimeout(() => copyButton.setText("Copy HTML"), 2000);
-            }
-        };
-
-        // --- Right (Side Panel) Area (React Component) ---
         const sidePanelContainer = container.createDiv({ cls: "mpeasy-side-panel" });
-        sidePanelContainer.createEl("h2", { text: "Side Panel Settings" }); // Semantic label
-
-        // Create a div for React to render into
         const reactRootDiv = sidePanelContainer.createDiv({ cls: "mpeasy-react-root" });
         this.reactRoot = ReactDOM.createRoot(reactRootDiv);
 
-        // Callback to update plugin settings and re-render content
-        const onOptsChange = async (newPartialOpts: Partial<MPEasyPlugin['settings']>) => {
-            Object.assign(this.plugin.settings, newPartialOpts);
-            await this.plugin.saveData(this.plugin.settings);
-            await this.updateRenderedContent(this.plugin.settings);
+        const onOptsChange = async (newPartialOpts: Partial<StyleSettings>) => {
+            Object.assign(this.plugin.settings.styleSettings, newPartialOpts);
+            await this.plugin.saveSettings();
+            await this.refreshView();
         };
 
-        // Render the React SidePanel component
         this.reactRoot.render(
             <SidePanel
-                plugin={this.plugin}
+                styleSettings={this.plugin.settings.styleSettings}
                 onOptsChange={onOptsChange}
+                app={this.app}
+                onRefresh={this.refreshView}
+                onCopy={this.copyRenderedHtml}
             />
         );
+
+        await this.refreshView();
     }
 
     async onClose() {
-        // Unmount React component when view is closed
         if (this.reactRoot) {
             this.reactRoot.unmount();
         }
     }
 
-    public async rerender() {
-        await this.updateRenderedContent(this.plugin.settings);
+    async copyRenderedHtml(): Promise<boolean> {
+        try {
+            await copyHtml(this.contentDiv.innerHTML);
+            return true;
+        } catch (err) {
+            console.error("Failed to copy HTML: ", err);
+            return false;
+        }
     }
 
-    // New method to handle rendering based on current settings
-    async updateRenderedContent(settings: MPEasyPlugin['settings']) {
+    async refreshView() {
+        const settings = this.plugin.settings.styleSettings;
+
+        // Update styles
+        if (!this.customCSSStyleEl || !this.codeThemeStyleEl) return;
+
+        if (settings.codeThemeName && settings.codeThemeName !== 'none') {
+            this.app.vault.adapter.read(settings.codeThemeName)
+                .then(css => { if (this.codeThemeStyleEl) this.codeThemeStyleEl.innerHTML = css; })
+                .catch(err => console.error(`Error loading code theme ${settings.codeThemeName}:`, err));
+        } else {
+            this.codeThemeStyleEl.innerHTML = '';
+        }
+
+        if (settings.useCustomCSS && settings.customStyleName && settings.customStyleName !== 'none') {
+            this.app.vault.adapter.read(settings.customStyleName)
+                .then(css => { if (this.customCSSStyleEl) this.customCSSStyleEl.innerHTML = css; })
+                .catch(err => console.error("Error loading custom CSS", err));
+        } else {
+            this.customCSSStyleEl.innerHTML = '';
+        }
+
+        // Update content
         const defaultOpts = {
-            theme: themeMap[settings.layoutThemeName] || themeMap.default, // Use layoutThemeName
+            theme: themeMap[settings.layoutThemeName] || themeMap.default,
             fonts: "-apple-system-font,BlinkMacSystemFont, Helvetica Neue, PingFang SC, Hiragino Sans GB , Microsoft YaHei UI , Microsoft YaHei ,Arial,sans-serif",
             size: settings.fontSize,
             isUseIndent: settings.isUseIndent,
             isUseJustify: settings.isUseJustify,
             legend: settings.legend,
-            citeStatus: settings.citeStatus,
-            countStatus: settings.countStatus,
+            citeStatus: settings.isCiteStatus,
+            countStatus: settings.isCountStatus,
             isMacCodeBlock: settings.isMacCodeBlock,
             primaryColor: settings.primaryColor,
-            // Add other settings from MPEasySettings to defaultOpts as needed
         };
         const renderer = initRenderer(defaultOpts);
 
         const activeFile = this.app.workspace.getActiveFile();
         if (activeFile) {
             const markdownContent = await this.app.vault.read(activeFile);
-            let { html, readingTime } = renderMarkdown(markdownContent, renderer);
-            let finalHtml = postProcessHtml(html, readingTime, renderer);
-
-            if (settings.codeThemeName && settings.codeThemeName !== 'none') {
-                try {
-                    const codeThemeCss = await this.app.vault.adapter.read(settings.codeThemeName);
-                    finalHtml += `<style>${codeThemeCss}</style>`;
-                } catch (error) {
-                    console.error(`Error loading code block theme ${settings.codeThemeName}:`, error);
-                }
-            }
+            const { html, readingTime } = renderMarkdown(markdownContent, renderer);
+            const finalHtml = postProcessHtml(html, readingTime, renderer);
 
             this.contentDiv.innerHTML = finalHtml;
         } else {
-            this.contentDiv.empty(); // Clear previous content
+            this.contentDiv.empty();
             this.contentDiv.createEl("p", { text: "No active Markdown file to preview." });
         }
     }
 }
-

@@ -1,13 +1,16 @@
 import * as React from 'react';
+import { App } from 'obsidian';
 import { useEffect, useState } from 'react';
-import type { MPEasySettings } from '../shared/types';
 import { getLayoutThemes, getCodeBlockThemes, getCustomStyles } from '../utils/themeHelpers';
 import Combobox from './Combobox';
-import type MPEasyPlugin from '../main';
+import { StyleSettings } from '../shared/types/settings';
 
 interface SidePanelProps {
-    plugin: MPEasyPlugin;
-    onOptsChange: (newOpts: Partial<MPEasySettings>) => void;
+    styleSettings: StyleSettings;
+    onOptsChange: (newOpts: Partial<StyleSettings>) => void;
+    app: App;
+    onRefresh: () => void;
+    onCopy: () => Promise<boolean>;
 }
 
 const PRESET_COLORS = [
@@ -43,13 +46,12 @@ const CollapsibleSection = ({ title, children, isCollapsed, onToggle }: Collapsi
     );
 };
 
-
-const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
-    const { settings, app } = plugin;
+const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopy }: SidePanelProps) => {
+    const [localSettings, setLocalSettings] = useState(styleSettings);
     const [layoutThemes, setLayoutThemes] = useState<{ name: string; path: string }[]>([]);
     const [codeBlockThemes, setCodeBlockThemes] = useState<{ name: string; path: string }[]>([]);
     const [customStyles, setCustomStyles] = useState<{ name: string; path: string }[]>([]);
-    const [customColor, setCustomColor] = useState(settings.primaryColor || '#007bff');
+    const [copyButtonText, setCopyButtonText] = useState('复制');
     const [collapsedSections, setCollapsedSections] = useState({
         style: false,
         color: true,
@@ -57,20 +59,26 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
     });
 
     useEffect(() => {
+        setLocalSettings(styleSettings);
+    }, [styleSettings]);
+
+    useEffect(() => {
         if (app) {
             getLayoutThemes(app).then(themes => setLayoutThemes(themes));
             getCodeBlockThemes(app).then(themes => setCodeBlockThemes(themes));
             getCustomStyles(app).then(styles => setCustomStyles(styles));
         }
-        setCustomColor(settings.primaryColor || '#007bff');
-    }, [settings.primaryColor, app]);
+    }, [app]);
 
-    const handleValueChange = (key: keyof MPEasySettings, value: any) => {
+    const handleValueChange = (key: keyof StyleSettings, value: any) => {
+        setLocalSettings(prev => ({ ...prev, [key]: value }));
         onOptsChange({ [key]: value });
     };
 
-    const handleCustomColorApply = () => {
-        handleValueChange('primaryColor', customColor);
+    const handleCopy = async () => {
+        const success = await onCopy();
+        setCopyButtonText(success ? '已复制!' : '失败!');
+        setTimeout(() => setCopyButtonText('复制'), 2000);
     };
 
     const toggleSection = (section: keyof typeof collapsedSections) => {
@@ -80,6 +88,13 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
     return (
         <div className="side-panel-view-container">
             <h3 className="side-panel-view-title">样式与功能</h3>
+
+            <div className="side-panel-view-actions">
+                <button type="button" onClick={onRefresh}>刷新</button>
+                <button type="button" onClick={handleCopy}>{copyButtonText}</button>
+                <button type="button" onClick={() => alert('即将支持')}>发草稿</button>
+            </div>
+
             <form className="side-panel-view-form">
                 <CollapsibleSection
                     title="样式设置"
@@ -89,7 +104,7 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                     <div className="side-panel-view-item">
                         <label>排版主题</label>
                         <select
-                            value={settings.layoutThemeName || 'minimal'}
+                            value={localSettings.layoutThemeName || 'minimal'}
                             onChange={(e) => handleValueChange('layoutThemeName', e.target.value)}
                         >
                             {layoutThemes.map(theme => (
@@ -101,7 +116,7 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                     <div className="side-panel-view-item">
                         <label>代码块主题</label>
                         <select
-                            value={settings.codeThemeName || 'atom-one-dark'}
+                            value={localSettings.codeThemeName || 'atom-one-dark'}
                             onChange={(e) => handleValueChange('codeThemeName', e.target.value)}
                         >
                             {codeBlockThemes.map(theme => (
@@ -113,7 +128,7 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                     <div className="side-panel-view-item">
                         <label>自定义样式</label>
                         <select
-                            value={settings.customStyleName || 'none'}
+                            value={localSettings.customStyleName || 'none'}
                             onChange={(e) => handleValueChange('customStyleName', e.target.value)}
                         >
                             {customStyles.map(style => (
@@ -125,7 +140,7 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                         <label>字体大小</label>
                         <Combobox
                             options={['13px', '14px', '15px', '16px', '17px', '18px', '20px', '22px', '24px']}
-                            value={settings.fontSize || '16px'}
+                            value={localSettings.fontSize || '16px'}
                             onChange={(newValue) => handleValueChange('fontSize', newValue)}
                             placeholder="例如: 16px"
                         />
@@ -134,7 +149,7 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                     <div className="side-panel-view-item">
                         <label>图注显示</label>
                         <select
-                            value={settings.legend || 'alt'}
+                            value={localSettings.legend || 'alt'}
                             onChange={(e) => handleValueChange('legend', e.target.value)}
                         >
                             <option value="alt">图片下方显示 alt</option>
@@ -147,7 +162,7 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                         <label>首行缩进</label>
                         <input
                             type="checkbox"
-                            checked={settings.isUseIndent || false}
+                            checked={localSettings.isUseIndent || false}
                             onChange={(e) => handleValueChange('isUseIndent', e.target.checked)}
                         />
                     </div>
@@ -156,7 +171,7 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                         <label>Mac 代码块</label>
                         <input
                             type="checkbox"
-                            checked={settings.isMacCodeBlock || false}
+                            checked={localSettings.isMacCodeBlock || false}
                             onChange={(e) => handleValueChange('isMacCodeBlock', e.target.checked)}
                         />
                     </div>
@@ -173,7 +188,7 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                             {PRESET_COLORS.map(preset => (
                                 <div
                                     key={preset.name}
-                                    className={`color-preset-item ${settings.primaryColor === preset.color ? 'selected' : ''}`}
+                                    className={`color-preset-item ${localSettings.primaryColor === preset.color ? 'selected' : ''}`}
                                     onClick={() => handleValueChange('primaryColor', preset.color)}
                                 >
                                     <div className="color-swatch" style={{ backgroundColor: preset.color }}></div>
@@ -188,17 +203,16 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                         <div className="custom-color-container">
                             <input
                                 type="color"
-                                value={customColor}
-                                onChange={(e) => setCustomColor(e.target.value)}
+                                value={localSettings.primaryColor || '#007bff'}
+                                onChange={(e) => handleValueChange('primaryColor', e.target.value)}
                                 className="custom-color-picker"
                             />
                             <input
                                 type="text"
-                                value={customColor}
-                                onChange={(e) => setCustomColor(e.target.value)}
+                                value={localSettings.primaryColor || '#007bff'}
+                                onChange={(e) => handleValueChange('primaryColor', e.target.value)}
                                 className="custom-color-input"
                             />
-                            <button type="button" onClick={handleCustomColorApply} className="custom-color-apply-btn">确定</button>
                         </div>
                     </div>
                 </CollapsibleSection>
@@ -212,7 +226,7 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                         <label>文末引用</label>
                         <input
                             type="checkbox"
-                            checked={settings.isCiteStatus || false}
+                            checked={localSettings.isCiteStatus || false}
                             onChange={(e) => handleValueChange('isCiteStatus', e.target.checked)}
                         />
                     </div>
@@ -221,7 +235,7 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                         <label>字数统计</label>
                         <input
                             type="checkbox"
-                            checked={settings.isCountStatus || false}
+                            checked={localSettings.isCountStatus || false}
                             onChange={(e) => handleValueChange('isCountStatus', e.target.checked)}
                         />
                     </div>
@@ -230,7 +244,7 @@ const SidePanel = ({ plugin, onOptsChange }: SidePanelProps) => {
                         <label>启用自定义 CSS</label>
                         <input
                             type="checkbox"
-                            checked={settings.useCustomCSS || false}
+                            checked={localSettings.useCustomCSS || false}
                             onChange={(e) => handleValueChange('useCustomCSS', e.target.checked)}
                         />
                     </div>
