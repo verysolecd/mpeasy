@@ -108,3 +108,23 @@ export async function formatDoc(content: string, type: `markdown` | `css` = `mar
     plugins: plugins[parser],
   })
 }
+
+/**
+ * Gets the MIME type based on the file extension.
+ * @param filename The name of the file.
+ * @returns The MIME type string.
+ */
+export function getMimeTypeFromFilename(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'png': return 'image/png';
+    case 'jpg':
+    case 'jpeg': return 'image/jpeg';
+    case 'gif': return 'image/gif';
+    case 'bmp': return 'image/bmp';
+    case 'webp': return 'image/webp';
+    case 'svg': return 'image/svg+xml';
+    // Add more types as needed
+    default: return 'application/octet-stream';
+  }
+}

@@ -11,6 +11,7 @@ interface SidePanelProps {
     app: App;
     onRefresh: () => void;
     onCopy: () => Promise<boolean>;
+    onSendToDraft: () => Promise<void>;
 }
 
 const PRESET_COLORS = [
@@ -46,7 +47,7 @@ const CollapsibleSection = ({ title, children, isCollapsed, onToggle }: Collapsi
     );
 };
 
-const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopy }: SidePanelProps) => {
+const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopy, onSendToDraft }: SidePanelProps) => {
     const [localSettings, setLocalSettings] = useState(styleSettings);
     const [layoutThemes, setLayoutThemes] = useState<{ name: string; path: string }[]>([]);
     const [codeBlockThemes, setCodeBlockThemes] = useState<{ name: string; path: string }[]>([]);
@@ -92,7 +93,7 @@ const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopy }: Side
             <div className="side-panel-view-actions">
                 <button type="button" onClick={onRefresh}>刷新</button>
                 <button type="button" onClick={handleCopy}>{copyButtonText}</button>
-                <button type="button" onClick={() => alert('即将支持')}>发草稿</button>
+                <button type="button" onClick={onSendToDraft}>发草稿</button>
             </div>
 
             <form className="side-panel-view-form">

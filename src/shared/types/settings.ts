@@ -15,4 +15,8 @@ export interface StyleSettings {
 
 export interface MPEasySettings {
     styleSettings: StyleSettings;
+    wxId: string;
+    wxSecret: string;
+    wxToken: string;
+    wxTokenAcquisitionTime: number;
 }
