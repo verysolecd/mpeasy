@@ -30,40 +30,69 @@ export async function getAccessToken(appId: string, appSecret: string): Promise<
     }
 }
 
+async function uploadMedia(url: string, imageBlob: Blob, filename: string): Promise<any> {
+    const boundary = `----WebKitFormBoundary${Math.random().toString(16).slice(2)}`;
+    const metadata = `--${boundary}\r\nContent-Disposition: form-data; name="media"; filename="${filename}"\r\nContent-Type: ${imageBlob.type}\r\n\r\n`;
+    const footer = `\r\n--${boundary}--`;
+
+    const metadataBuffer = new TextEncoder().encode(metadata);
+    const imageBuffer = await imageBlob.arrayBuffer();
+    const footerBuffer = new TextEncoder().encode(footer);
+
+    const combinedBuffer = new Uint8Array(metadataBuffer.length + imageBuffer.byteLength + footerBuffer.length);
+    combinedBuffer.set(metadataBuffer);
+    combinedBuffer.set(new Uint8Array(imageBuffer), metadataBuffer.length);
+    combinedBuffer.set(footerBuffer, metadataBuffer.length + imageBuffer.byteLength);
+
+    const response = await requestUrl({
+        url,
+        method: 'POST',
+        body: combinedBuffer.buffer,
+        headers: {
+            'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        },
+    });
+    return response.json;
+}
+
 /**
- * Uploads an image to WeChat material library.
- * @param accessToken The WeChat access token.
- * @param imageBlob The image data as a Blob.
- * @param filename The name of the image file.
+ * Uploads an image for use within article content.
  * @returns A promise that resolves to the URL of the uploaded image.
  */
-export async function uploadImage(accessToken: string, imageBlob: Blob, filename: string): Promise<string> {
+export async function uploadContentImage(accessToken: string, imageBlob: Blob, filename: string): Promise<string> {
     const url = `https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=${accessToken}`;
-
-    const formData = new FormData();
-    formData.append('media', imageBlob, filename);
-
     try {
-        const response = await requestUrl({
-            url,
-            method: 'POST',
-            body: formData,
-            headers: {
-                // 'Content-Type': 'multipart/form-data', // requestUrl handles this automatically with FormData
-            },
-        });
-        const data = response.json;
-
+        const data = await uploadMedia(url, imageBlob, filename);
         if (data && data.url) {
             return data.url;
         } else {
-            throw new Error(`Failed to upload image: ${data.errmsg || 'Unknown error'}`);
+            throw new Error(`Failed to upload content image: ${data.errmsg || 'Unknown error'}`);
         }
     } catch (error) {
-        console.error("Error uploading image to WeChat:", error);
+        console.error("Error uploading content image to WeChat:", error);
         throw error;
     }
 }
+
+/**
+ * Uploads a thumbnail image for use as a cover.
+ * @returns A promise that resolves to the media_id of the uploaded thumbnail.
+ */
+export async function uploadThumb(accessToken: string, imageBlob: Blob, filename: string): Promise<string> {
+    const url = `https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=${accessToken}&type=thumb`;
+    try {
+        const data = await uploadMedia(url, imageBlob, filename);
+        if (data && data.media_id) {
+            return data.media_id;
+        } else {
+            throw new Error(`Failed to upload thumb: ${data.errmsg || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error("Error uploading thumb to WeChat:", error);
+        throw error;
+    }
+}
+
 
 export interface AddDraftOptions {
     author?: string;
@@ -79,19 +108,18 @@ export interface AddDraftResponse {
 
 /**
  * Adds a new draft to WeChat Official Account.
- * @param accessToken The WeChat access token.
- * @param title The title of the draft.
- * @param content The HTML content of the draft.
- * @param options Optional parameters for the draft.
- * @returns A promise that resolves to the media_id of the new draft.
  */
 export async function addDraft(accessToken: string, title: string, content: string, options?: AddDraftOptions): Promise<AddDraftResponse> {
     const url = `https://api.weixin.qq.com/cgi-bin/draft/add?access_token=${accessToken}`;
 
     const body = {
-        title,
-        content,
-        ...options,
+        articles: [
+            {
+                title,
+                content,
+                ...options,
+            }
+        ]
     };
 
     try {

@@ -8,8 +8,9 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import SidePanel from './components/SidePanel';
 import { StyleSettings } from './shared/types/settings';
-import { getAccessToken, uploadImage, addDraft } from './wx/api';
+import { getAccessToken, uploadContentImage, uploadThumb, addDraft } from './wx/api';
 import { getMimeTypeFromFilename } from './shared/utils/fileHelpers';
+import { getCoverImagePath } from './utils/frontmatter';
 
 export const VIEW_TYPE_MPEASY = "mpeasy-view";
 
@@ -101,7 +102,7 @@ export class MPEasyView extends ItemView {
 
     async sendToWeChatDraft(): Promise<void> {
         const { wxId, wxSecret, wxToken, wxTokenAcquisitionTime } = this.plugin.settings;
-        const TOKEN_EXPIRATION_SECONDS = 7000; // 2 hours is 7200s, use a slightly shorter duration
+        const TOKEN_EXPIRATION_SECONDS = 7000;
 
         if (!wxId || !wxSecret) {
             alert("请在插件设置中配置公众号ID和Secret。");
@@ -109,11 +110,7 @@ export class MPEasyView extends ItemView {
         }
 
         let currentToken = wxToken;
-        let currentTokenAcquisitionTime = wxTokenAcquisitionTime;
-
-        // Check token validity
-        if (!currentToken || !currentTokenAcquisitionTime || (Date.now() - currentTokenAcquisitionTime) / 1000 > TOKEN_EXPIRATION_SECONDS) {
-            console.log("Token missing or expired, re-acquiring...");
+        if (!currentToken || !wxTokenAcquisitionTime || (Date.now() - wxTokenAcquisitionTime) / 1000 > TOKEN_EXPIRATION_SECONDS) {
             try {
                 currentToken = await getAccessToken(wxId, wxSecret);
                 this.plugin.settings.wxToken = currentToken;
@@ -121,78 +118,96 @@ export class MPEasyView extends ItemView {
                 await this.plugin.saveSettings();
                 alert("Access Token已更新。");
             } catch (error) {
-                console.error("Failed to re-acquire access token:", error);
                 alert(`无法获取Access Token: ${error.message}`);
                 return;
             }
         }
 
-        console.log("Access Token is valid:", currentToken);
+        const activeFile = this.app.workspace.getActiveFile();
+        if (!activeFile) {
+            alert("No active file.");
+            return;
+        }
 
-        // Image handling logic
-        console.log("Starting image processing for WeChat...");
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(this.contentDiv.innerHTML, 'text/html');
-        const imgElements = doc.querySelectorAll('img');
+        // 1. Handle Cover Image
+        let thumb_media_id: string | undefined = undefined;
+        try {
+            const coverPath = getCoverImagePath(this.app, activeFile);
+            let coverFile: TFile | null = null;
 
-        for (const imgEl of Array.from(imgElements)) {
-            const src = imgEl.getAttribute('src');
-            if (!src) continue;
-
-            if (src.startsWith('http://') || src.startsWith('https://')) {
-                // Web image, keep as is
-                console.log('Web image, keeping as is:', src);
-            } else if (src.startsWith('data:image/')) {
-                // Data URI image, convert to Blob and upload
-                console.log('Data URI image, converting to Blob and uploading:', src.substring(0, 50) + '...');
-                try {
-                    const blob = dataURItoBlob(src);
-                    // Generate a filename (e.g., based on timestamp and a random number)
-                    const filename = `image_${Date.now()}_${Math.floor(Math.random() * 1000)}.png`; // Assuming PNG for now
-                    const uploadedUrl = await uploadImage(currentToken, blob, filename);
-                    imgEl.setAttribute('src', uploadedUrl);
-                    console.log('Uploaded Data URI image. New URL:', uploadedUrl);
-                } catch (error) {
-                    console.error('Failed to upload Data URI image:', error);
-                    // Decide how to handle failed uploads (e.g., skip, alert user)
+            if (coverPath === 'default_banner') {
+                const defaultBannerPath = `${this.plugin.manifest.dir}/assets/images/banner.png`;
+                const abstractFile = this.app.vault.getAbstractFileByPath(defaultBannerPath);
+                if (abstractFile instanceof TFile) {
+                    coverFile = abstractFile;
+                } else {
+                    alert('Default banner image not found! Looked at: ' + defaultBannerPath);
                 }
             } else {
-                // Assume local file path (e.g., Obsidian attachment)
-                console.log('Local file image, needs to be read from vault and uploaded:', src);
-                try {
-                    // Resolve the path to an Obsidian TFile
+                const abstractFile = this.app.vault.getAbstractFileByPath(coverPath);
+                if (abstractFile instanceof TFile) {
+                    coverFile = abstractFile;
+                } else {
+                    alert(`Cover image not found at path: ${coverPath}`);
+                }
+            }
+
+            if (coverFile) {
+                const arrayBuffer = await this.app.vault.readBinary(coverFile);
+                const mimeType = getMimeTypeFromFilename(coverFile.name);
+                const blob = new Blob([arrayBuffer], { type: mimeType });
+                thumb_media_id = await uploadThumb(currentToken, blob, coverFile.name);
+                console.log("Uploaded thumb image. Media ID:", thumb_media_id);
+            }
+        } catch (error) {
+            console.error('Failed to upload thumb image:', error);
+            alert(`上传封面图片失败: ${error.message}`);
+            return; // Stop if cover upload fails
+        }
+
+        // 2. Handle Content Images
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(this.contentDiv.innerHTML, 'text/html');
+        const imgElements = Array.from(doc.querySelectorAll('img'));
+
+        for (const imgEl of imgElements) {
+            const src = imgEl.getAttribute('src');
+            if (!src || src.startsWith('http')) continue;
+
+            try {
+                let blob: Blob;
+                let filename: string;
+
+                if (src.startsWith('data:image/')) {
+                    blob = dataURItoBlob(src);
+                    filename = `image_${Date.now()}.png`;
+                } else {
                     const imageFile = this.app.vault.getAbstractFileByPath(src);
                     if (imageFile instanceof TFile) {
-                        // Read the file content as ArrayBuffer
                         const arrayBuffer = await this.app.vault.readBinary(imageFile);
-                        const mimeType = getMimeTypeFromFilename(imageFile.name); // Get MIME type from filename
-                        const blob = new Blob([arrayBuffer], { type: mimeType });
-                        const filename = imageFile.name;
-                        const uploadedUrl = await uploadImage(currentToken, blob, filename);
-                        imgEl.setAttribute('src', uploadedUrl);
-                        console.log('Uploaded local file image. New URL:', uploadedUrl);
+                        blob = new Blob([arrayBuffer], { type: getMimeTypeFromFilename(imageFile.name) });
+                        filename = imageFile.name;
                     } else {
-                        console.warn('Could not find local image file or it is not a TFile:', src);
+                        console.warn(`Could not find local image file: ${src}`);
+                        continue;
                     }
-                } catch (error) {
-                    console.error('Failed to upload local file image:', error);
                 }
+                const uploadedUrl = await uploadContentImage(currentToken, blob, filename);
+                imgEl.setAttribute('src', uploadedUrl);
+                console.log('Uploaded content image. New URL:', uploadedUrl);
+            } catch (error) {
+                console.error(`Failed to upload content image: ${src}`, error);
             }
         }
 
-        const processedHtml = doc.documentElement.innerHTML;
-        console.log("Processed HTML content:", processedHtml);
+        const processedHtml = doc.body.innerHTML;
 
-        // Send draft logic
+        // 3. Send Draft
         try {
-            const activeFile = this.app.workspace.getActiveFile();
-            const draftTitle = activeFile ? activeFile.basename : 'Untitled Draft';
-
-            const addDraftResponse = await addDraft(currentToken, draftTitle, processedHtml);
-            console.log('Draft added successfully:', addDraftResponse);
+            const draftTitle = activeFile.basename;
+            const addDraftResponse = await addDraft(currentToken, draftTitle, processedHtml, { thumb_media_id });
             alert(`草稿已成功发送！Media ID: ${addDraftResponse.media_id}`);
         } catch (error) {
-            console.error('Failed to send draft:', error);
             alert(`发送草稿失败: ${error.message}`);
         }
     }

@@ -19,8 +19,32 @@ const cleanAndDeployPlugin = {
       }
       console.log(`[esbuild] Cleaning directory: ${targetPath}...`);
       try {
-        await fs.rm(targetPath, { recursive: true, force: true });
-        console.log('[esbuild] Clean complete.');
+        // Check if directory exists
+        try {
+          await fs.access(targetPath);
+        } catch {
+          console.log('[esbuild] Target directory does not exist, skipping clean.');
+          return;
+        }
+        
+        // Read directory contents
+        const items = await fs.readdir(targetPath);
+        
+        // Remove each item except data.json
+        for (const item of items) {
+          if (item !== 'data.json') {
+            const itemPath = path.join(targetPath, item);
+            const stats = await fs.stat(itemPath);
+            
+            if (stats.isDirectory()) {
+              await fs.rm(itemPath, { recursive: true, force: true });
+            } else {
+              await fs.rm(itemPath, { force: true });
+            }
+          }
+        }
+        
+        console.log('[esbuild] Clean complete (preserved data.json).');
       } catch (err) {
         console.error('[esbuild] Failed to clean target directory:', err);
       }
