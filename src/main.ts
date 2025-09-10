@@ -46,7 +46,7 @@ export default class MPEasyPlugin extends Plugin {
         if (leaves.length > 0) {
             const leaf = leaves[0];
             const view = leaf.view as MPEasyView;
-            await view.rerender();
+            await view.refreshView();
             this.app.workspace.revealLeaf(leaf);
         } else {
             this.app.workspace.detachLeavesOfType(VIEW_TYPE_MPEASY);
