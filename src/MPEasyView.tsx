@@ -191,13 +191,14 @@ export class MPEasyView extends ItemView {
                     alert('未在插件设置中指定默认封面文件。');
                 } else {
                     const defaultBannerPath = `${this.plugin.manifest.dir}/assets/images/${bannerFilename}`;
-                    const abstractFile = this.app.vault.getAbstractFileByPath(defaultBannerPath);
-                    if (abstractFile instanceof TFile) {
-                        const arrayBuffer = await this.app.vault.readBinary(abstractFile);
-                        imageBlob = new Blob([arrayBuffer], { type: getMimeTypeFromFilename(abstractFile.name) });
-                        imageName = abstractFile.name;
-                    } else {
-                        alert(`默认封面图片未找到! 路径: ${defaultBannerPath}`);
+                    try {
+                        // Use adapter.readBinary for files outside the vault's direct content (like plugin assets)
+                        const arrayBuffer = await this.app.vault.adapter.readBinary(defaultBannerPath);
+                        imageBlob = new Blob([arrayBuffer], { type: getMimeTypeFromFilename(bannerFilename) });
+                        imageName = bannerFilename;
+                    } catch (error) {
+                        console.error(`MPEasy: Error reading default banner image: ${defaultBannerPath}`, error);
+                        alert(`默认封面图片加载失败! 路径: ${defaultBannerPath}。错误: ${error.message}`);
                     }
                 }
             } else if (coverImageResult === null) {
