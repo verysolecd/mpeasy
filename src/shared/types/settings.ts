@@ -19,4 +19,5 @@ export interface MPEasySettings {
     wxSecret: string;
     wxToken: string;
     wxTokenAcquisitionTime: number;
+    defaultCoverBanner: string;
 }

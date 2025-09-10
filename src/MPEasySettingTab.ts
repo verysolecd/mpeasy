@@ -22,6 +22,24 @@ export class MPEasySettingTab extends PluginSettingTab {
 
         containerEl.createEl('h2', { text: '微信公众号设置' });
 
+        const bannerFiles: Record<string, string> = {
+            'banner.png': '默认横幅',
+            'banner 2.png': '默认横幅2'
+        };
+
+        new Setting(containerEl)
+            .setName("默认封面")
+            .setDesc("当文章没有在 frontmatter 中设置封面时，将使用此处的封面。图片来源于插件目录下的 assets/images。")
+            .addDropdown((dropdown) => {
+                dropdown
+                    .addOptions(bannerFiles)
+                    .setValue(this.plugin.settings.defaultCoverBanner)
+                    .onChange(async (value) => {
+                        this.plugin.settings.defaultCoverBanner = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
         new Setting(containerEl)
             .setName("公众号ID")
             .setDesc("Your WeChat Official Account ID (AppID).")

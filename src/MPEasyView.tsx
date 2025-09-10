@@ -15,7 +15,20 @@ import { processContent } from './utils/contentProcessor';
 
 export const VIEW_TYPE_MPEASY = "mpeasy-view";
 
-// 使用contentProcessor中的dataURItoBlob函数，此处不再需要定义
+/**
+ * Fetches an image from a URL and returns it as a Blob.
+ * @param url The URL of the image to fetch.
+ * @returns A promise that resolves with the image Blob.
+ */
+async function fetchImageAsBlob(url: string): Promise<Blob> {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch image from ${url}: ${response.statusText}`);
+    }
+    const blob = await response.blob();
+    return blob;
+}
+
 
 export class MPEasyView extends ItemView {
     plugin: MPEasyPlugin;
@@ -156,40 +169,59 @@ export class MPEasyView extends ItemView {
         let thumb_media_id: string | undefined = undefined;
         try {
             const coverImageResult = getCoverImage(this.app, activeFile);
-            let coverFile: TFile | null = null;
+            
+            let imageBlob: Blob | null = null;
+            let imageName: string = 'cover-image.png'; // Default name
 
-            if (coverImageResult === 'default_banner') {
-                const defaultBannerPath = `${this.plugin.manifest.dir}/assets/images/banner.png`;
-                const abstractFile = this.app.vault.getAbstractFileByPath(defaultBannerPath);
-                if (abstractFile instanceof TFile) {
-                    coverFile = abstractFile;
-                } else {
-                    alert('Default banner image not found! Looked at: ' + defaultBannerPath);
+            if (coverImageResult instanceof TFile) {
+                const arrayBuffer = await this.app.vault.readBinary(coverImageResult);
+                imageBlob = new Blob([arrayBuffer], { type: getMimeTypeFromFilename(coverImageResult.name) });
+                imageName = coverImageResult.name;
+            } else if (typeof coverImageResult === 'string' && coverImageResult.startsWith('http')) {
+                try {
+                    imageBlob = await fetchImageAsBlob(coverImageResult);
+                    imageName = coverImageResult.substring(coverImageResult.lastIndexOf('/') + 1) || imageName;
+                } catch (urlError) {
+                    console.error('Failed to fetch cover image from URL:', urlError);
+                    alert(`从URL加载封面图片失败: ${urlError.message}`);
                 }
-            } else if (typeof coverImageResult === 'string') {
-                // It's a web URL. WeChat requires uploading, so we can't use a URL directly.
-                // For now, we will skip it. A future implementation could download it first.
-                console.warn('MPEasy: Cover image is a web URL, which is not supported for direct upload to WeChat. Skipping cover image.');
-            } else {
-                coverFile = coverImageResult;
+            } else if (coverImageResult === 'use_default_banner_setting') {
+                const bannerFilename = this.plugin.settings.defaultCoverBanner;
+                if (!bannerFilename) {
+                    alert('未在插件设置中指定默认封面文件。');
+                } else {
+                    const defaultBannerPath = `${this.plugin.manifest.dir}/assets/images/${bannerFilename}`;
+                    const abstractFile = this.app.vault.getAbstractFileByPath(defaultBannerPath);
+                    if (abstractFile instanceof TFile) {
+                        const arrayBuffer = await this.app.vault.readBinary(abstractFile);
+                        imageBlob = new Blob([arrayBuffer], { type: getMimeTypeFromFilename(abstractFile.name) });
+                        imageName = abstractFile.name;
+                    } else {
+                        alert(`默认封面图片未找到! 路径: ${defaultBannerPath}`);
+                    }
+                }
+            } else if (coverImageResult === null) {
+                // This means the user specified a cover in frontmatter, but it could not be found.
+                alert('无法找到您在 frontmatter 中指定的封面图片，请检查 `cover` 字段的路径是否正确。');
+                return; // Stop the process
             }
 
-            if (coverFile) {
-                const arrayBuffer = await this.app.vault.readBinary(coverFile);
-                const mimeType = getMimeTypeFromFilename(coverFile.name);
-                const blob = new Blob([arrayBuffer], { type: mimeType });
-                thumb_media_id = await uploadThumb(currentToken, blob, coverFile.name);
+            if (imageBlob) {
+                thumb_media_id = await uploadThumb(currentToken, imageBlob, imageName);
                 console.log("Uploaded thumb image. Media ID:", thumb_media_id);
             }
         } catch (error) {
             console.error('Failed to upload thumb image:', error);
             alert(`上传封面图片失败: ${error.message}`);
-            return; // Stop if cover upload fails
+            // Decide if you want to stop or continue without a cover
+            // return; // Uncomment to stop if cover upload fails
         }
+
 
         // 2. 处理内容和图片
         const { html: processedHtml } = await processContent(this.contentDiv.innerHTML, {
             app: this.app,
+            sourcePath: activeFile.path,
             processImages: true,
             accessToken: currentToken
         });

@@ -19,7 +19,6 @@ const cleanAndDeployPlugin = {
       }
       console.log(`[esbuild] Cleaning directory: ${targetPath}...`);
       try {
-        // Check if directory exists
         try {
           await fs.access(targetPath);
         } catch {
@@ -44,7 +43,7 @@ const cleanAndDeployPlugin = {
           }
         }
         
-        console.log('[esbuild] Clean complete (preserved data.json).');
+        console.log('[esbuild] Clean complete');
       } catch (err) {
         console.error('[esbuild] Failed to clean target directory:', err);
       }

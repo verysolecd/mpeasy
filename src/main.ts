@@ -6,6 +6,11 @@ import { DEFAULT_STYLE_SETTINGS } from './shared/configs/defaults';
 
 const DEFAULT_SETTINGS: MPEasySettings = {
     styleSettings: DEFAULT_STYLE_SETTINGS,
+    wxId: '',
+    wxSecret: '',
+    wxToken: '',
+    wxTokenAcquisitionTime: 0,
+    defaultCoverBanner: 'banner.png',
 };
 
 export default class MPEasyPlugin extends Plugin {
