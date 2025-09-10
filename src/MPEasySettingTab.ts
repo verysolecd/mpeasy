@@ -23,8 +23,8 @@ export class MPEasySettingTab extends PluginSettingTab {
         containerEl.createEl('h2', { text: '微信公众号设置' });
 
         const bannerFiles: Record<string, string> = {
-            'banner.png': '默认横幅',
-            'banner 2.png': '默认横幅2'
+            'banner.png': 'banner.png',
+            'banner 2.png': 'banner 2.png'
         };
 
         new Setting(containerEl)
