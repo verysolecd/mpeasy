@@ -32,8 +32,9 @@ export async function copyPlain(text: string): Promise<void> {
   await legacyCopy(text)
 }
 
-export async function copyHtml(html: string, fallback?: string): Promise<void> {
-  const plain = fallback ?? html.replace(/<[^>]+>/g, ``)
+export async function copyHtml(html: string, plainText?: string): Promise<void> {
+  // 如果没有提供纯文本，则从HTML中提取
+  const plain = plainText ?? html.replace(/<[^>]+>/g, ``)
   if (window.isSecureContext && navigator.clipboard?.write) {
     try {
       const item = new ClipboardItem({
@@ -43,7 +44,8 @@ export async function copyHtml(html: string, fallback?: string): Promise<void> {
       await navigator.clipboard.write([item])
       return
     }
-    catch {
+    catch (error) {
+      console.error("Error using Clipboard API:", error)
     }
   }
   await copyPlain(plain)

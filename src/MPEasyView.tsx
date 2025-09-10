@@ -8,23 +8,14 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import SidePanel from './components/SidePanel';
 import { StyleSettings } from './shared/types/settings';
-import { getAccessToken, uploadContentImage, uploadThumb, addDraft } from './wx/api';
+import { getAccessToken, uploadThumb, addDraft } from './wx/api';
 import { getMimeTypeFromFilename } from './shared/utils/fileHelpers';
-import { getCoverImagePath } from './utils/frontmatter';
+import { getCoverImage } from './utils/frontmatter';
+import { processContent } from './utils/contentProcessor';
 
 export const VIEW_TYPE_MPEASY = "mpeasy-view";
 
-// Helper function to convert Data URI to Blob
-function dataURItoBlob(dataURI: string): Blob {
-    const byteString = atob(dataURI.split(',')[1]);
-    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([ab], { type: mimeString });
-}
+// 使用contentProcessor中的dataURItoBlob函数，此处不再需要定义
 
 export class MPEasyView extends ItemView {
     plugin: MPEasyPlugin;
@@ -32,6 +23,35 @@ export class MPEasyView extends ItemView {
     private reactRoot: ReactDOM.Root;
     private codeThemeStyleEl: HTMLStyleElement | null = null;
     private customCSSStyleEl: HTMLStyleElement | null = null;
+    
+    /**
+     * 处理本地图片路径
+     * @param activeFile 当前活动文件
+     */
+    private processLocalImages(activeFile: TFile): void {
+        const imgElements = Array.from(this.contentDiv.querySelectorAll('img[data-local-image="true"]'));
+
+        for (const imgEl of imgElements) {
+            const originalSrc = imgEl.getAttribute('src');
+            if (!originalSrc || originalSrc.startsWith('http') || originalSrc.startsWith('app://')) {
+                continue;
+            }
+
+            const decodedSrc = decodeURIComponent(originalSrc);
+            
+            const imageFile = this.app.metadataCache.getFirstLinkpathDest(decodedSrc, activeFile.path);
+
+            if (imageFile instanceof TFile) {
+                const resourcePath = this.app.vault.adapter.getResourcePath(imageFile.path);
+                imgEl.setAttribute('src', resourcePath);
+                imgEl.setAttribute('data-src', imageFile.path); // Update data-src to the resolved vault path
+            } else {
+                console.warn(`MPEasy: Could not find local image file using getFirstLinkpathDest: ${decodedSrc}`);
+                imgEl.classList.add('image-not-found');
+                imgEl.setAttribute('title', `Image not found: ${decodedSrc}`);
+            }
+        }
+    }
 
     constructor(leaf: WorkspaceLeaf, plugin: MPEasyPlugin) {
         super(leaf);
@@ -92,7 +112,10 @@ export class MPEasyView extends ItemView {
 
     async copyRenderedHtml(): Promise<boolean> {
         try {
-            await copyHtml(this.contentDiv.innerHTML);
+            const { html, plainText } = await processContent(this.contentDiv.innerHTML, {
+                processImages: false
+            });
+            await copyHtml(html, plainText);
             return true;
         } catch (err) {
             console.error("Failed to copy HTML: ", err);
@@ -132,10 +155,10 @@ export class MPEasyView extends ItemView {
         // 1. Handle Cover Image
         let thumb_media_id: string | undefined = undefined;
         try {
-            const coverPath = getCoverImagePath(this.app, activeFile);
+            const coverImageResult = getCoverImage(this.app, activeFile);
             let coverFile: TFile | null = null;
 
-            if (coverPath === 'default_banner') {
+            if (coverImageResult === 'default_banner') {
                 const defaultBannerPath = `${this.plugin.manifest.dir}/assets/images/banner.png`;
                 const abstractFile = this.app.vault.getAbstractFileByPath(defaultBannerPath);
                 if (abstractFile instanceof TFile) {
@@ -143,13 +166,12 @@ export class MPEasyView extends ItemView {
                 } else {
                     alert('Default banner image not found! Looked at: ' + defaultBannerPath);
                 }
+            } else if (typeof coverImageResult === 'string') {
+                // It's a web URL. WeChat requires uploading, so we can't use a URL directly.
+                // For now, we will skip it. A future implementation could download it first.
+                console.warn('MPEasy: Cover image is a web URL, which is not supported for direct upload to WeChat. Skipping cover image.');
             } else {
-                const abstractFile = this.app.vault.getAbstractFileByPath(coverPath);
-                if (abstractFile instanceof TFile) {
-                    coverFile = abstractFile;
-                } else {
-                    alert(`Cover image not found at path: ${coverPath}`);
-                }
+                coverFile = coverImageResult;
             }
 
             if (coverFile) {
@@ -165,49 +187,26 @@ export class MPEasyView extends ItemView {
             return; // Stop if cover upload fails
         }
 
-        // 2. Handle Content Images
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(this.contentDiv.innerHTML, 'text/html');
-        const imgElements = Array.from(doc.querySelectorAll('img'));
-
-        for (const imgEl of imgElements) {
-            const src = imgEl.getAttribute('src');
-            if (!src || src.startsWith('http')) continue;
-
-            try {
-                let blob: Blob;
-                let filename: string;
-
-                if (src.startsWith('data:image/')) {
-                    blob = dataURItoBlob(src);
-                    filename = `image_${Date.now()}.png`;
-                } else {
-                    const imageFile = this.app.vault.getAbstractFileByPath(src);
-                    if (imageFile instanceof TFile) {
-                        const arrayBuffer = await this.app.vault.readBinary(imageFile);
-                        blob = new Blob([arrayBuffer], { type: getMimeTypeFromFilename(imageFile.name) });
-                        filename = imageFile.name;
-                    } else {
-                        console.warn(`Could not find local image file: ${src}`);
-                        continue;
-                    }
-                }
-                const uploadedUrl = await uploadContentImage(currentToken, blob, filename);
-                imgEl.setAttribute('src', uploadedUrl);
-                console.log('Uploaded content image. New URL:', uploadedUrl);
-            } catch (error) {
-                console.error(`Failed to upload content image: ${src}`, error);
-            }
-        }
-
-        const processedHtml = doc.body.innerHTML;
+        // 2. 处理内容和图片
+        const { html: processedHtml } = await processContent(this.contentDiv.innerHTML, {
+            app: this.app,
+            processImages: true,
+            accessToken: currentToken
+        });
 
         // 3. Send Draft
         try {
             const draftTitle = activeFile.basename;
-            const addDraftResponse = await addDraft(currentToken, draftTitle, processedHtml, { thumb_media_id });
+            // 确保thumb_media_id是有效的，如果无效则不传递
+            const options: any = {};
+            if (thumb_media_id) {
+                options.thumb_media_id = thumb_media_id;
+            }
+            
+            const addDraftResponse = await addDraft(currentToken, draftTitle, processedHtml, options);
             alert(`草稿已成功发送！Media ID: ${addDraftResponse.media_id}`);
         } catch (error) {
+            console.error("Error adding draft to WeChat:", error);
             alert(`发送草稿失败: ${error.message}`);
         }
     }
@@ -256,6 +255,9 @@ export class MPEasyView extends ItemView {
             const finalHtml = postProcessHtml(html, readingTime, renderer);
 
             this.contentDiv.innerHTML = finalHtml;
+            
+            // 处理本地图片路径
+            this.processLocalImages(activeFile);
         } else {
             this.contentDiv.empty();
             this.contentDiv.createEl("p", { text: "No active Markdown file to preview." });

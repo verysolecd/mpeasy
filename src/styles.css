@@ -221,4 +221,25 @@
     border-color: var(--text-accent);  
     transform: translateY(-1px);  
     box-shadow: 0 3px 6px rgba(0,0,0,0.2);  
-} 
+}
+
+/* 图片未找到样式 */
+.image-not-found {
+    border: 2px dashed #ff6b6b;
+    background-color: #ffeeee;
+    min-height: 50px;
+    min-width: 50px;
+    display: inline-block;
+    position: relative;
+}
+
+.image-not-found::after {
+    content: "⚠️ 图片未找到";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ff6b6b;
+    font-size: 12px;
+    white-space: nowrap;
+}
