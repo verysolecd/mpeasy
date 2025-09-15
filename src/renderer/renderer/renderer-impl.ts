@@ -318,8 +318,8 @@ export function initRenderer(opts: IOpts): RendererAPI {
       listCounters[listCounters.length - 1] = idx + 1
 
       const listItemPrefix = ordered
-        ? `${idx}. `
-        : `• `
+        ? ``
+        : ``
 
       let content: string
       try {

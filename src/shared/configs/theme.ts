@@ -234,7 +234,6 @@ const defaultTheme: Theme = {
   },
   inline: {
     listitem: {
-      display: `block`,
       margin: `0.2em 8px`,
       color: `hsl(var(--foreground))`,
     },
