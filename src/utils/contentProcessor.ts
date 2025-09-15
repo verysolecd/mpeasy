@@ -20,19 +20,46 @@ async function processHtmlImages(doc: Document, options: ProcessOptions): Promis
 
     for (const imgEl of Array.from(doc.querySelectorAll('img'))) {
         const dataSrc = imgEl.getAttribute('data-src') || imgEl.getAttribute('src');
-        if (!dataSrc || dataSrc.startsWith('http')) continue;
+        if (!dataSrc) continue;
 
         try {
-            const imageFile = resolveImagePath(app, dataSrc, sourcePath);
-            if (imageFile instanceof TFile) {
-                const arrayBuffer = await app.vault.readBinary(imageFile);
-                const blob = new Blob([arrayBuffer], { type: getMimeTypeFromFilename(imageFile.name) });
-                const uploadedUrl = await uploadContentImage(accessToken, blob, imageFile.name);
-                imgEl.setAttribute('src', uploadedUrl);
-                imgEl.setAttribute('data-src', uploadedUrl); // Also update data-src
+            let blob: Blob;
+            let imageName = 'image.png'; // Default name
+
+            if (dataSrc.startsWith('http')) {
+                // Network image: fetch and create a blob
+                const response = await fetch(dataSrc);
+                if (!response.ok) {
+                    console.warn(`MPEasy: Failed to fetch network image: ${dataSrc}. Status: ${response.status}`);
+                    continue; // Skip this image
+                }
+                blob = await response.blob();
+                try {
+                    const url = new URL(dataSrc);
+                    const pathParts = url.pathname.split('/');
+                    imageName = pathParts[pathParts.length - 1] || imageName;
+                } catch { /* ignore URL parsing errors, use default name */ }
+
+            } else {
+                // Local image: use existing logic
+                const imageFile = resolveImagePath(app, dataSrc, sourcePath);
+                if (imageFile instanceof TFile) {
+                    const arrayBuffer = await app.vault.readBinary(imageFile);
+                    blob = new Blob([arrayBuffer], { type: getMimeTypeFromFilename(imageFile.name) });
+                    imageName = imageFile.name;
+                } else {
+                    console.warn(`MPEasy: Could not resolve local image: ${dataSrc}`);
+                    continue; // Skip if local image can't be resolved
+                }
             }
+            
+            // Unified upload logic
+            const uploadedUrl = await uploadContentImage(accessToken, blob, imageName);
+            imgEl.setAttribute('src', uploadedUrl);
+            imgEl.setAttribute('data-src', uploadedUrl);
+
         } catch (error) {
-            console.error(`Failed to upload content image: ${dataSrc}`, error);
+            console.error(`MPEasy: Failed to process image: ${dataSrc}`, error);
         }
     }
 }

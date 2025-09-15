@@ -342,10 +342,8 @@ export function initRenderer(opts: IOpts): RendererAPI {
       const subText = styledContent(`figcaption`, transform(opts.legend!, text, title))
       const figureStyles = styles(`figure`)
       const imgStyles = styles(`image`)
-      
-      // 处理Obsidian本地图片路径
-      // 添加data-src属性以便后续处理
-      return `<figure ${figureStyles}><img ${imgStyles} src="${href}" data-src="${href}" title="${title}" alt="${text}" data-local-image="true"/>${subText}</figure>`
+      const isLocal = !href.startsWith('http');
+      return `<figure ${figureStyles}><img ${imgStyles} src="${href}" data-src="${href}" title="${title}" alt="${text}" ${isLocal ? 'data-local-image="true"' : ''}/>${subText}</figure>`
     },
 
     link({ href, title, text, tokens }: Tokens.Link): string {
