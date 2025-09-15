@@ -20,6 +20,7 @@
     "front-matter": "^4.0.2",
     "highlight.js": "^11.11.1",
     "isomorphic-dompurify": "^2.26.0",
+    "less": "^4.4.1",
     "marked": "^16.2.1",
     "mermaid": "^11.11.0",
     "obsidian": "^1.8.7",
@@ -31,5 +32,8 @@
     "remark-stringify": "^11.0.0",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.0.0"
+  },
+  "dependencies": {
+    "juice": "^11.0.1"
   }
 }

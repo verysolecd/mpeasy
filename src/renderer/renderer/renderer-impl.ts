@@ -38,13 +38,31 @@ function buildTheme({ theme: _theme, fonts, size, isUseIndent, isUseJustify, pri
     }
   }
 
+  // Resolve CSS variables before returning the theme
+  const resolvedTheme = cloneDeep(theme);
+  const foregroundColor = '#333333'; // Default foreground color
+
+  const resolveCssVars = (styleObject: Record<string, any>) => {
+    for (const key in styleObject) {
+      const value = styleObject[key];
+      if (typeof value === 'string') {
+        styleObject[key] = value
+          .replace(/var\(--md-primary-color\)/g, primaryColor)
+          .replace(/hsl\(var\(--foreground\)\)/g, foregroundColor);
+      }
+    }
+  };
+
+  Object.values(resolvedTheme.block).forEach(resolveCssVars);
+  Object.values(resolvedTheme.inline).forEach(resolveCssVars);
+
   const mergeStyles = (styles: Record<string, PropertiesHyphen>): Record<string, ExtendedProperties> =>
     Object.fromEntries(
       Object.entries(styles).map(([ele, style]) => [ele, toMerged(base, style)]),
     )
   return {
-    ...mergeStyles(theme.inline),
-    ...mergeStyles(theme.block),
+    ...mergeStyles(resolvedTheme.inline),
+    ...mergeStyles(resolvedTheme.block),
   } as ThemeStyles
 }
 

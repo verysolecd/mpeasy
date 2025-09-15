@@ -126,7 +126,8 @@ export class MPEasyView extends ItemView {
     async copyRenderedHtml(): Promise<boolean> {
         try {
             const { html, plainText } = await processContent(this.contentDiv.innerHTML, {
-                processImages: false
+                processImages: false,
+                plugin: this.plugin
             });
             await copyHtml(html, plainText);
             return true;
@@ -224,7 +225,8 @@ export class MPEasyView extends ItemView {
             app: this.app,
             sourcePath: activeFile.path,
             processImages: true,
-            accessToken: currentToken
+            accessToken: currentToken,
+            plugin: this.plugin
         });
 
         // 3. Send Draft
