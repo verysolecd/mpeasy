@@ -65,8 +65,8 @@ function processWXhtml(doc: Document): void {
             Object.assign(innerSpan.style, innerStyles);
             innerSpan.style.display = 'inline-block'; // Keep for H1/H2
         } 
-        // For H3 with a left border, apply a specific transformation for full-width
-        else if (heading.tagName === 'H3' && heading.style.borderLeft) {
+        // For H3-H6, apply a block-level transformation to preserve styles
+        else {
             const innerSpan = doc.createElement('span');
             innerSpan.innerHTML = heading.innerHTML;
             heading.innerHTML = '';
@@ -88,7 +88,7 @@ function processWXhtml(doc: Document): void {
             heading.style.cssText = '';
             Object.assign(heading.style, outerStyles);
             Object.assign(innerSpan.style, innerStyles);
-            innerSpan.style.display = 'block'; // Use 'block' for H3 to make it full-width
+            innerSpan.style.display = 'block'; // Use 'block' to ensure styles are preserved and full-width
         }
     });
 
