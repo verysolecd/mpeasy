@@ -38,32 +38,58 @@ async function processHtmlImages(doc: Document, options: ProcessOptions): Promis
 }
 
 function processWXhtml(doc: Document): void {
-    // 1. Transform headings with `display: table`
+    // 1. Transform headings
     doc.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach((heading: HTMLElement) => {
-        if (heading.style.display !== 'table') return;
+        // For H1/H2 with display: table, use the original transformation
+        if (heading.style.display === 'table') {
+            const innerSpan = doc.createElement('span');
+            innerSpan.innerHTML = heading.innerHTML;
+            heading.innerHTML = '';
+            heading.appendChild(innerSpan);
 
-        const innerSpan = doc.createElement('span');
-        innerSpan.innerHTML = heading.innerHTML;
-        heading.innerHTML = '';
-        heading.appendChild(innerSpan);
+            const outerStyles: Record<string, string> = {};
+            const innerStyles: Record<string, string> = {};
 
-        const outerStyles: Record<string, string> = {};
-        const innerStyles: Record<string, string> = {};
-
-        for (let i = 0; i < heading.style.length; i++) {
-            const key = heading.style[i];
-            const value = heading.style.getPropertyValue(key);
-            if (key.startsWith('margin') || key === 'text-align') {
-                outerStyles[key] = value;
-            } else {
-                innerStyles[key] = value;
+            for (let i = 0; i < heading.style.length; i++) {
+                const key = heading.style[i];
+                const value = heading.style.getPropertyValue(key);
+                if (key.startsWith('margin') || key === 'text-align') {
+                    outerStyles[key] = value;
+                } else {
+                    innerStyles[key] = value;
+                }
             }
-        }
 
-        heading.style.cssText = '';
-        Object.assign(heading.style, outerStyles);
-        Object.assign(innerSpan.style, innerStyles);
-        innerSpan.style.display = 'inline-block';
+            heading.style.cssText = '';
+            Object.assign(heading.style, outerStyles);
+            Object.assign(innerSpan.style, innerStyles);
+            innerSpan.style.display = 'inline-block'; // Keep for H1/H2
+        } 
+        // For H3 with a left border, apply a specific transformation for full-width
+        else if (heading.tagName === 'H3' && heading.style.borderLeft) {
+            const innerSpan = doc.createElement('span');
+            innerSpan.innerHTML = heading.innerHTML;
+            heading.innerHTML = '';
+            heading.appendChild(innerSpan);
+
+            const outerStyles: Record<string, string> = {};
+            const innerStyles: Record<string, string> = {};
+
+            for (let i = 0; i < heading.style.length; i++) {
+                const key = heading.style[i];
+                const value = heading.style.getPropertyValue(key);
+                if (key.startsWith('margin')) {
+                    outerStyles[key] = value;
+                } else {
+                    innerStyles[key] = value;
+                }
+            }
+
+            heading.style.cssText = '';
+            Object.assign(heading.style, outerStyles);
+            Object.assign(innerSpan.style, innerStyles);
+            innerSpan.style.display = 'block'; // Use 'block' for H3 to make it full-width
+        }
     });
 
     // 2. Add classes to tables and blockquotes for WeChat
