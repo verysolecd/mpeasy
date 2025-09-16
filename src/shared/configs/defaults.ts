@@ -2,7 +2,7 @@ import { StyleSettings } from '../types';
 
 export const DEFAULT_STYLE_SETTINGS: StyleSettings = {
     layoutThemeName: 'minimal',
-    codeThemeName: 'atom-one-dark',
+    codeThemeName: 'gradient-light',
     customStyleName: 'none',
     fontSize: '16px',
     legend: 'alt',

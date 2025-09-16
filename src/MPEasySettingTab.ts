@@ -10,7 +10,7 @@ export class MPEasySettingTab extends PluginSettingTab {
         this.plugin = plugin;
     }
 
-    display(): void {
+    async display(): Promise<void> {
         const { containerEl } = this;
 
         containerEl.empty();
@@ -22,10 +22,20 @@ export class MPEasySettingTab extends PluginSettingTab {
 
         containerEl.createEl('h2', { text: '微信公众号设置' });
 
-        const bannerFiles: Record<string, string> = {
-            'banner.png': 'banner.png',
-            'banner 2.png': 'banner 2.png'
-        };
+        const bannerFiles: Record<string, string> = {};
+        const imagePath = `${this.plugin.manifest.dir}/assets/images`;
+        try {
+            const imageList = await this.app.vault.adapter.list(imagePath);
+            for (const filePath of imageList.files) {
+                const filename = filePath.split('/').pop();
+                if (filename) {
+                    bannerFiles[filename] = filename;
+                }
+            }
+        } catch (error) {
+            console.error("MPEasy: Could not list banner images.", error);
+            bannerFiles['error'] = "Could not load images!";
+        }
 
         new Setting(containerEl)
             .setName("默认封面")

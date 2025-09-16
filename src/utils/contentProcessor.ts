@@ -122,6 +122,26 @@ function processWXhtml(doc: Document): void {
     // 2. Add classes to tables and blockquotes for WeChat
     doc.querySelectorAll('table').forEach(table => table.classList.add('custom-table'));
     doc.querySelectorAll('blockquote').forEach(bq => bq.classList.add('custom-quote'));
+
+    // 3. Handle paragraph indentation for WeChat
+    doc.querySelectorAll('p').forEach((p: HTMLElement) => {
+        // Check if the paragraph has an inline style with text-indent
+        if (p.style.textIndent) {
+            // Remove the text-indent style property
+            p.style.removeProperty('text-indent');
+
+            // Prepend two full-width spaces to the paragraph's content
+            const firstChild = p.firstChild;
+            if (firstChild && firstChild.nodeType === Node.TEXT_NODE) {
+                // If the first child is a text node, just prepend to its content
+                firstChild.textContent = '　　' + firstChild.textContent;
+            } else {
+                // Otherwise, create a new text node and insert it at the beginning
+                const spaceNode = doc.createTextNode('　　');
+                p.insertBefore(spaceNode, p.firstChild);
+            }
+        }
+    });
 }
 
 export interface ProcessedContent {
