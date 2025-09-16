@@ -8,7 +8,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import SidePanel from './components/SidePanel';
 import { StyleSettings } from './shared/types/settings';
-import { getAccessToken, uploadThumb, addDraft } from './wx/api';
+import { getAccessToken, uploadThumb, addDraft, AddDraftOptions } from './wx/api';
 import { getMimeTypeFromFilename } from './shared/utils/fileHelpers';
 import { getCoverImage } from './utils/frontmatter';
 import { processContent } from './utils/contentProcessor';
@@ -166,6 +166,10 @@ export class MPEasyView extends ItemView {
             return;
         }
 
+        // Use Obsidian's metadata cache to get frontmatter efficiently
+        const fileCache = this.app.metadataCache.getFileCache(activeFile);
+        const frontmatter = fileCache?.frontmatter || {};
+
         // 1. Handle Cover Image
         let thumb_media_id: string | undefined = undefined;
         try {
@@ -232,10 +236,16 @@ export class MPEasyView extends ItemView {
         // 3. Send Draft
         try {
             const draftTitle = activeFile.basename;
-            // 确保thumb_media_id是有效的，如果无效则不传递
-            const options: any = {};
+            const options: AddDraftOptions = {};
             if (thumb_media_id) {
                 options.thumb_media_id = thumb_media_id;
+            }
+            // Use the frontmatter object from the cache
+            if (frontmatter.author) {
+                options.author = frontmatter.author;
+            }
+            if (frontmatter.digest) {
+                options.digest = frontmatter.digest;
             }
             
             const addDraftResponse = await addDraft(currentToken, draftTitle, processedHtml, options);
