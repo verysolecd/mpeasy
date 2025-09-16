@@ -11,6 +11,8 @@ const DEFAULT_SETTINGS: MPEasySettings = {
     wxToken: '',
     wxTokenAcquisitionTime: 0,
     defaultCoverBanner: 'banner.png',
+    isCommentDisabled: false,
+    isFansOnlyComment: false,
 };
 
 export default class MPEasyPlugin extends Plugin {
@@ -27,6 +29,16 @@ export default class MPEasyPlugin extends Plugin {
         );
 
         this.addSettingTab(new MPEasySettingTab(this.app, this));
+
+        this.registerEvent(
+            this.app.workspace.on('active-leaf-change', async () => {
+                const mpeasyLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_MPEASY)[0];
+                if (mpeasyLeaf) {
+                    const mpeasyView = mpeasyLeaf.view as MPEasyView;
+                    await mpeasyView.refreshView();
+                }
+            })
+        );
 
         this.addRibbonIcon('document', 'Open MPEasy Preview', () => {
             this.activateView();
