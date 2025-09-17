@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import MPEasyPlugin from './main';
 import { getAccessToken } from '../utils/wechat/api';
 
@@ -95,11 +95,12 @@ export class MPEasySettingTab extends PluginSettingTab {
                         this.plugin.settings.wxTokenAcquisitionTime = Date.now(); // Save acquisition time
                         await this.plugin.saveSettings();
                         tokenInput.value = token;
+                        new Notice("微信公众号Access Token获取成功");
                         button.setButtonText("获取成功!");
                     } catch (error) {
                         console.error("Failed to get token:", error);
                         button.setButtonText("获取失败!");
-                        alert(`Failed to get token: ${error.message}`);
+                        new Notice(`获取Token失败: ${error.message}`);
                     } finally {
                         setTimeout(() => {
                             button.setButtonText(originalButtonText);

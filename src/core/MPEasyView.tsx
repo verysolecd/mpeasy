@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, App, TFile } from 'obsidian';
+import { ItemView, WorkspaceLeaf, App, TFile, Notice } from 'obsidian';
 import { initRenderer } from '../rendering/renderer/renderer/renderer-impl';
 import { themeMap } from '../utils/config/configs/theme';
 import { renderMarkdown, postProcessHtml } from '../rendering/renderer/utils/markdownHelpers';
@@ -139,10 +139,10 @@ export class MPEasyView extends ItemView {
                 this.plugin.settings.wxToken = newAccessToken;
                 this.plugin.settings.wxTokenAcquisitionTime = Date.now();
                 await this.plugin.saveSettings();
-                alert("Access Token已更新。");
+                new Notice("微信公众号Access Token已更新");
                 return newAccessToken;
             } catch (error) {
-                alert(`无法获取Access Token: ${error.message}`);
+                new Notice(`无法获取Access Token: ${error.message}`);
                 return null;
             }
         }
