@@ -34,6 +34,7 @@
     "unist-util-visit": "^5.0.0"
   },
   "dependencies": {
-    "juice": "^11.0.1"
+    "juice": "^11.0.1",
+    "lucide-react": "^0.544.0"
   }
 }

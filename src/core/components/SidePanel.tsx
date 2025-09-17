@@ -5,6 +5,7 @@ import { getLayoutThemes, getCodeBlockThemes, getCustomStyles } from '../../rend
 import Combobox from './Combobox';
 import { StyleSettings } from '../../utils/config/types/settings';
 import { PRESET_COLORS, DEFAULT_CONFIG } from '../../utils/config/constants';
+import { Copy, Image, RefreshCw, Send } from 'lucide-react';
 
 interface SidePanelProps {
     styleSettings: StyleSettings;
@@ -86,10 +87,30 @@ const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopyHTML, on
             <h3 className="side-panel-view-title">样式与功能</h3>
 
             <div className="side-panel-view-actions">
-                <button type="button" onClick={onRefresh}>刷新</button>
-                <button type="button" onClick={() => handleCopy(false)}>{copyButtonText}</button>
-                <button type="button" onClick={() => handleCopy(true)}>{copyWithImageButtonText}</button>
-                <button type="button" onClick={onSendToDraft}>发草稿</button>
+                <button type="button" onClick={onRefresh}>
+                    <div className="button-content">
+                        <RefreshCw size={24} />
+                        <span className="button-tooltip">刷新</span>
+                    </div>
+                </button>
+                <button type="button" onClick={() => handleCopy(false)}>
+                    <div className="button-content">
+                        <Copy size={24} />
+                        <span className="button-tooltip">{copyButtonText}</span>
+                    </div>
+                </button>
+                <button type="button" onClick={() => handleCopy(true)}>
+                    <div className="button-content">
+                        <Image size={24} />
+                        <span className="button-tooltip">{copyWithImageButtonText}</span>
+                    </div>
+                </button>
+                <button type="button" onClick={onSendToDraft}>
+                    <div className="button-content">
+                        <Send size={24} />
+                        <span className="button-tooltip">发草稿</span>
+                    </div>
+                </button>
             </div>
 
             <form className="side-panel-view-form">

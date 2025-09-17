@@ -165,6 +165,16 @@
     font-size: 1em;
     font-weight: bold;
     text-align: left;
+    /* 添加斜45度蒂芙尼蓝线底纹，减少密度 */
+   background-image: repeating-linear-gradient(
+        45deg,
+        #0abab5,  /* 蒂芙尼蓝（线条颜色） */
+        #0abab5 5px,  /* 线条宽度（1px） */
+        transparent 1px,  /* 线条结束，开始透明间隔 */
+        transparent 1px  /* 间隔宽度（总周期8px） */
+    );
+    background-size: 100% 100%;
+    position: relative; /* 为文字遮罩层做准备 */
 }
 
 .collapsible-section:not(.collapsed) .collapsible-section-header {
@@ -173,7 +183,8 @@
 }
 
 .collapsible-section-header:hover {
-    background-color: var(--background-modifier-hover);
+    background-color: #09a8a3; /* 悬停时稍微深一点的蒂芙尼蓝 */
+    border-color: #09a8a3;
 }
 
 .collapsible-section-icon {
@@ -194,33 +205,81 @@
     border-top: none;
     border-radius: 0 0 6px 6px;
     margin-top: -1px;
-}  
+}
+
 /* Action Buttons in Side Panel */  
 .side-panel-view-actions {  
     display: flex;  
     width: 100%;  
     gap: 10px;  
     margin-bottom: 15px;  
+    position: relative;
+    z-index: 5; /* 确保按钮在折叠条之上 */
 }  
   
 .side-panel-view-actions button {  
     flex: 1;  
     padding: 8px 4px;  
     font-size: 0.9em;  
-    border: 1px solid var(--background-modifier-border);  
-    border-radius: 4px;  
-    background-color: var(--background-secondary-alt);  
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);  
-    cursor: pointer;  
-    transition: all 0.2s ease-in-out;  
-    text-align: center;  
-}  
-  
-.side-panel-view-actions button:hover {  
-    background-color: var(--background-modifier-hover);  
-    border-color: var(--text-accent);  
-    transform: translateY(-1px);  
-    box-shadow: 0 3px 6px rgba(0,0,0,0.2);  
+    background: transparent;
+    border: none;
+    outline: none; /* 移除焦点时的轮廓 */
+    box-shadow: none; /* 移除可能存在的阴影 */
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    appearance: none; /* 移除浏览器默认样式 */
+    -webkit-appearance: none; /* 兼容WebKit浏览器 */
+    -moz-appearance: none; /* 兼容Firefox浏览器 */
+}
+
+.side-panel-view-actions button:hover {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.side-panel-view-actions button:focus {
+    outline: none;
+    border: none;
+    box-shadow: none;
+}
+
+.button-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.button-content svg {
+    flex-shrink: 0;
+    color: #0abab5; /* 蒂芙尼蓝色 */
+    stroke-width: 2.5; /* 适当加粗SVG线 */
+}
+
+.button-tooltip {
+    position: absolute;
+    bottom: -30px;
+    background-color: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 10; /* 提高层级避免被遮挡 */
+}
+
+.button-content:hover .button-tooltip {
+    opacity: 1;
 }
 
 /* 图片未找到样式 */
