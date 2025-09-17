@@ -1,18 +1,18 @@
 import { ItemView, WorkspaceLeaf, App, TFile } from 'obsidian';
-import { initRenderer } from './renderer/renderer/renderer-impl';
-import { themeMap } from './shared/configs/theme';
-import { renderMarkdown, postProcessHtml } from './renderer/utils/markdownHelpers';
-import { copyHtml } from './utils/clipboard';
+import { initRenderer } from '../rendering/renderer/renderer/renderer-impl';
+import { themeMap } from '../utils/config/configs/theme';
+import { renderMarkdown, postProcessHtml } from '../rendering/renderer/utils/markdownHelpers';
+import { copyHtml } from '../utils/clipboard';
 import MPEasyPlugin from './main';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import SidePanel from './components/SidePanel';
-import { StyleSettings } from './shared/types/settings';
-import { getAccessToken, uploadThumb, addDraft, AddDraftOptions } from './Wx/api';
-import { getMimeTypeFromFilename } from './shared/utils/fileHelpers';
-import { getCoverImage } from './utils/frontmatter';
-import { processContent } from './utils/contentProcessor';
-import { WECHAT_CONFIG } from './shared/constants';
+import { StyleSettings } from '../utils/config/types/settings';
+import { getAccessToken, uploadThumb, addDraft, AddDraftOptions } from '../utils/wechat/api';
+import { getMimeTypeFromFilename } from '../utils/config/utils/fileHelpers';
+import { getCoverImage } from '../content/frontmatter';
+import { processContent } from '../content/processor';
+import { WECHAT_CONFIG } from '../utils/config/constants';
 
 export const VIEW_TYPE_MPEASY = "mpeasy-view";
 

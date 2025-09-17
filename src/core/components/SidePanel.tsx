@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { App } from 'obsidian';
 import { useEffect, useState } from 'react';
-import { getLayoutThemes, getCodeBlockThemes, getCustomStyles } from '../utils/themeHelpers';
+import { getLayoutThemes, getCodeBlockThemes, getCustomStyles } from '../../rendering/themeHelpers';
 import Combobox from './Combobox';
-import { StyleSettings } from '../shared/types/settings';
-import { PRESET_COLORS, DEFAULT_CONFIG } from '../shared/constants';
+import { StyleSettings } from '../../utils/config/types/settings';
+import { PRESET_COLORS, DEFAULT_CONFIG } from '../../utils/config/constants';
 
 interface SidePanelProps {
     styleSettings: StyleSettings;

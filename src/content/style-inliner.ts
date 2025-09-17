@@ -1,12 +1,12 @@
 import juice from 'juice';
-import MPEasyPlugin from '../main';
+import MPEasyPlugin from '../core/main';
 
 async function getCssRules(plugin: MPEasyPlugin): Promise<string> {
     let css = '';
     const { styleSettings } = plugin.settings;
 
     // 1. Read base styles (styles.css)
-    // The build script copies styles.css to the plugin's root directory.
+    // The build script copies UIstyle.css from src/core/components/UIstyle.css to the plugin's root directory as styles.css.
     const basePath = `${plugin.manifest.dir}/styles.css`;
     try {
         const baseCss = await plugin.app.vault.adapter.read(basePath);

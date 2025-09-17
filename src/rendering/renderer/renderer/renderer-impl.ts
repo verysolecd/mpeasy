@@ -1,4 +1,4 @@
-import type { ExtendedProperties, IOpts, RendererAPI, ThemeStyles } from '@md/shared/types'
+import type { ExtendedProperties, IOpts, RendererAPI, ThemeStyles } from '../../../utils/config/types/renderer-types'
 import type { PropertiesHyphen } from 'csstype'
 import type { RendererObject, Tokens } from 'marked'
 import type { ReadTimeResults } from 'reading-time'

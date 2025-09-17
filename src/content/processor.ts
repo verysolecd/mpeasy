@@ -1,9 +1,9 @@
 import { App, TFile } from 'obsidian';
-import { getMimeTypeFromFilename } from '../shared/utils/fileHelpers';
-import { uploadContentImage } from '../wx/api';
-import { resolveImagePath } from './imagePathResolver';
-import { inlineStyles } from './styleInliner';
-import MPEasyPlugin from '../main';
+import { getMimeTypeFromFilename } from '../utils/config/utils/fileHelpers';
+import { uploadContentImage } from '../utils/wechat/api';
+import { resolveImagePath } from './image-handler';
+import { inlineStyles } from './style-inliner';
+import MPEasyPlugin from '../core/main';
 
 // Options for processing content
 interface ProcessOptions {

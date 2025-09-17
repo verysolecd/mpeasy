@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import MPEasyPlugin from './main';
-import { getAccessToken } from './wx/api';
+import { getAccessToken } from '../utils/wechat/api';
 
 export class MPEasySettingTab extends PluginSettingTab {
     plugin: MPEasyPlugin;

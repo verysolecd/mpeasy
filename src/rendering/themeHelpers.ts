@@ -1,5 +1,5 @@
 import { App } from 'obsidian';
-import { themeOptions } from '../shared/configs/theme';
+import { themeOptions } from '../utils/config/configs/theme';
 
 // Placeholder for getLayoutThemes
 export async function getLayoutThemes(app: App): Promise<{ name: string; path: string }[]> {

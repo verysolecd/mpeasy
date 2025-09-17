@@ -1,6 +1,6 @@
 import { App, TFile } from 'obsidian';
-import { resolveImagePath } from './imagePathResolver';
-import { MPEasySettings } from '../shared/types/settings';
+import { resolveImagePath } from './image-handler';
+import { MPEasySettings } from '../utils/config/types/settings';
 
 /**
  * Gets the cover image specified in the frontmatter.

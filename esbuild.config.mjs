@@ -7,118 +7,99 @@ const config = JSON.parse(await fs.readFile('build-config.json', 'utf-8'));
 const targetPath = config.targetPath;
 const isProd = process.env.NODE_ENV === 'production';
 
-// --- Custom Plugin ---
-const cleanAndDeployPlugin = {
-  name: 'clean-and-deploy',
-  setup(build) {
-    // On build start, clean the target directory
-    build.onStart(async () => {
-      if (!targetPath) {
-        console.log('No targetPath in build-config.json, skipping clean.');
-        return;
-      }
-      console.log(`[esbuild] Cleaning directory: ${targetPath}...`);
-      try {
-        try {
-          await fs.access(targetPath);
-        } catch {
-          console.log('[esbuild] Target directory does not exist, skipping clean.');
-          return;
-        }
-        
-        // Read directory contents
-        const items = await fs.readdir(targetPath);
-        
-        // Remove each item except data.json
-        for (const item of items) {
-          if (item !== 'data.json') {
-            const itemPath = path.join(targetPath, item);
-            const stats = await fs.stat(itemPath);
-            
-            if (stats.isDirectory()) {
-              await fs.rm(itemPath, { recursive: true, force: true });
-            } else {
-              await fs.rm(itemPath, { force: true });
-            }
-          }
-        }
-        
-        console.log('[esbuild] Clean complete');
-      } catch (err) {
-        console.error('[esbuild] Failed to clean target directory:', err);
-      }
-    });
-
-    // On build end, copy the necessary files
-    build.onEnd(async (result) => {
-      if (result.errors.length > 0) {
-        console.log('[esbuild] Build failed, skipping deploy.');
-        return;
-      }
-      if (!targetPath) {
-        console.log('No targetPath in build-config.json, skipping deploy.');
-        return;
-      }
-
-      console.log(`[esbuild] Deploying to ${targetPath}...`);
-      try {
-        await fs.mkdir(targetPath, { recursive: true });
-        // Copy the main JS bundle
-        await fs.copyFile('dist/main.js', path.join(targetPath, 'main.js'));
-        // Copy manifest and styles
-        await fs.copyFile('src/manifest.json', path.join(targetPath, 'manifest.json'));
-        await fs.copyFile('src/styles.css', path.join(targetPath, 'styles.css'));
-        
-        // Copy project assets
-        const assetsSource = 'assets';
-        const assetsDest = path.join(targetPath, 'assets');
-        console.log(`[esbuild] Copying project assets from ${assetsSource} to ${assetsDest}...`);
-        await fs.mkdir(assetsDest, { recursive: true });
-        await fs.cp(assetsSource, assetsDest, { recursive: true });
-
-        // Copy codestyles
-        const codestyleSource = 'node_modules/highlight.js/styles';
-        const codestyleDest = path.join(targetPath, 'assets/codestyle');
-        console.log(`[esbuild] Copying codestyles from ${codestyleSource} to ${codestyleDest}...`);
-        await fs.mkdir(codestyleDest, { recursive: true });
-        
-        const files = await fs.readdir(codestyleSource);
-        for (const file of files) {
-            if (file.endsWith('.css') && !file.endsWith('.min.css')) {
-                const sourceFile = path.join(codestyleSource, file);
-                const destFile = path.join(codestyleDest, file);
-                await fs.copyFile(sourceFile, destFile);
-            }
-        }
-
-        console.log('[esbuild] Deploy complete.');
-      } catch (err) {
-        console.error('[esbuild] Failed to deploy:', err);
-      }
-    });
-  },
-};
-
 // --- Build ---
 try {
-  await esbuild.build({
-    entryPoints: ['src/main.ts'],
-    bundle: true,
-        external: ['obsidian', 'stream', 'util'],
-    format: 'cjs',
-    target: 'es2020',
-    platform: 'browser',
-    outfile: 'dist/main.js',
-    sourcemap: isProd ? false : 'inline',
-    treeShaking: true,
-    plugins: [cleanAndDeployPlugin],
-    // React/JSX support
-    loader: {'.ts': 'ts', '.tsx': 'tsx'},
-    jsxFactory: 'React.createElement',
-    jsxFragment: 'React.Fragment',
-  });
-  console.log('[esbuild] Build finished successfully.');
+    // First build to dist directory
+    const buildConfig = {
+        entryPoints: ['src/main.ts'],
+        bundle: true,
+        outdir: 'dist',  // Output to dist directory first
+        format: 'cjs',
+        platform: 'node',
+        sourcemap: isProd ? false : 'inline',
+        minify: isProd,
+        define: {
+            'process.env.NODE_ENV': JSON.stringify(isProd ? 'production' : 'development'),
+        },
+        loader: {
+            '.ts': 'ts',
+            '.tsx': 'tsx',
+        },
+        resolveExtensions: ['.ts', '.tsx', '.js', '.jsx'],
+        external: ['obsidian', 'electron', './xhr-sync-worker.js']
+    };
+
+    // Compile first - if this fails, the process will exit without cleaning/deploying
+    await esbuild.build(buildConfig);
+    console.log('[esbuild] Build completed successfully.');
+
+    // Copy additional assets to dist directory
+    // Copy manifest.json
+    await fs.copyFile('src/manifest.json', 'dist/manifest.json');
+    
+    // Copy UIstyle.css as styles.css to comply with Obsidian plugin requirements
+    await fs.copyFile('src/core/components/UIstyle.css', 'dist/styles.css');
+    
+    // Copy assets folder
+    const assetsDest = 'dist/assets';
+    await fs.mkdir(assetsDest, { recursive: true });
+    await fs.cp('assets', assetsDest, { recursive: true });
+    
+    // Copy codestyles
+    const codestyleSource = 'node_modules/highlight.js/styles';
+    const codestyleDest = 'dist/assets/codestyle';
+    await fs.mkdir(codestyleDest, { recursive: true });
+    
+    const files = await fs.readdir(codestyleSource);
+    for (const file of files) {
+        if (file.endsWith('.css') && !file.endsWith('.min.css')) {
+            const sourceFile = path.join(codestyleSource, file);
+            const destFile = path.join(codestyleDest, file);
+            await fs.copyFile(sourceFile, destFile);
+        }
+    }
+
+    // Only proceed with deployment if build was successful
+    if (targetPath) {
+        console.log(`[esbuild] Deploying to ${targetPath}...`);
+        
+        // First clean the target directory
+        try {
+            await fs.access(targetPath);
+            
+            // Read directory contents
+            const items = await fs.readdir(targetPath);
+            
+            // Remove each item except data.json
+            for (const item of items) {
+                if (item !== 'data.json') {
+                    const itemPath = path.join(targetPath, item);
+                    const stats = await fs.stat(itemPath);
+                    
+                    if (stats.isDirectory()) {
+                        await fs.rm(itemPath, { recursive: true, force: true });
+                    } else {
+                        await fs.rm(itemPath, { force: true });
+                    }
+                }
+            }
+        } catch {
+            // Target directory does not exist, will create it
+        }
+        
+        // Ensure target directory exists
+        await fs.mkdir(targetPath, { recursive: true });
+        
+        // Copy all files from dist to target
+        await fs.cp('dist', targetPath, { recursive: true });
+        
+        console.log('[esbuild] Deployment completed successfully.');
+    } else {
+        console.log('[esbuild] No target path specified. Skipping deployment.');
+    }
+    
+    console.log('[esbuild] Build process finished successfully.');
 } catch (e) {
-  console.error('[esbuild] Build failed:', e);
-  process.exit(1);
+    console.error('[esbuild] Build failed:', e.message);
+    process.exit(1);
 }

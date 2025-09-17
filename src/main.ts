@@ -1,9 +1,10 @@
 import { Plugin, WorkspaceLeaf } from 'obsidian';
-import { MPEasyView, VIEW_TYPE_MPEASY } from './MPEasyView';
-import { MPEasySettingTab } from './MPEasySettingTab';
-import { MPEasySettings, StyleSettings } from './shared/types/settings';
-import { DEFAULT_STYLE_SETTINGS } from './shared/configs/defaults';
+import { MPEasyView, VIEW_TYPE_MPEASY } from './core/MPEasyView';
+import { MPEasySettingTab } from './core/MPEasySettingTab';
+import { MPEasySettings, StyleSettings } from './utils/config/types/settings';
+import { DEFAULT_STYLE_SETTINGS } from './utils/config/configs/defaults';
 
+// Syntax error for testing build failure handling
 const DEFAULT_SETTINGS: MPEasySettings = {
     styleSettings: DEFAULT_STYLE_SETTINGS,
     wxId: '',
@@ -94,3 +95,4 @@ export default class MPEasyPlugin extends Plugin {
         await this.saveData(this.settings);
     }
 }
+
