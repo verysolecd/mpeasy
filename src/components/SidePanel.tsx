@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getLayoutThemes, getCodeBlockThemes, getCustomStyles } from '../utils/themeHelpers';
 import Combobox from './Combobox';
 import { StyleSettings } from '../shared/types/settings';
+import { PRESET_COLORS, DEFAULT_CONFIG } from '../shared/constants';
 
 interface SidePanelProps {
     styleSettings: StyleSettings;
@@ -14,19 +15,7 @@ interface SidePanelProps {
     onSendToDraft: () => Promise<void>;
 }
 
-const PRESET_COLORS = [
-    { name: '经典蓝', color: '#0F4C81' },
-    { name: '翡翠绿', color: '#009874' },
-    { name: '活力橘', color: '#FA5151' },
-    { name: '柠檬黄', color: '#FECE00' },
-    { name: '薰衣紫', color: '#92617E' },
-    { name: '天空蓝', color: '#55C9EA' },
-    { name: '玫瑰金', color: '#B76E79' },
-    { name: '橄榄绿', color: '#556B2F' },
-    { name: '石墨黑', color: '#333333' },
-    { name: '雾烟灰', color: '#A9A9A9' },
-    { name: '樱花粉', color: '#FFB7C5' },
-];
+
 
 interface CollapsibleSectionProps {
     title: string;
@@ -112,7 +101,7 @@ const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopyHTML, on
                     <div className="side-panel-view-item">
                         <label>排版主题</label>
                         <select
-                            value={localSettings.layoutThemeName || 'minimal'}
+                            value={localSettings.layoutThemeName || DEFAULT_CONFIG.DEFAULT_LAYOUT_THEME}
                             onChange={(e) => handleValueChange('layoutThemeName', e.target.value)}
                         >
                             {layoutThemes.map(theme => (
@@ -124,7 +113,7 @@ const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopyHTML, on
                     <div className="side-panel-view-item">
                         <label>代码块主题</label>
                         <select
-                            value={localSettings.codeThemeName || 'atom-one-dark'}
+                            value={localSettings.codeThemeName || DEFAULT_CONFIG.DEFAULT_CODE_THEME}
                             onChange={(e) => handleValueChange('codeThemeName', e.target.value)}
                         >
                             {codeBlockThemes.map(theme => (
@@ -148,7 +137,7 @@ const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopyHTML, on
                         <label>字体大小</label>
                         <Combobox
                             options={['13px', '14px', '15px', '16px', '17px', '18px', '20px', '22px', '24px']}
-                            value={localSettings.fontSize || '16px'}
+                            value={localSettings.fontSize || DEFAULT_CONFIG.DEFAULT_FONT_SIZE}
                             onChange={(newValue) => handleValueChange('fontSize', newValue)}
                             placeholder="例如: 16px"
                         />
@@ -211,7 +200,7 @@ const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopyHTML, on
                         <div className="custom-color-container">
                             <input
                                 type="color"
-                                value={localSettings.primaryColor || '#007bff'}
+                                value={localSettings.primaryColor || DEFAULT_CONFIG.DEFAULT_PRIMARY_COLOR}
                                 onChange={(e) => handleValueChange('primaryColor', e.target.value)}
                                 className="custom-color-picker"
                             />

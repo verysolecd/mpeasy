@@ -69,22 +69,3 @@ export function postProcessHtml(baseHtml: string, reading: ReadTimeResults, rend
   // 包裹 HTML
   return renderer.createContainer(html)
 }
-
-/**
- * 修改 HTML 内容
- * @param content - 原始内容
- * @param renderer - 渲染器 API
- * @returns 修改后的 HTML 字符串
- */
-export function modifyHtmlContent(content: string, renderer: RendererAPI): string {
-  const {
-    markdownContent,
-    readingTime: readingTimeResult,
-  } = renderer.parseFrontMatterAndContent(content)
-
-  let html = marked.parse(markdownContent) as string
-  html = DOMPurify.sanitize(html, {
-    ADD_TAGS: [`mp-common-profile`],
-  })
-  return postProcessHtml(html, readingTimeResult, renderer)
-}

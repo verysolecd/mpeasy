@@ -12,6 +12,7 @@ import { getAccessToken, uploadThumb, addDraft, AddDraftOptions } from './Wx/api
 import { getMimeTypeFromFilename } from './shared/utils/fileHelpers';
 import { getCoverImage } from './utils/frontmatter';
 import { processContent } from './utils/contentProcessor';
+import { WECHAT_CONFIG } from './shared/constants';
 
 export const VIEW_TYPE_MPEASY = "mpeasy-view";
 
@@ -125,7 +126,7 @@ export class MPEasyView extends ItemView {
 
     private async getValidAccessToken(): Promise<string | null> {
         const { wxId, wxSecret, wxToken, wxTokenAcquisitionTime } = this.plugin.settings;
-        const TOKEN_EXPIRATION_SECONDS = 7000;
+        const TOKEN_EXPIRATION_SECONDS = WECHAT_CONFIG.TOKEN_EXPIRATION_SECONDS;
 
         if (!wxId || !wxSecret) {
             alert("请在插件设置中配置公众号ID和Secret。");
