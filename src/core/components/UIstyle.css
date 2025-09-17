@@ -27,11 +27,55 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1em;
+    margin: 0.8em 0 2em 0; /* 上边距从2em调整为0.8em(0.4倍)，下边距保持2em */
 }
 
 .mpeasy-header h2 {
     margin: 0;
+    color: var(--mpeasy-primary-color, #007bff); /* 使用CSS变量设置主题色，默认为蓝色 */
+    text-align: center; /* 标题居中 */
+    flex-grow: 1; /* 使标题占据可用空间 */
+    font-size: 2em; /* 字体大小为2em */
+}
+
+.mpeasy-header-divider {
+    width: 95%; /* 占满宽度的88% */
+    height: 3px; /* 3px高度 */
+    margin: 0 auto; /* 居中显示 */
+    position: relative;
+}
+
+.mpeasy-header-divider::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(50% - 20px); /* 左侧线段，到中心点左侧30px处 */
+    height: 100%;
+    background: linear-gradient(to right, #0abab5, #0abab5) no-repeat left center;
+    background-size: 100% 3px;
+}
+
+.mpeasy-header-divider::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: calc(50% - 20px); /* 右侧线段，到中心点右侧30px处 */
+    height: 100%;
+    background: linear-gradient(to right, #0abab5, #0abab5) no-repeat right center;
+    background-size: 100% 3px;
+}
+
+.mpeasy-header-divider .divider-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    background-color: #0abab5; /* 蒂芙尼蓝色点 */
+    border-radius: 50%; /* 圆形点 */
 }
 
 /* --- Side Panel View Styles (adapted from sty.css) --- */

@@ -86,12 +86,18 @@ export class MPEasyView extends ItemView {
         const renderAreaDiv = container.createDiv({ cls: "mpeasy-render-area" });
         const headerDiv = renderAreaDiv.createDiv({ cls: "mpeasy-header" });
         headerDiv.createEl("h2", { text: "MPEasy Preview" });
+        
+        // 添加分隔线
+        const dividerDiv = renderAreaDiv.createDiv({ cls: "mpeasy-header-divider" });
+        dividerDiv.createDiv({ cls: "divider-dot" }); // 添加中心点
 
         this.contentDiv = renderAreaDiv.createDiv({ id: "mpeasy-rendered-content" });
         this.contentDiv.style.padding = "1em";
         this.contentDiv.style.overflowY = "auto";
 
         this.codeThemeStyleEl = renderAreaDiv.createEl('style', { attr: { id: 'mpeasy-code-theme-style' } });
+        this.customCSSStyleEl = renderAreaDiv.createEl('style', { attr: { id: 'mpeasy-custom-css-style' } });
+        // 创建用于设置主题色的style元素
         this.customCSSStyleEl = renderAreaDiv.createEl('style', { attr: { id: 'mpeasy-custom-css-style' } });
 
         const sidePanelContainer = container.createDiv({ cls: "mpeasy-side-panel" });
@@ -289,6 +295,16 @@ export class MPEasyView extends ItemView {
         // Update styles
         if (!this.customCSSStyleEl || !this.codeThemeStyleEl) return;
 
+        // 更新主题色CSS变量
+        if (this.customCSSStyleEl) {
+            // 设置主题色CSS变量
+            this.customCSSStyleEl.innerHTML = `
+                :root {
+                    --mpeasy-primary-color: ${settings.primaryColor || '#007bff'};
+                }
+            `;
+        }
+
         if (settings.codeThemeName && settings.codeThemeName !== 'none') {
             this.app.vault.adapter.read(settings.codeThemeName)
                 .then(css => { if (this.codeThemeStyleEl) this.codeThemeStyleEl.innerHTML = css; })
@@ -299,10 +315,20 @@ export class MPEasyView extends ItemView {
 
         if (settings.useCustomCSS && settings.customStyleName && settings.customStyleName !== 'none') {
             this.app.vault.adapter.read(settings.customStyleName)
-                .then(css => { if (this.customCSSStyleEl) this.customCSSStyleEl.innerHTML = css; })
+                .then(css => { if (this.customCSSStyleEl) this.customCSSStyleEl.innerHTML += css; })
                 .catch(err => console.error("Error loading custom CSS", err));
         } else {
-            this.customCSSStyleEl.innerHTML = '';
+            // 保留主题色设置
+            if (this.customCSSStyleEl) {
+                const existingContent = this.customCSSStyleEl.innerHTML;
+                if (!existingContent.includes('--mpeasy-primary-color')) {
+                    this.customCSSStyleEl.innerHTML = `
+                        :root {
+                            --mpeasy-primary-color: ${settings.primaryColor || '#007bff'};
+                        }
+                    ` + existingContent;
+                }
+            }
         }
 
         // Update content
@@ -328,11 +354,23 @@ export class MPEasyView extends ItemView {
 
             this.contentDiv.innerHTML = finalHtml;
             
+            // 更新标题为当前文档标题
+            const headerElement = this.containerEl.querySelector('.mpeasy-header h2');
+            if (headerElement) {
+                headerElement.textContent = activeFile.basename;
+            }
+            
             // 处理本地图片路径
             this.processLocalImages(activeFile);
         } else {
             this.contentDiv.empty();
             this.contentDiv.createEl("p", { text: "No active Markdown file to preview." });
+            
+            // 没有活动文件时恢复默认标题
+            const headerElement = this.containerEl.querySelector('.mpeasy-header h2');
+            if (headerElement) {
+                headerElement.textContent = "MPEasy Preview";
+            }
         }
     }
 }
