@@ -8,7 +8,7 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import SidePanel from './components/SidePanel';
 import { StyleSettings } from './shared/types/settings';
-import { getAccessToken, uploadThumb, addDraft, AddDraftOptions } from './wx/api';
+import { getAccessToken, uploadThumb, addDraft, AddDraftOptions } from './Wx/api';
 import { getMimeTypeFromFilename } from './shared/utils/fileHelpers';
 import { getCoverImage } from './utils/frontmatter';
 import { processContent } from './utils/contentProcessor';
@@ -123,6 +123,32 @@ export class MPEasyView extends ItemView {
         }
     }
 
+    private async getValidAccessToken(): Promise<string | null> {
+        const { wxId, wxSecret, wxToken, wxTokenAcquisitionTime } = this.plugin.settings;
+        const TOKEN_EXPIRATION_SECONDS = 7000;
+
+        if (!wxId || !wxSecret) {
+            alert("请在插件设置中配置公众号ID和Secret。");
+            return null;
+        }
+
+        if (!wxToken || !wxTokenAcquisitionTime || (Date.now() - wxTokenAcquisitionTime) / 1000 > TOKEN_EXPIRATION_SECONDS) {
+            try {
+                const newAccessToken = await getAccessToken(wxId, wxSecret);
+                this.plugin.settings.wxToken = newAccessToken;
+                this.plugin.settings.wxTokenAcquisitionTime = Date.now();
+                await this.plugin.saveSettings();
+                alert("Access Token已更新。");
+                return newAccessToken;
+            } catch (error) {
+                alert(`无法获取Access Token: ${error.message}`);
+                return null;
+            }
+        }
+
+        return wxToken;
+    }
+
     async copyRenderedHtml(processImages: boolean): Promise<boolean> {
         const activeFile = this.app.workspace.getActiveFile();
         if (!activeFile) {
@@ -130,27 +156,11 @@ export class MPEasyView extends ItemView {
             return false;
         }
 
-        const { wxId, wxSecret, wxToken, wxTokenAcquisitionTime } = this.plugin.settings;
-        const TOKEN_EXPIRATION_SECONDS = 7000;
-        let currentToken = wxToken;
-
+        let currentToken: string | null = null;
         if (processImages) {
-            if (!wxId || !wxSecret) {
-                alert("请在插件设置中配置公众号ID和Secret。");
+            currentToken = await this.getValidAccessToken();
+            if (!currentToken) {
                 return false;
-            }
-
-            if (!currentToken || !wxTokenAcquisitionTime || (Date.now() - wxTokenAcquisitionTime) / 1000 > TOKEN_EXPIRATION_SECONDS) {
-                try {
-                    currentToken = await getAccessToken(wxId, wxSecret);
-                    this.plugin.settings.wxToken = currentToken;
-                    this.plugin.settings.wxTokenAcquisitionTime = Date.now();
-                    await this.plugin.saveSettings();
-                    alert("Access Token已更新。");
-                } catch (error) {
-                    alert(`无法获取Access Token: ${error.message}`);
-                    return false;
-                }
             }
         }
 
@@ -171,26 +181,9 @@ export class MPEasyView extends ItemView {
     }
 
     async sendToWeChatDraft(): Promise<void> {
-        const { wxId, wxSecret, wxToken, wxTokenAcquisitionTime } = this.plugin.settings;
-        const TOKEN_EXPIRATION_SECONDS = 7000;
-
-        if (!wxId || !wxSecret) {
-            alert("请在插件设置中配置公众号ID和Secret。");
+        const currentToken = await this.getValidAccessToken();
+        if (!currentToken) {
             return;
-        }
-
-        let currentToken = wxToken;
-        if (!currentToken || !wxTokenAcquisitionTime || (Date.now() - wxTokenAcquisitionTime) / 1000 > TOKEN_EXPIRATION_SECONDS) {
-            try {
-                currentToken = await getAccessToken(wxId, wxSecret);
-                this.plugin.settings.wxToken = currentToken;
-                this.plugin.settings.wxTokenAcquisitionTime = Date.now();
-                await this.plugin.saveSettings();
-                alert("Access Token已更新。");
-            } catch (error) {
-                alert(`无法获取Access Token: ${error.message}`);
-                return;
-            }
         }
 
         const activeFile = this.app.workspace.getActiveFile();
