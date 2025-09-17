@@ -109,7 +109,7 @@ export class MPEasyView extends ItemView {
                 onOptsChange={onOptsChange}
                 app={this.app}
                 onRefresh={this.refreshView}
-                onCopy={this.copyRenderedHtml}
+                onCopyHTML={this.copyRenderedHtml}
                 onSendToDraft={this.sendToWeChatDraft}
             />
         );
@@ -123,10 +123,43 @@ export class MPEasyView extends ItemView {
         }
     }
 
-    async copyRenderedHtml(): Promise<boolean> {
+    async copyRenderedHtml(processImages: boolean): Promise<boolean> {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (!activeFile) {
+            alert("No active file.");
+            return false;
+        }
+
+        const { wxId, wxSecret, wxToken, wxTokenAcquisitionTime } = this.plugin.settings;
+        const TOKEN_EXPIRATION_SECONDS = 7000;
+        let currentToken = wxToken;
+
+        if (processImages) {
+            if (!wxId || !wxSecret) {
+                alert("请在插件设置中配置公众号ID和Secret。");
+                return false;
+            }
+
+            if (!currentToken || !wxTokenAcquisitionTime || (Date.now() - wxTokenAcquisitionTime) / 1000 > TOKEN_EXPIRATION_SECONDS) {
+                try {
+                    currentToken = await getAccessToken(wxId, wxSecret);
+                    this.plugin.settings.wxToken = currentToken;
+                    this.plugin.settings.wxTokenAcquisitionTime = Date.now();
+                    await this.plugin.saveSettings();
+                    alert("Access Token已更新。");
+                } catch (error) {
+                    alert(`无法获取Access Token: ${error.message}`);
+                    return false;
+                }
+            }
+        }
+
         try {
             const { html, plainText } = await processContent(this.contentDiv.innerHTML, {
-                processImages: false,
+                app: this.app,
+                sourcePath: activeFile.path,
+                processImages: processImages,
+                accessToken: currentToken,
                 plugin: this.plugin
             });
             await copyHtml(html, plainText);

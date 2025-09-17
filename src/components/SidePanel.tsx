@@ -10,7 +10,7 @@ interface SidePanelProps {
     onOptsChange: (newOpts: Partial<StyleSettings>) => void;
     app: App;
     onRefresh: () => void;
-    onCopy: () => Promise<boolean>;
+    onCopyHTML: (processImages: boolean) => Promise<boolean>;
     onSendToDraft: () => Promise<void>;
 }
 
@@ -47,12 +47,13 @@ const CollapsibleSection = ({ title, children, isCollapsed, onToggle }: Collapsi
     );
 };
 
-const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopy, onSendToDraft }: SidePanelProps) => {
+const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopyHTML, onSendToDraft }: SidePanelProps) => {
     const [localSettings, setLocalSettings] = useState(styleSettings);
     const [layoutThemes, setLayoutThemes] = useState<{ name: string; path: string }[]>([]);
     const [codeBlockThemes, setCodeBlockThemes] = useState<{ name: string; path: string }[]>([]);
     const [customStyles, setCustomStyles] = useState<{ name: string; path: string }[]>([]);
-    const [copyButtonText, setCopyButtonText] = useState('复制');
+    const [copyButtonText, setCopyButtonText] = useState('复制(无图)');
+    const [copyWithImageButtonText, setCopyWithImageButtonText] = useState('复制(带图)');
     const [collapsedSections, setCollapsedSections] = useState({
         style: false,
         color: true,
@@ -76,10 +77,15 @@ const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopy, onSend
         onOptsChange({ [key]: value });
     };
 
-    const handleCopy = async () => {
-        const success = await onCopy();
-        setCopyButtonText(success ? '已复制!' : '失败!');
-        setTimeout(() => setCopyButtonText('复制'), 2000);
+    const handleCopy = async (processImages: boolean) => {
+        const success = await onCopyHTML(processImages);
+        if (processImages) {
+            setCopyWithImageButtonText(success ? '已复制!' : '失败!');
+            setTimeout(() => setCopyWithImageButtonText('复制(带图)'), 2000);
+        } else {
+            setCopyButtonText(success ? '已复制!' : '失败!');
+            setTimeout(() => setCopyButtonText('复制(无图)'), 2000);
+        }
     };
 
     const toggleSection = (section: keyof typeof collapsedSections) => {
@@ -92,7 +98,8 @@ const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopy, onSend
 
             <div className="side-panel-view-actions">
                 <button type="button" onClick={onRefresh}>刷新</button>
-                <button type="button" onClick={handleCopy}>{copyButtonText}</button>
+                <button type="button" onClick={() => handleCopy(false)}>{copyButtonText}</button>
+                <button type="button" onClick={() => handleCopy(true)}>{copyWithImageButtonText}</button>
                 <button type="button" onClick={onSendToDraft}>发草稿</button>
             </div>
 
