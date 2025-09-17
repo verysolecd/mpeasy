@@ -41,7 +41,8 @@ export default class MPEasyPlugin extends Plugin {
             })
         );
 
-        this.addRibbonIcon('document', 'Open MPEasy Preview', () => {
+        // 使用打开的信封图标作为ribbon按钮
+        this.addRibbonIcon('mail-open', 'Open MPEasy Preview', () => {
             this.activateView();
         });
 

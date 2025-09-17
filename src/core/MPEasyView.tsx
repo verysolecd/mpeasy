@@ -295,16 +295,6 @@ export class MPEasyView extends ItemView {
         // Update styles
         if (!this.customCSSStyleEl || !this.codeThemeStyleEl) return;
 
-        // 更新主题色CSS变量
-        if (this.customCSSStyleEl) {
-            // 设置主题色CSS变量
-            this.customCSSStyleEl.innerHTML = `
-                :root {
-                    --mpeasy-primary-color: ${settings.primaryColor || '#007bff'};
-                }
-            `;
-        }
-
         if (settings.codeThemeName && settings.codeThemeName !== 'none') {
             this.app.vault.adapter.read(settings.codeThemeName)
                 .then(css => { if (this.codeThemeStyleEl) this.codeThemeStyleEl.innerHTML = css; })
@@ -315,20 +305,10 @@ export class MPEasyView extends ItemView {
 
         if (settings.useCustomCSS && settings.customStyleName && settings.customStyleName !== 'none') {
             this.app.vault.adapter.read(settings.customStyleName)
-                .then(css => { if (this.customCSSStyleEl) this.customCSSStyleEl.innerHTML += css; })
+                .then(css => { if (this.customCSSStyleEl) this.customCSSStyleEl.innerHTML = css; })
                 .catch(err => console.error("Error loading custom CSS", err));
         } else {
-            // 保留主题色设置
-            if (this.customCSSStyleEl) {
-                const existingContent = this.customCSSStyleEl.innerHTML;
-                if (!existingContent.includes('--mpeasy-primary-color')) {
-                    this.customCSSStyleEl.innerHTML = `
-                        :root {
-                            --mpeasy-primary-color: ${settings.primaryColor || '#007bff'};
-                        }
-                    ` + existingContent;
-                }
-            }
+            this.customCSSStyleEl.innerHTML = '';
         }
 
         // Update content
