@@ -57,7 +57,12 @@ try {
     const hljsThemes = 
     [
         "atom-one-dark.css", 
-        "github.css"
+        "github.css",
+        "gradient-light.css",
+        "gradient-dark.css",
+        "monokai.css",
+        "xcode.css"
+        
     ];
 
     if (hljsThemes && Array.isArray(hljsThemes)) {
