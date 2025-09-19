@@ -9,13 +9,16 @@ const isProd = process.env.NODE_ENV === 'production';
 
 // --- Build ---
 try {
+    console.log('[esbuild] Cleaning dist directory...');
+    await fs.rm('dist', { recursive: true, force: true });
     // First build to dist directory
     const buildConfig = {
         entryPoints: ['src/main.ts'],
         bundle: true,
         outdir: 'dist',  // Output to dist directory first
-        format: 'cjs',
-        platform: 'node',
+        format: 'cjs', // Changed from 'esm' to 'cjs' for Obsidian plugin compatibility
+        splitting: false, // Disable code splitting for CommonJS
+        platform: 'node', // Keep as node to resolve built-in modules
         sourcemap: isProd ? false : 'inline',
         minify: isProd,
         define: {
@@ -45,18 +48,32 @@ try {
     await fs.mkdir(assetsDest, { recursive: true });
     await fs.cp('assets', assetsDest, { recursive: true });
     
-    // Copy codestyles
+    // Copy codestyles based on the list in build-config.json
     const codestyleSource = 'node_modules/highlight.js/styles';
     const codestyleDest = 'dist/assets/codestyle';
     await fs.mkdir(codestyleDest, { recursive: true });
-    
-    const files = await fs.readdir(codestyleSource);
-    for (const file of files) {
-        if (file.endsWith('.css') && !file.endsWith('.min.css')) {
-            const sourceFile = path.join(codestyleSource, file);
-            const destFile = path.join(codestyleDest, file);
-            await fs.copyFile(sourceFile, destFile);
+
+    // Define the list of themes to copy directly here
+    const hljsThemes = 
+    [
+        "atom-one-dark.css", 
+        "github.css"
+    ];
+
+    if (hljsThemes && Array.isArray(hljsThemes)) {
+        console.log('[esbuild] Copying specified highlight.js themes...');
+        for (const themeFile of hljsThemes) {
+            const sourceFile = path.join(codestyleSource, themeFile);
+            const destFile = path.join(codestyleDest, themeFile);
+            try {
+                await fs.copyFile(sourceFile, destFile);
+                console.log(`  - Copied ${themeFile}`);
+            } catch (copyError) {
+                console.warn(`  - Warning: Could not find or copy theme '${themeFile}'. Please check the filename.`);
+            }
         }
+    } else {
+        console.warn('[esbuild] Warning: No hljsThemes array found in build-config.json. No highlight.js themes will be copied.');
     }
 
     // Only proceed with deployment if build was successful

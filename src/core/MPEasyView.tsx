@@ -3,7 +3,7 @@ import { initRenderer } from '../rendering/renderer/renderer/renderer-impl';
 import { themeMap } from '../utils/config/configs/theme';
 import { renderMarkdown, postProcessHtml } from '../rendering/renderer/utils/markdownHelpers';
 import { copyHtml } from '../utils/clipboard';
-import MPEasyPlugin from './main';
+import MPEasyPlugin from '../main';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import SidePanel from './components/SidePanel';

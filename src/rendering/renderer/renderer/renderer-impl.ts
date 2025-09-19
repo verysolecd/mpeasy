@@ -4,7 +4,54 @@ import type { RendererObject, Tokens } from 'marked'
 import type { ReadTimeResults } from 'reading-time'
 import { cloneDeep, toMerged } from 'es-toolkit'
 import frontMatter from 'front-matter'
-import hljs from 'highlight.js'
+import hljs from 'highlight.js/lib/core';
+
+// Import and register mainstream languages
+import javascript from 'highlight.js/lib/languages/javascript';
+import typescript from 'highlight.js/lib/languages/typescript';
+import xml from 'highlight.js/lib/languages/xml'; // For HTML
+import css from 'highlight.js/lib/languages/css';
+import json from 'highlight.js/lib/languages/json';
+import bash from 'highlight.js/lib/languages/bash';
+import python from 'highlight.js/lib/languages/python';
+import javaa from 'highlight.js/lib/languages/java';
+import csharp from 'highlight.js/lib/languages/csharp';
+import cpp from 'highlight.js/lib/languages/cpp';
+import go from 'highlight.js/lib/languages/go';
+import rust from 'highlight.js/lib/languages/rust';
+import ruby from 'highlight.js/lib/languages/ruby';
+import php from 'highlight.js/lib/languages/php';
+import plaintext from 'highlight.js/lib/languages/plaintext';
+import markdown from 'highlight.js/lib/languages/markdown';
+import shell from 'highlight.js/lib/languages/shell';
+import sql from 'highlight.js/lib/languages/sql';
+
+// Registering the languages
+hljs.registerLanguage('javascript', javascript);
+hljs.registerLanguage('js', javascript);
+hljs.registerLanguage('typescript', typescript);
+hljs.registerLanguage('ts', typescript);
+hljs.registerLanguage('xml', xml);
+hljs.registerLanguage('html', xml);
+hljs.registerLanguage('css', css);
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('bash', bash);
+hljs.registerLanguage('python', python);
+hljs.registerLanguage('py', python);
+hljs.registerLanguage('java', javaa);
+hljs.registerLanguage('csharp', csharp);
+hljs.registerLanguage('cs', csharp);
+hljs.registerLanguage('cpp', cpp);
+hljs.registerLanguage('go', go);
+hljs.registerLanguage('rust', rust);
+hljs.registerLanguage('ruby', ruby);
+hljs.registerLanguage('php', php);
+hljs.registerLanguage('plaintext', plaintext);
+hljs.registerLanguage('markdown', markdown);
+hljs.registerLanguage('md', markdown);
+hljs.registerLanguage('shell', shell);
+hljs.registerLanguage('sh', shell);
+hljs.registerLanguage('sql', sql);
 import { marked } from 'marked'
 import mermaid from 'mermaid'
 import readingTime from 'reading-time'
@@ -257,8 +304,10 @@ export function initRenderer(opts: IOpts): RendererAPI {
       if (lang.startsWith(`mermaid`)) {
         clearTimeout(codeIndex)
         codeIndex = setTimeout(() => {
-          mermaid.run()
-        }, 0) as any as number
+          import('mermaid').then((m) => {
+            m.default.run()
+          })
+        }, 100) as any as number
         return `<div class="mermaid">${text}</div>`
       }
       const langText = lang.split(` `)[0]
