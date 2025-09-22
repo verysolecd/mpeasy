@@ -4,13 +4,24 @@ export interface MarkedKatexOptions {
   nonStandard?: boolean
 }
 
-const inlineRule = /^(\$[1,2])(?=!\$)(?:\\.|[^\\n])*?(?:\\.|[^\\n$])\1(?=[\s?!.,:？！。，：]|$)/;
-const inlineRuleNonStandard = /^(\$[1,2])(?=!\$)(?:\\.|[^\\n])*?(?:\\.|[^\\n$])\1/ // Non-standard, even if there are no spaces before and after $ or $$, try to parse
 
-const blockRule = /^\s{0,3}(\$[1,2])[ \t]*\n([\s\S]+?)\n\s{0,3}\1[ \t]*(?:\n|$)/;
+const inlineRule = /^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1(?=[\s?!.,:？！。，：]|$)/
+const inlineRuleNonStandard = /^(\${1,2})(?!\$)((?:\\.|[^\\\n])*?(?:\\.|[^\\\n$]))\1/ // Non-standard, even if there are no spaces before and after $ or $$, try to parse
+
+const blockRule = /^\s{0,3}(\${1,2})[ \t]*\n([\s\S]+?)\n\s{0,3}\1[ \t]*(?:\n|$)/
+
+
+//const inlineRule = /^("${1,2})(?!"$)((?:\\.|[^\\n])*?(?:\\.|[^\\n$]))\1(?=[\s?!.,:？！。，：]|$)/;
+//const inlineRuleNonStandard = /^("${1,2})(?!"$)((?:\\.|[^\\n])*?(?:\\.|[^\\n$]))\1/ // Non-standard, even if there are no spaces before and after $ or $, try to parse
+
+//const blockRule = /^\s{0,3}("${1,2})[ \t]*\n([\s\S]+?)\n\s{0,3}\1[ \t]*(?:\n|$)/;
 
 function createRenderer(display: boolean, inlineStyle: string, blockStyle: string) {
   return (token: any) => {
+    if (!window.MathJax || typeof window.MathJax.tex2svg !== 'function') {
+        console.error('MPEasy: MathJax or tex2svg not available at render time!', window.MathJax);
+        return `<span style="color: red;">[Math Processing Error]</span>`; // Fail gracefully
+    }
     // @ts-expect-error MathJax is a global variable
     window.MathJax.texReset()
     // @ts-expect-error MathJax is a global variable
@@ -47,7 +58,7 @@ function inlineKatex(options: MarkedKatexOptions | undefined, renderer: any) {
       let indexSrc = src
 
       while (indexSrc) {
-        index = indexSrc.indexOf(`$`)
+        index = indexSrc.indexOf(`$`);
         if (index === -1) {
           return
         }
