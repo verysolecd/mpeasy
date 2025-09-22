@@ -25,7 +25,7 @@ const defaultTheme: Theme = {
     h2: {
       'display': `table`,
       'padding': `0 0.2em`,
-      'margin': `4em auto 2em`,
+      'margin': `1.5em auto 1em`,
       'color': `#fff`,
       'background': `var(--md-primary-color)`,
       'font-size': `1.2em`,

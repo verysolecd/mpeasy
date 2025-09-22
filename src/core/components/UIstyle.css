@@ -23,6 +23,17 @@
     background-color: var(--background-secondary); /* Slightly different background */
 }
 
+/* 当窗口宽度小于768px时，隐藏侧边栏 */
+@media screen and (max-width: 768px) {
+    .mpeasy-side-panel {
+        display: none;
+    }
+    
+    .mpeasy-render-area {
+        width: 100%;
+    }
+}
+
 .mpeasy-header {
     display: flex;
     justify-content: space-between;
@@ -258,7 +269,7 @@
     gap: 10px;  
     margin-bottom: 15px;  
     position: relative;
-    z-index: 5; /* 确保按钮在折叠条之上 */
+    z-index: 1; /* 降低层级避免遮挡窗口控件 */
 }  
   
 .side-panel-view-actions button {  
