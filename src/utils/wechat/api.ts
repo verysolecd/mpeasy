@@ -79,7 +79,7 @@ export async function uploadContentImage(accessToken: string, imageBlob: Blob, f
  * @returns A promise that resolves to the media_id of the uploaded thumbnail.
  */
 export async function uploadThumb(accessToken: string, imageBlob: Blob, filename: string): Promise<string> {
-    const url = `https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=${accessToken}&type=thumb`;
+    const url = `https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=${accessToken}&type=image`;
     try {
         const data = await uploadMedia(url, imageBlob, filename);
         if (data && data.media_id) {
@@ -100,6 +100,7 @@ export interface AddDraftOptions {
     thumb_media_id?: string; // media_id of the cover image
     need_open_comment?: number; // 1 for open, 0 for close
     only_fans_can_comment?: number; // 1 for true, 0 for false
+    pic_crop_1_1?: string; // e.g. "0,0,0.5,1"
 }
 
 export interface AddDraftResponse {

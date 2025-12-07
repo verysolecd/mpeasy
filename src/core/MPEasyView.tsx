@@ -30,6 +30,27 @@ async function fetchImageAsBlob(url: string): Promise<Blob> {
     return blob;
 }
 
+/**
+ * Gets the dimensions of an image from a Blob.
+ * @param blob The image blob.
+ * @returns A promise that resolves with the width and height of the image.
+ */
+async function getImageDimensions(blob: Blob): Promise<{ width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+        const objectUrl = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        };
+        img.onerror = (err) => {
+            URL.revokeObjectURL(objectUrl);
+            reject(err);
+        };
+        img.src = objectUrl;
+    });
+}
+
 
 export class MPEasyView extends ItemView {
     plugin: MPEasyPlugin;
@@ -218,8 +239,18 @@ export class MPEasyView extends ItemView {
         const fileCache = this.app.metadataCache.getFileCache(activeFile);
         const frontmatter = fileCache?.frontmatter || {};
 
+        const draftTitle = activeFile.basename;
+        const options: AddDraftOptions = { need_open_comment: 1, only_fans_can_comment: 0 };
+
+        // Use the frontmatter object from the cache
+        if (frontmatter.author) {
+            options.author = frontmatter.author;
+        }
+        if (frontmatter.digest) {
+            options.digest = frontmatter.digest;
+        }
+
         // 1. Handle Cover Image
-        let thumb_media_id: string | undefined = undefined;
         try {
             const coverImageResult = getCoverImage(this.app, activeFile);
             
@@ -241,7 +272,7 @@ export class MPEasyView extends ItemView {
             } else if (coverImageResult === 'use_default_banner_setting') {
                 const bannerFilename = this.plugin.settings.defaultCoverBanner;
                 if (!bannerFilename) {
-                    alert('未在插件设置中指定默认封面文件。');
+                    // No default banner set, proceed without a cover
                 } else {
                     const defaultBannerPath = `${this.plugin.manifest.dir}/assets/images/${bannerFilename}`;
                     try {
@@ -261,12 +292,30 @@ export class MPEasyView extends ItemView {
             }
 
             if (imageBlob) {
-                thumb_media_id = await uploadThumb(currentToken, imageBlob, imageName);
+                // Only apply custom crop if cover is from frontmatter
+                const isFrontmatterCover = !!frontmatter?.cover;
+
+                if (isFrontmatterCover) {
+                    try {
+                        const { width, height } = await getImageDimensions(imageBlob);
+                        if (width > height) { // Only crop landscape images
+                            const x2 = (height / width).toFixed(6); // Use up to 6 decimal places as per docs
+                            options.pic_crop_1_1 = `0_0_${x2}_1`;
+                            console.log(`MPEasy: Applying 1:1 left-crop with normalized coordinates: ${options.pic_crop_1_1}`);
+                        }
+                    } catch (dimError) {
+                        console.error("MPEasy: Could not get image dimensions for cropping.", dimError);
+                        // Fail silently and proceed without custom crop
+                    }
+                }
+
+                const thumb_media_id = await uploadThumb(currentToken, imageBlob, imageName);
+                options.thumb_media_id = thumb_media_id;
                 console.log("Uploaded thumb image. Media ID:", thumb_media_id);
             }
         } catch (error) {
-            console.error('Failed to upload thumb image:', error);
-            alert(`上传封面图片失败: ${error.message}`);
+            console.error('Failed to prepare or upload cover image:', error);
+            alert(`封面图片处理或上传失败: ${error.message}`);
             // Decide if you want to stop or continue without a cover
             // return; // Uncomment to stop if cover upload fails
         }
@@ -283,19 +332,6 @@ export class MPEasyView extends ItemView {
 
         // 3. Send Draft
         try {
-            const draftTitle = activeFile.basename;
-            const options: AddDraftOptions = {};
-            if (thumb_media_id) {
-                options.thumb_media_id = thumb_media_id;
-            }
-            // Use the frontmatter object from the cache
-            if (frontmatter.author) {
-                options.author = frontmatter.author;
-            }
-            if (frontmatter.digest) {
-                options.digest = frontmatter.digest;
-            }
-            
             const addDraftResponse = await addDraft(currentToken, draftTitle, processedHtml, options);
             alert(`草稿已成功发送！Media ID: ${addDraftResponse.media_id}`);
         } catch (error) {
