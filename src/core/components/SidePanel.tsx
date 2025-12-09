@@ -250,6 +250,15 @@ const SidePanel = ({ styleSettings, onOptsChange, app, onRefresh, onCopyHTML, on
                     </div>
 
                     <div className="side-panel-view-item">
+                        <label>题头/页尾</label>
+                        <input
+                            type="checkbox"
+                            checked={localSettings.isFrontalCiteStatus || false}
+                            onChange={(e) => handleValueChange('isFrontalCiteStatus', e.target.checked)}
+                        />
+                    </div>
+
+                    <div className="side-panel-view-item">
                         <label>字数统计</label>
                         <input
                             type="checkbox"

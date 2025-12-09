@@ -10,7 +10,7 @@ import SidePanel from './components/SidePanel';
 import { StyleSettings } from '../utils/config/types/settings';
 import { getAccessToken, uploadThumb, addDraft, AddDraftOptions } from '../utils/wechat/api';
 import { getMimeTypeFromFilename } from '../utils/config/utils/fileHelpers';
-import { getCoverImage } from '../content/frontmatter';
+import { getFrontmatterData } from '../content/frontmatter';
 import { processContent } from '../content/processor';
 import { WECHAT_CONFIG } from '../utils/config/constants';
 
@@ -252,7 +252,7 @@ export class MPEasyView extends ItemView {
 
         // 1. Handle Cover Image
         try {
-            const coverImageResult = getCoverImage(this.app, activeFile);
+            const { coverImage: coverImageResult } = getFrontmatterData(this.app, activeFile);
             
             let imageBlob: Blob | null = null;
             let imageName: string = 'cover-image.png'; // Default name

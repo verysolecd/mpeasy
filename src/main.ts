@@ -12,8 +12,6 @@ const DEFAULT_SETTINGS: MPEasySettings = {
     wxToken: '',
     wxTokenAcquisitionTime: 0,
     defaultCoverBanner: 'banner.png',
-    isCommentDisabled: false,
-    isFansOnlyComment: false,
 };
 
 export default class MPEasyPlugin extends Plugin {
