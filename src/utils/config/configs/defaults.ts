@@ -10,8 +10,6 @@ export const DEFAULT_STYLE_SETTINGS: StyleSettings = {
     isMacCodeBlock: false,
     primaryColor: '#0F4C81',
     isCiteStatus: false,
-    isFrontalCiteStatus: false,
     isCountStatus: false,
     useCustomCSS: false,
-    isUseJustify: false,
 };

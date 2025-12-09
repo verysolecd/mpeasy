@@ -8,7 +8,6 @@ export interface StyleSettings {
     isMacCodeBlock: boolean;
     primaryColor: string;
     isCiteStatus: boolean;
-    isFrontalCiteStatus: boolean;
     isCountStatus: boolean;
     useCustomCSS: boolean;
     isUseJustify: boolean;

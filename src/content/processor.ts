@@ -4,7 +4,6 @@ import { uploadContentImage } from '../utils/wechat/api';
 import { resolveImagePath } from './image-handler';
 import { inlineStyles } from './style-inliner';
 import MPEasyPlugin from '../core/main';
-import { getFrontmatterData } from './frontmatter';
 
 // Options for processing content
 interface ProcessOptions {
@@ -179,62 +178,7 @@ export async function processContent(
     // 5. Generate final HTML
     let finalHtml = doc.body.innerHTML;
 
-    // 6. Add header and footer if enabled
-    if (plugin?.settings.styleSettings.enableFrontal) {
-        const frontalMdPath = 'assets/frontal.md';
-        try {
-            const frontalMdContent = await plugin.app.vault.adapter.read(frontalMdPath);
-            const separator = '<!-- FOOTER -->';
-            const parts = frontalMdContent.split(separator);
-            let headerHtml = parts[0] || '';
-            const footerHtml = parts.length > 1 ? parts[1] : '';
-            
-            const file = plugin.app.workspace.getActiveFile();
-            if (file) {
-                const { epigraph, author } = getFrontmatterData(plugin.app, file);
-
-                // Replace epigraph placeholder
-                if (epigraph) {
-                    // This assumes a simple {{epigraph}} placeholder in the template
-                    headerHtml = headerHtml.replace(/\{\{epigraph\}\}/g, epigraph);
-                    // And this handles the conditional block
-                    headerHtml = headerHtml.replace(/\{\{#epigraph\}\}([\s\S]*?)\{\{\/epigraph\}\}/g, (match, p1) => p1.replace(/\{\{epigraph\}\}/g, epigraph));
-
-                } else {
-                    // Remove the epigraph block if it's not present
-                    headerHtml = headerHtml.replace(/\{\{#epigraph\}\}([\s\S]*?)\{\{\/epigraph\}\}/g, '');
-                    headerHtml = headerHtml.replace(/\{\{epigraph\}\}/g, '');
-                }
-
-                // Replace author placeholder
-                if (author) {
-                    headerHtml = headerHtml.replace(/\{\{author\}\}/g, author);
-                } else {
-                    headerHtml = headerHtml.replace(/\{\{author\}\}/g, '佚名'); // Default if author is not set
-                }
-            }
-
-            // Inject header after the word count block, if it exists
-            const wordCountRegex = /<blockquote[^>]*>[\s\S]*?字数[\s\S]*?<\/blockquote>/;
-            const match = finalHtml.match(wordCountRegex);
-
-            if (match && match[0]) {
-                finalHtml = finalHtml.replace(match[0], match[0] + headerHtml);
-            } else {
-                finalHtml = headerHtml + finalHtml;
-            }
-
-            // Append footer
-            if (footerHtml) {
-                finalHtml += footerHtml;
-            }
-
-        } catch (error) {
-            console.error(`MPEasy: Failed to read or process ${frontalMdPath}`, error);
-        }
-    }
-
-    // 7. Re-apply the old code block processing for WeChat using regex
+    // 6. Re-apply the old code block processing for WeChat using regex
     if (processImages) {
         finalHtml = finalHtml.replace(/<pre([^>]*)><code([^>]*)>(.*?)<\/code><\/pre>/gis, (match, preAttrs, codeAttrs, content) => {
             const langMatch = (codeAttrs as string).match(/class="language-([^"]*)"/i);
@@ -243,7 +187,7 @@ export async function processContent(
         });
     }
 
-    // 8. Generate plain text version
+    // 7. Generate plain text version
     const plainText = doc.body.textContent || '';
     
     return {
