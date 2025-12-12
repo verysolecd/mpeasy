@@ -18,11 +18,12 @@
 <section>
   <!-- 格言 -->
   <p class="js_darkmode__1" 
-     style="-webkit-tap-highlight-color: transparent; margin-top: 10px; margin-bottom: 0; outline: 0; background-color: #000; font-size: 10.5pt; font-family: DengXian; caret-color: #000; color: #000; letter-spacing: normal; text-align: right; visibility: visible; line-height: 1.5em;">
+     style="-webkit-tap-highlight-color: transparent; margin-top: 10px; margin-bottom: 0; outline: 0; font-size: 10.5pt; font-family: DengXian; caret-color: #000; color: #000; letter-spacing: normal; text-align: right; visibility: visible; line-height: 1.5em;">
     <span style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', Arial, sans-serif; caret-color: #222; line-height: 29.75px; color: #fff; font-size: 15px; -webkit-tap-highlight-color: transparent; outline: 0; background-color: #000; visibility: visible; padding: 0 4px;">{{this}}</span>
   </p>
 
   <!-- 作者信息 -->
+    <p><br /></p>
   <p class="js_darkmode__11" 
      style="-webkit-tap-highlight-color: transparent; margin-bottom: 0; outline: 0; letter-spacing: 0.544px; text-indent: 0; caret-color: #222; color: #222; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', Arial, sans-serif; text-align: right; visibility: visible; line-height: 1.5em;">
     <span style="-webkit-tap-highlight-color: transparent; outline: 0; line-height: 29.75px; text-align: right; color: #888; letter-spacing: 0.8; visibility: visible; font-size: 15px;">作者：安亭吴彦祖</span>
@@ -30,7 +31,7 @@
 
   <!-- 分割线 -->
   <hr style="border-style: solid; border-width: 1px 0 0; border-color: rgba(0,0,0,0.4); -webkit-transform-origin: 0 0; -webkit-transform: scale(1, 0.5); transform-origin: 0 0; transform: scale(1, 0.5);" />
-
+   <p><br /></p>
   <!-- 占位段落 -->
 
 </section>

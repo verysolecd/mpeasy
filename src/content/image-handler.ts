@@ -8,6 +8,7 @@ import { App, TFile } from 'obsidian';
  * 3. URL encoded paths (%20)
  * 4. Standard Obsidian relative/absolute paths
  * 5. Obsidian's internal app:// URIs
+ * 6. Markdown syntax like `![](path)` or `[](path)`
  *
  * @param app The Obsidian App instance.
  * @param imagePath The raw path to the image from frontmatter or HTML src.
@@ -20,6 +21,18 @@ export function resolveImagePath(app: App, imagePath: string, sourceFilePath: st
     }
 
     let cleanPath = imagePath.trim();
+
+    // Handle markdown image/link syntax: ![alt](src) or [text](src)
+    const markdownMatch = /^(?:!\[.*?\]|\[.*?\])\((.*?)\)$/.exec(cleanPath);
+    if (markdownMatch) {
+        cleanPath = markdownMatch[1].trim();
+    }
+    
+    // Handle web URLs - if it's a URL, we can't resolve it to a local TFile.
+    // The existing logic in `getCoverImage` will handle it.
+    if (/^(https?:\/\/|www\.)/i.test(cleanPath.replace(/\\/g, '/'))) {
+        return null;
+    }
 
     // Handle Obsidian's internal app:// URI first, as it's a full identifier
     if (cleanPath.startsWith('app://')) {
@@ -45,9 +58,9 @@ export function resolveImagePath(app: App, imagePath: string, sourceFilePath: st
         cleanPath = cleanPath.substring(2, cleanPath.length - 2);
     }
 
-    // Decode URL-encoded characters like %20
+    // Decode URL-encoded characters like %20 and replace backslashes
     try {
-        cleanPath = decodeURIComponent(cleanPath);
+        cleanPath = decodeURIComponent(cleanPath.replace(/\\/g, '/'));
     } catch (e) {
         // Ignore decoding errors, proceed with the path as is
         console.warn(`MPEasy: Failed to decode URI component: ${cleanPath}`);

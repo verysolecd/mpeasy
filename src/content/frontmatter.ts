@@ -17,29 +17,41 @@ export function getCoverImage(app: App, file: TFile): TFile | string | null {
     const fileCache = app.metadataCache.getFileCache(file);
     const frontmatter = fileCache?.frontmatter;
 
-    const coverPath = frontmatter?.cover ? String(frontmatter.cover).trim() : null;
+    const coverPathFromFM = frontmatter?.cover ? String(frontmatter.cover).trim() : null;
 
     // 1. If cover is not specified in frontmatter, signal to use the default.
-    if (!coverPath) {
+    if (!coverPathFromFM) {
         return 'use_default_banner_setting';
     }
 
     // 2. If specified, process the path.
-    
-    // A. Check for web URLs
-    if (coverPath.startsWith('http://') || coverPath.startsWith('https://')) {
-        return coverPath;
+    // Handle markdown syntax like `![](path.png)`
+    let cleanCoverPath = coverPathFromFM;
+    const markdownMatch = /^(?:!\[.*?\]|\[.*?\])\((.*?)\)$/.exec(cleanCoverPath);
+    if (markdownMatch) {
+        cleanCoverPath = markdownMatch[1].trim();
     }
 
-    // B. Resolve any other path format using the unified resolver
-    const imageFile = resolveImagePath(app, coverPath, file.path);
-
+    // A. First, try to resolve as a local file path.
+    // resolveImagePath is smart enough to handle markdown, but we do it here too
+    // to have the clean path available for the web URL check below.
+    const imageFile = resolveImagePath(app, cleanCoverPath, file.path);
     if (imageFile) {
         return imageFile;
     }
 
-    // C. Fallback: Specified in frontmatter but not found
-    console.warn(`MPEasy: Could not find the cover image "${coverPath}" from frontmatter for "${file.path}".`);
+    // B. If not a local file, check if it's a web URL.
+    // This handles cases like 'www.example.com/img.png' and URLs with backslashes.
+    const processedPath = cleanCoverPath.replace(/\\/g, '/');
+    if (processedPath.startsWith('http://') || processedPath.startsWith('https://')) {
+        return processedPath;
+    }
+    if (processedPath.startsWith('www.')) {
+        return `https://${processedPath}`;
+    }
+
+    // C. Fallback: Not a resolvable local file or a recognizable web URL.
+    console.warn(`MPEasy: Could not find the cover image "${coverPathFromFM}" from frontmatter for "${file.path}". It's not a valid local path or a recognizable web URL.`);
     return null;
 }
 
