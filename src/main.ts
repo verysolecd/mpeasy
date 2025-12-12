@@ -14,6 +14,9 @@ const DEFAULT_SETTINGS: MPEasySettings = {
     defaultCoverBanner: 'banner.png',
     isCommentDisabled: false,
     isFansOnlyComment: false,
+    enableFrontmatterInjection: false,
+    epigraph:
+        '沮丧吗？无非就是一个小布尔乔亚的无病呻吟，留恋它就是一种高度近视。',
 };
 
 export default class MPEasyPlugin extends Plugin {

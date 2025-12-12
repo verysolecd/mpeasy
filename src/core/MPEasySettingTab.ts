@@ -51,6 +51,19 @@ export class MPEasySettingTab extends PluginSettingTab {
             });
 
         new Setting(containerEl)
+            .setName("格言")
+            .setDesc("当frontmatter中epigraph字段为空时，将使用此格言。")
+            .addTextArea((text) => {
+                text
+                    .setPlaceholder("Enter your epigraph")
+                    .setValue(this.plugin.settings.epigraph)
+                    .onChange(async (value) => {
+                        this.plugin.settings.epigraph = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
+        new Setting(containerEl)
             .setName("公众号ID")
             .setDesc("Your WeChat Official Account ID (AppID).")
             .addText((text) => {

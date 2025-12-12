@@ -20,4 +20,8 @@ export interface MPEasySettings {
     wxToken: string;
     wxTokenAcquisitionTime: number;
     defaultCoverBanner: string;
+    isCommentDisabled: boolean;
+    isFansOnlyComment: boolean;
+    enableFrontmatterInjection: boolean;
+    epigraph: string;
 }

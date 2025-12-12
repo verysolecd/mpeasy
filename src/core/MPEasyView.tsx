@@ -7,10 +7,10 @@ import MPEasyPlugin from '../main';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom/client';
 import SidePanel from './components/SidePanel';
-import { StyleSettings } from '../utils/config/types/settings';
+import { MPEasySettings, StyleSettings } from '../utils/config/types/settings';
 import { getAccessToken, uploadThumb, addDraft, AddDraftOptions } from '../utils/wechat/api';
 import { getMimeTypeFromFilename } from '../utils/config/utils/fileHelpers';
-import { getCoverImage } from '../content/frontmatter';
+import { getCoverImage, injectFrontmatter } from '../content/frontmatter';
 import { processContent } from '../content/processor';
 import { WECHAT_CONFIG } from '../utils/config/constants';
 
@@ -140,16 +140,25 @@ export class MPEasyView extends ItemView {
         const reactRootDiv = sidePanelContainer.createDiv({ cls: "mpeasy-react-root" });
         this.reactRoot = ReactDOM.createRoot(reactRootDiv);
 
-        const onOptsChange = async (newPartialOpts: Partial<StyleSettings>) => {
-            Object.assign(this.plugin.settings.styleSettings, newPartialOpts);
+        const onSettingsChange = async (newPartialOpts: Partial<MPEasySettings>) => {
+            const currentSettings = this.plugin.settings;
+            const newSettings = {
+                ...currentSettings,
+                ...newPartialOpts,
+                styleSettings: {
+                    ...currentSettings.styleSettings,
+                    ...(newPartialOpts.styleSettings || {}),
+                },
+            };
+            this.plugin.settings = newSettings;
             await this.plugin.saveSettings();
             await this.refreshView();
         };
 
         this.reactRoot.render(
             <SidePanel
-                styleSettings={this.plugin.settings.styleSettings}
-                onOptsChange={onOptsChange}
+                settings={this.plugin.settings}
+                onSettingsChange={onSettingsChange}
                 app={this.app}
                 onRefresh={this.refreshView}
                 onCopyHTML={this.copyRenderedHtml}
@@ -383,7 +392,8 @@ export class MPEasyView extends ItemView {
             const { html, readingTime } = renderMarkdown(markdownContent, renderer);
             const finalHtml = postProcessHtml(html, readingTime, renderer);
 
-            this.contentDiv.innerHTML = finalHtml;
+            const injectedHtml = await injectFrontmatter(finalHtml, this.plugin, activeFile);
+            this.contentDiv.innerHTML = injectedHtml;
             
             // 更新标题为当前文档标题
             const headerElement = this.containerEl.querySelector('.mpeasy-header h2');
