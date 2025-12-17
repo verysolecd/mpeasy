@@ -12,7 +12,7 @@
             style="letter-spacing: 0.544px;-webkit-tap-highlight-color: transparent;outline: 0px;visibility: visible !important;width: 677px !important;"
             data-imgqrcoded="1">
     </section>	
-	<br>
+        <p><br /></p>
 </section>
 ---
 <section>
@@ -28,12 +28,10 @@
      style="-webkit-tap-highlight-color: transparent; margin-bottom: 0; outline: 0; letter-spacing: 0.544px; text-indent: 0; caret-color: #222; color: #222; font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', Arial, sans-serif; text-align: right; visibility: visible; line-height: 1.5em;">
     <span style="-webkit-tap-highlight-color: transparent; outline: 0; line-height: 29.75px; text-align: right; color: #888; letter-spacing: 0.8; visibility: visible; font-size: 15px;">作者：安亭吴彦祖</span>
   </p>
-
   <!-- 分割线 -->
   <hr style="border-style: solid; border-width: 1px 0 0; border-color: rgba(0,0,0,0.4); -webkit-transform-origin: 0 0; -webkit-transform: scale(1, 0.5); transform-origin: 0 0; transform: scale(1, 0.5);" />
    <p><br /></p>
   <!-- 占位段落 -->
-
 </section>
  ---
 <section>
