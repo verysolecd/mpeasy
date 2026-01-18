@@ -12,11 +12,11 @@ const defaultTheme: Theme = {
     // 一级标题
     h1: {
       'display': `table`,
-      'padding': `0 1em`,
-      'border-bottom': `2px solid var(--md-primary-color)`,
-      'margin': `2em auto 1em`,
-      'color': `hsl(var(--foreground))`,
-      'font-size': `1.2em`,
+      'padding': `0 0.2em`,
+      'margin': `1.5em auto 1em`,
+      'color': `#fff`,
+      'background': `var(--md-primary-color)`,
+      'font-size': `1.1em`,
       'font-weight': `bold`,
       'text-align': `center`,
     },
@@ -24,11 +24,11 @@ const defaultTheme: Theme = {
     // 二级标题
     h2: {
       'display': `table`,
-      'padding': `0 0.2em`,
-      'margin': `1.5em auto 1em`,
-      'color': `#fff`,
-      'background': `var(--md-primary-color)`,
-      'font-size': `1.2em`,
+      'padding': `0 1em`,
+      'border-bottom': `2px solid var(--md-primary-color)`,
+      'margin': `2em auto 1em`,
+      'color': `hsl(var(--foreground))`,
+      'font-size': `1.1em`,
       'font-weight': `bold`,
       'text-align': `center`,
     },
@@ -39,7 +39,7 @@ const defaultTheme: Theme = {
       'border-left': `3px solid var(--md-primary-color)`,
       'margin': `2em 8px 0.75em 0`,
       'color': `hsl(var(--foreground))`,
-      'font-size': `1.1em`,
+      'font-size': `1.05em`,
       'font-weight': `bold`,
       'line-height': `1.2`,
     },
@@ -48,7 +48,7 @@ const defaultTheme: Theme = {
     h4: {
       'margin': `2em 8px 0.5em`,
       'color': `var(--md-primary-color)`,
-      'font-size': `1em`,
+      'font-size': `1.1em`,
       'font-weight': `bold`,
     },
 
@@ -88,7 +88,7 @@ const defaultTheme: Theme = {
     // 引用内容
     blockquote_p: {
       'display': `block`,
-      'font-size': `1em`,
+      'font-size': `1.05em`,
       'letter-spacing': `0.1em`,
       'color': `hsl(var(--foreground))`,
     },
@@ -319,28 +319,29 @@ const graceTheme = toMerged(defaultTheme, {
   block: {
     'container': {},
     'h1': {
-      'padding': `0.5em 1em`,
-      'border-bottom': `2px solid var(--md-primary-color)`,
-      'font-size': `1.4em`,
-      'text-shadow': `2px 2px 4px rgba(0,0,0,0.1)`,
-    },
-
-    'h2': {
       'padding': `0.3em 1em`,
       'border-radius': `8px`,
       'font-size': `1.3em`,
       'box-shadow': `0 4px 6px rgba(0,0,0,0.1)`,
     },
 
+    'h2': {
+      'padding': `0.5em 1em`,
+      'border-bottom': `2px solid var(--md-primary-color)`,
+      'font-size': `1.2em`,
+      'text-shadow': `2px 2px 4px rgba(0,0,0,0.1)`,
+    },
+
     'h3': {
       'padding-left': `12px`,
-      'font-size': `1.2em`,
+      'font-size': `1.1em`,
       'border-left': `4px solid var(--md-primary-color)`,
-      'border-bottom': `1px dashed var(--md-primary-color)`,
+      'border-bottom': `1.2px solid var(--md-primary-color)`,
     },
 
     'h4': {
-      'font-size': `1.1em`,
+      'font-size': `1.05em`,
+      'border-bottom': `1px dashed var(--md-primary-color)`,
     },
 
     'h5': {
@@ -462,21 +463,21 @@ const simpleTheme = toMerged(defaultTheme, {
   block: {
     container: {},
     h1: {
-      'padding': `0.5em 1em`,
-      'font-size': `1.4em`,
-      'text-shadow': `1px 1px 3px rgba(0,0,0,0.05)`,
-    },
-
-    h2: {
       'padding': `0.3em 1.2em`,
       'font-size': `1.3em`,
       'border-radius': `8px 24px 8px 24px`,
       'box-shadow': `0 2px 6px rgba(0,0,0,0.06)`,
     },
 
+    h2: {
+      'padding': `0.5em 1em`,
+      'font-size': `1.2em`,
+      'text-shadow': `1px 1px 3px rgba(0,0,0,0.05)`,
+    },
+
     h3: {
       'padding-left': `12px`,
-      'font-size': `1.2em`,
+      'font-size': `1.1em`,
       'border-radius': `6px`,
       'line-height': `2.4em`,
       'border-left': `4px solid var(--md-primary-color)`,
@@ -489,6 +490,8 @@ const simpleTheme = toMerged(defaultTheme, {
     h4: {
       'font-size': `1.1em`,
       'border-radius': `6px`,
+      'border-bottom': `1px dashed var(--md-primary-color)`,
+      'border-left': `5px solid var(--md-primary-color)`,
     },
 
     h5: {

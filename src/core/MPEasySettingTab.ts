@@ -20,6 +20,20 @@ export class MPEasySettingTab extends PluginSettingTab {
         const descEl = containerEl.createEl('p');
         descEl.setText('All styling-related settings are now available in the side panel of the MPEasy Preview view. Open a preview to get started!');
 
+        new Setting(containerEl)
+            .setName("文章字体大小")
+            .setDesc("设置默认的正文字体大小。此设置与预览侧边栏同步。")
+            .addDropdown((dropdown) => {
+                const sizes = ['13px', '14px', '15px', '16px', '17px', '18px', '20px', '22px', '24px'];
+                sizes.forEach(size => dropdown.addOption(size, size));
+                dropdown
+                    .setValue(this.plugin.settings.styleSettings.fontSize || '16px')
+                    .onChange(async (value) => {
+                        this.plugin.settings.styleSettings.fontSize = value;
+                        await this.plugin.saveSettings();
+                    });
+            });
+
         containerEl.createEl('h2', { text: '微信公众号设置' });
 
         const bannerFiles: Record<string, string> = {};
