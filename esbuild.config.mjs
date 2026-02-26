@@ -1,20 +1,18 @@
 import esbuild from 'esbuild';
 import fs from 'fs/promises';
 import path from 'path';
-import { execSync } from 'child_process';
+import trash from 'trash';
 
 /**
- * 将文件或文件夹移至回收站 (Windows 专用方案)
- * @param {string} targetPath 路径
+ * 将文件或文件夹移至回收站
+ * @param {string | string[]} paths 路径或路径数组
  */
-async function moveToTrash(targetPath) {
+async function moveToTrash(paths) {
     try {
-        const absolutePath = path.resolve(targetPath);
-        // 使用 PowerShell 的 Microsoft.VisualBasic.FileIO.FileSystem 将文件/目录移至回收站
-        const command = `powershell -Command "Add-Type -AssemblyName Microsoft.VisualBasic; if (Test-Path '${absolutePath}') { if (ls '${absolutePath}' -Directory) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory('${absolutePath}', 'OnlyErrorDialogs', 'SendToRecycleBin') } else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('${absolutePath}', 'OnlyErrorDialogs', 'SendToRecycleBin') } }"`;
-        execSync(command);
+        await trash(paths);
     } catch (err) {
-        // 如果文件不存在则忽略
+        // 忽略不存在的文件或其他普通错误
+        console.warn(`[trash] Warning: Could not move ${paths} to trash: ${err.message}`);
     }
 }
 
