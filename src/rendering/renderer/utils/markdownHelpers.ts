@@ -2,8 +2,6 @@ import type { RendererAPI } from '@md/shared/types'
 import type { RendererAPI } from '../../../utils/config/types/renderer-types'
 import type { ReadTimeResults } from 'reading-time'
 import DOMPurify from 'isomorphic-dompurify'
-import { marked } from 'marked'
-
 /**
  * 渲染 Markdown 内容
  * @param raw - 原始 markdown 字符串
@@ -16,12 +14,12 @@ export function renderMarkdown(raw: string, renderer: RendererAPI) {
     = renderer.parseFrontMatterAndContent(raw)
 
   // marked -> html
-  let html = marked.parse(markdownContent) as string
+  const html = renderer.render(markdownContent)
 
   // XSS 处理
-  html = DOMPurify.sanitize(html, { ADD_TAGS: [`mp-common-profile`] })
+  const sanitizedHtml = DOMPurify.sanitize(html, { ADD_TAGS: [`mp-common-profile`] })
 
-  return { html, readingTime }
+  return { html: sanitizedHtml, readingTime }
 }
 
 /**

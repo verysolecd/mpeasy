@@ -18,7 +18,7 @@
 <section>
   <!-- 格言 -->
   <p class="js_darkmode__1" 
-     style="-webkit-tap-highlight-color: transparent; margin-top: 10px; margin-bottom: 0; outline: 0; font-size: 10.5pt; font-family: DengXian; caret-color: #000; color: #000; letter-spacing: normal; text-align: right; visibility: visible; line-height: 1.5em;">
+     style="-webkit-tap-highlight-color: transparent; margin-top: 10px; margin-bottom: 0; outline: 0; font-size: 12.5px; font-family: DengXian; caret-color: #000; color: #000; letter-spacing: normal; text-align: right; visibility: visible; line-height: 1.5em;">
     <span style="font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', 'Microsoft YaHei', Arial, sans-serif; caret-color: #222; line-height: 29.75px; color: #fff; font-size: 15px; -webkit-tap-highlight-color: transparent; outline: 0; background-color: #000; visibility: visible; padding: 0 4px;">{{this}}</span>
   </p>
 

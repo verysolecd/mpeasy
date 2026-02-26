@@ -36,11 +36,8 @@ async function getCssRules(plugin: MPEasyPlugin): Promise<string> {
         }
     }
 
-    // 4. Inject Font Size Force Rule
-    // This ensures that the user's selected font size takes precedence and is marked !important
-    // satisfying the requirement to "inline the important tag" robustly.
-    const fontSize = styleSettings.fontSize || '16px';
-    css += `\n p, li, #mpeasy-container { font-size: ${fontSize} !important; } \n`;
+    // 4. Force reset mobile text size adjustment to prevent font scaling on mobile WeChat
+    css += `\n * { -webkit-text-size-adjust: 100% !important; } \n`;
 
     return css;
 }

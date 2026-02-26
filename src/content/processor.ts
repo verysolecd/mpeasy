@@ -183,7 +183,12 @@ export async function processContent(
         finalHtml = finalHtml.replace(/<pre([^>]*)><code([^>]*)>(.*?)<\/code><\/pre>/gis, (match, preAttrs, codeAttrs, content) => {
             const langMatch = (codeAttrs as string).match(/class="language-([^"]*)"/i);
             const lang = langMatch ? langMatch[1] : '';
-            return `<pre class="code-snippet__js" data-lang="${lang}">${content}</pre>`;
+
+            // Extract style from codeAttrs or preAttrs
+            const styleMatch = (codeAttrs as string).match(/style="([^"]*)"/i) || (preAttrs as string).match(/style="([^"]*)"/i);
+            const styleAttr = styleMatch ? `style="${styleMatch[1]}"` : '';
+
+            return `<pre class="code-snippet__js" data-lang="${lang}" ${styleAttr}>${content}</pre>`;
         });
     }
 

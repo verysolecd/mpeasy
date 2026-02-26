@@ -8,6 +8,7 @@ export interface RendererAPI {
   getOpts: () => IOpts
 
   /* —— Markdown 处理 —— */
+  render: (markdown: string) => string
   parseFrontMatterAndContent: (markdown: string) => {
     yamlData: Record<string, any>
     markdownContent: string

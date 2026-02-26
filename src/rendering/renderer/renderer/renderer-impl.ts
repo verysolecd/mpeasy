@@ -52,16 +52,13 @@ hljs.registerLanguage('md', markdown);
 hljs.registerLanguage('shell', shell);
 hljs.registerLanguage('sh', shell);
 hljs.registerLanguage('sql', sql);
-import { marked } from 'marked'
+import { Marked } from 'marked'
 import mermaid from 'mermaid'
 import readingTime from 'reading-time'
 import { markedAlert, markedFootnotes, markedPlantUML, markedRuby, markedSlider, markedToc, MDKatex } from '../extensions'
 import { getStyleString, escapeHtml } from '../utils'
 
-marked.setOptions({
-  breaks: true,
-})
-marked.use(markedSlider())
+// Global marked setup removed. Configuration is now handled per-renderer instance in initRenderer.
 
 function buildTheme({ theme: _theme, fonts, size, isUseIndent, isUseJustify, primaryColor }: IOpts): ThemeStyles {
   const theme = cloneDeep(_theme)
@@ -214,6 +211,10 @@ export function initRenderer(opts: IOpts): RendererAPI {
   const listOrderedStack: boolean[] = []
   const listCounters: number[] = []
 
+  const localMarked = new Marked({
+    breaks: true,
+  })
+
   function getOpts(): IOpts {
     return opts
   }
@@ -241,15 +242,10 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
   function setOptions(newOpts: Partial<IOpts>): void {
     opts = { ...opts, ...newOpts }
-    const oldStyle = JSON.stringify(styleMapping)
     styleMapping = buildTheme(opts)
-    const newStyle = JSON.stringify(styleMapping)
-    if (oldStyle !== newStyle) {
-      marked.use(markedAlert({ styles: styleMapping }))
-      marked.use(
-        MDKatex({ nonStandard: true }, styles(`inline_katex`, `;line-height: 1;`), styles(`block_katex`, `;text-align: center;`)),
-      )
-    }
+    // Note: Marked extensions are cumulative and cannot be easily updated.
+    // In this project's architecture, we rely on initRenderer being called 
+    // to create a fresh renderer when major settings change.
   }
 
   function buildReadingTime(readingTime: ReadTimeResults): string {
@@ -260,8 +256,8 @@ export function initRenderer(opts: IOpts): RendererAPI {
       return ``
     }
     return `
-      <blockquote ${styles(`blockquote`)}>
-        <p ${styles(`blockquote_p`)}>字数 ${readingTime?.words}，阅读大约需 ${Math.ceil(readingTime?.minutes)} 分钟</p>
+      <blockquote ${styles(`blockquote`, `;margin-top: 0; margin-bottom: 0;`)}>
+        <p ${styles(`blockquote_p`, `;font-size: 13px; margin-top: 0; margin-bottom: 0;`)}>字数 ${readingTime?.words}，阅读大约需 ${Math.ceil(readingTime?.minutes)} 分钟</p>
       </blockquote>
     `
   }
@@ -453,20 +449,23 @@ export function initRenderer(opts: IOpts): RendererAPI {
     },
   }
 
-  marked.use({ renderer })
-  marked.use(markedToc())
-  marked.use(markedSlider({ styles: styleMapping }))
-  marked.use(markedAlert({ styles: styleMapping }))
-  marked.use(
+  localMarked.use({ renderer })
+  localMarked.use(markedToc())
+  localMarked.use(markedSlider({ styles: styleMapping }))
+  localMarked.use(markedAlert({ styles: styleMapping }))
+  localMarked.use(
     MDKatex({ nonStandard: true }, styles(`inline_katex`, `;line-height: 1;`), styles(`block_katex`, `;text-align: center;`)),
   )
-  marked.use(markedFootnotes())
-  marked.use(markedPlantUML({
+  localMarked.use(markedFootnotes())
+  localMarked.use(markedPlantUML({
     inlineSvg: true, // 启用SVG内嵌，适用于微信公众号
   }))
-  marked.use(markedRuby())
+  localMarked.use(markedRuby())
 
   return {
+    render(markdown: string) {
+      return localMarked.parse(markdown) as string
+    },
     buildAddition,
     buildFootnotes,
     setOptions,

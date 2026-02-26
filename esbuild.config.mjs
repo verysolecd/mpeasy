@@ -1,6 +1,23 @@
 import esbuild from 'esbuild';
 import fs from 'fs/promises';
 import path from 'path';
+import { execSync } from 'child_process';
+
+/**
+ * 将文件或文件夹移至回收站 (Windows 专用方案)
+ * @param {string} targetPath 路径
+ */
+async function moveToTrash(targetPath) {
+    try {
+        const absolutePath = path.resolve(targetPath);
+        // 使用 PowerShell 的 Microsoft.VisualBasic.FileIO.FileSystem 将文件/目录移至回收站
+        const command = `powershell -Command "Add-Type -AssemblyName Microsoft.VisualBasic; if (Test-Path '${absolutePath}') { if (ls '${absolutePath}' -Directory) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory('${absolutePath}', 'OnlyErrorDialogs', 'SendToRecycleBin') } else { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('${absolutePath}', 'OnlyErrorDialogs', 'SendToRecycleBin') } }"`;
+        execSync(command);
+    } catch (err) {
+        // 如果文件不存在则忽略
+    }
+}
+
 
 // --- Configuration ---
 const config = JSON.parse(await fs.readFile('build-config.json', 'utf-8'));
@@ -10,7 +27,7 @@ const isProd = process.env.NODE_ENV === 'production';
 // --- Build ---
 try {
     console.log('[esbuild] Cleaning dist directory...');
-    await fs.rm('dist', { recursive: true, force: true });
+    await moveToTrash('dist');
     // First build to dist directory
     const buildConfig = {
         entryPoints: ['src/main.ts'],
@@ -99,9 +116,9 @@ try {
                     const stats = await fs.stat(itemPath);
                     
                     if (stats.isDirectory()) {
-                        await fs.rm(itemPath, { recursive: true, force: true });
+                        await moveToTrash(itemPath);
                     } else {
-                        await fs.rm(itemPath, { force: true });
+                        await moveToTrash(itemPath);
                     }
                 }
             }
