@@ -16,6 +16,47 @@ async function moveToTrash(paths) {
     }
 }
 
+/**
+ * 部署到目标路径下的 Mpe_dist 目录中
+ * @param {string} sourceFolder 源目录
+ * @param {string} rootTargetPath 根目标路径
+ */
+async function deployToTarget(sourceFolder, rootTargetPath) {
+    if (!rootTargetPath) {
+        console.log('[esbuild] No target path specified. Skipping deployment.');
+        return;
+    }
+    
+    // Mpe_dist 作为真正路径
+    const mpeDistPath = path.join(rootTargetPath, 'Mpe_dist');
+    console.log(`[esbuild] Deploying to ${mpeDistPath}...`);
+    
+    // 先清理目标目录
+    try {
+        await fs.access(mpeDistPath);
+        
+        // 读取目录内容
+        const items = await fs.readdir(mpeDistPath);
+        
+        // 删除每个子项，除了 data.json
+        for (const item of items) {
+            if (item !== 'data.json') {
+                const itemPath = path.join(mpeDistPath, item);
+                await moveToTrash(itemPath);
+            }
+        }
+    } catch {
+        // 目标目录不存在则跳过清理
+    }
+    
+    // 确保目标目录存在
+    await fs.mkdir(mpeDistPath, { recursive: true });
+    
+    // 从 sourceFolder 复制所有文件到 mpeDistPath
+    await fs.cp(sourceFolder, mpeDistPath, { recursive: true });
+    
+    console.log('[esbuild] Deployment completed successfully.');
+}
 
 // --- Configuration ---
 const config = JSON.parse(await fs.readFile('build-config.json', 'utf-8'));
@@ -97,43 +138,7 @@ try {
     }
 
     // Only proceed with deployment if build was successful
-    if (targetPath) {
-        console.log(`[esbuild] Deploying to ${targetPath}...`);
-        
-        // First clean the target directory
-        try {
-            await fs.access(targetPath);
-            
-            // Read directory contents
-            const items = await fs.readdir(targetPath);
-            
-            // Remove each item except data.json
-            for (const item of items) {
-                if (item !== 'data.json') {
-                    const itemPath = path.join(targetPath, item);
-                    const stats = await fs.stat(itemPath);
-                    
-                    if (stats.isDirectory()) {
-                        await moveToTrash(itemPath);
-                    } else {
-                        await moveToTrash(itemPath);
-                    }
-                }
-            }
-        } catch {
-            // Target directory does not exist, will create it
-        }
-        
-        // Ensure target directory exists
-        await fs.mkdir(targetPath, { recursive: true });
-        
-        // Copy all files from dist to target
-        await fs.cp('dist', targetPath, { recursive: true });
-        
-        console.log('[esbuild] Deployment completed successfully.');
-    } else {
-        console.log('[esbuild] No target path specified. Skipping deployment.');
-    }
+    await deployToTarget('dist', targetPath);
     
     console.log('[esbuild] Build process finished successfully.');
 } catch (e) {
