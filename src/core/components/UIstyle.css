@@ -1,0 +1,404 @@
+/* MPEasy styles will go here */
+
+.mpeasy-main-container {
+    display: flex;
+    height: 100%; /* Ensure it takes full height of its parent */
+    width: 100%; /* Ensure it takes full width */
+    position: relative; /* Add relative positioning for the toggle button */
+}
+
+.mpeasy-render-area {
+    flex-grow: 1; /* Takes up remaining space */
+    overflow-y: auto; /* Enable scrolling for content */
+    padding: 1em; /* Add some padding */
+    box-sizing: border-box; /* Include padding in width/height */
+    transition: width 0.3s ease-in-out; /* Add transition for smooth resizing */
+}
+
+.mpeasy-side-panel {
+    width: 300px; /* Fixed width for the side panel, adjusted for settings */
+    flex-shrink: 0; /* Prevent it from shrinking */
+    height: 100%;
+    overflow-y: auto; /* Enable scrolling for side panel content */
+    border-left: 1px solid var(--background-modifier-border); /* Visual separation */
+    box-sizing: border-box; /* Include padding in width/height */
+    background-color: var(--background-secondary); /* Slightly different background */
+    transition: width 0.3s ease-in-out; /* Smooth transition for collapsing */
+    overflow-x: hidden; /* Hide content when collapsing */
+}
+
+.mpeasy-side-panel.collapsed {
+    width: 0;
+    border-left: none;
+    padding: 0;
+}
+
+/* Toggle Button Styles */
+.mpeasy-side-panel-toggle-button {
+    position: absolute;
+    top: 50%;
+    left: calc(100% - 300px);
+    transform: translate(-100%, -50%); /* Position to the left of the separator */
+    z-index: 10;
+    width: 18px; /* Final width */
+    height: 60px; /* Final height */
+    background-color: #0abab5; /* Tiffany blue background */
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: left 0.3s ease-in-out, transform 0.3s ease-in-out, background-color 0.2s ease;
+    /* Polygon for a tall, thin trapezoid with rounded corners on the left */
+    clip-path: polygon(100% 0, 100% 100%, 33% 100%, 10% 95%, 0 85%, 0 15%, 10% 5%, 33% 0);
+}
+
+.mpeasy-side-panel-toggle-button:hover {
+    background-color: #09a8a3; /* Slightly darker Tiffany blue on hover */
+}
+
+.mpeasy-side-panel-toggle-button.collapsed {
+    left: 100%;
+    transform: translate(-100%, -50%); /* No rotation, just position adjustment */
+}
+
+.mpeasy-side-panel-toggle-button svg {
+    color: white; /* White icon for contrast */
+}
+
+/* 当窗口宽度小于768px时，隐藏侧边栏和按钮 */
+@media screen and (max-width: 768px) {
+    .mpeasy-side-panel {
+        display: none;
+    }
+    .mpeasy-side-panel-toggle-button {
+        display: none;
+    }
+    .mpeasy-render-area {
+        width: 100%;
+    }
+}
+
+.mpeasy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0.8em 0 2em 0; /* 上边距从2em调整为0.8em(0.4倍)，下边距保持2em */
+}
+
+.mpeasy-header h2 {
+    margin: 0;
+    color: #0abab5; /* 固定为蒂芙尼蓝色 */
+    text-align: center; /* 标题居中 */
+    flex-grow: 1; /* 使标题占据可用空间 */
+    font-size: 2em; /* 字体大小为2em */
+}
+
+.mpeasy-header-divider {
+    width: 95%; /* 占满宽度的88% */
+    height: 3px; /* 3px高度 */
+    margin: 0 auto; /* 居中显示 */
+    position: relative;
+}
+
+.mpeasy-header-divider::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(50% - 20px); /* 左侧线段，到中心点左侧30px处 */
+    height: 100%;
+    background: linear-gradient(to right, #0abab5, #0abab5) no-repeat left center;
+    background-size: 100% 3px;
+}
+
+.mpeasy-header-divider::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: calc(50% - 20px); /* 右侧线段，到中心点右侧30px处 */
+    height: 100%;
+    background: linear-gradient(to right, #0abab5, #0abab5) no-repeat right center;
+    background-size: 100% 3px;
+}
+
+.mpeasy-header-divider .divider-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px;
+    height: 6px;
+    background-color: #0abab5; /* 蒂芙尼蓝色点 */
+    border-radius: 50%; /* 圆形点 */
+}
+
+/* --- Side Panel View Styles (adapted from sty.css) --- */
+
+.side-panel-view-container {
+    padding: 15px;
+    height: 100%;
+}
+
+.side-panel-view-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.side-panel-view-form .side-panel-view-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.side-panel-view-form .side-panel-view-item-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.side-panel-view-form .side-panel-view-item-column label {
+    margin-bottom: 8px;
+}
+
+.side-panel-view-form label {
+    font-size: 0.9em;
+}
+
+.side-panel-view-form select,
+.side-panel-view-form input {
+    max-width: 60%;
+}
+
+/* Color Picker Styles */
+.color-preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.color-preset-item {
+    display: flex;
+    align-items: center;
+    padding: 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s ease-in-out;
+}
+
+.color-preset-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.color-preset-item.selected {
+    border-color: var(--text-accent);
+    background-color: var(--background-modifier-hover);
+}
+
+.color-preset-item .color-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.color-preset-item span {
+    font-size: 0.85em;
+}
+
+.custom-color-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.custom-color-picker {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    cursor: pointer;
+}
+
+.custom-color-picker::-webkit-color-swatch {
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.custom-color-input {
+    flex-grow: 1;
+    margin: 0 8px;
+    max-width: none !important; /* Override general input style */
+}
+
+/* --- End of Side Panel View Styles --- */
+
+/* Collapsible Section Styles */
+.collapsible-section {
+    margin-bottom: 10px;
+}
+
+.collapsible-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    text-align: left;
+    /* 添加斜45度蒂芙尼蓝线底纹，减少密度 */
+   background-image: repeating-linear-gradient(
+        45deg,
+        #0abab5,  /* 蒂芙尼蓝（线条颜色） */
+        #0abab5 5px,  /* 线条宽度（1px） */
+        transparent 1px,  /* 线条结束，开始透明间隔 */
+        transparent 1px  /* 间隔宽度（总周期8px） */
+    );
+    background-size: 100% 100%;
+    position: relative; /* 为文字遮罩层做准备 */
+}
+
+.collapsible-section:not(.collapsed) .collapsible-section-header {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.collapsible-section-header:hover {
+    background-color: #09a8a3; /* 悬停时稍微深一点的蒂芙尼蓝 */
+    border-color: #09a8a3;
+}
+
+.collapsible-section-icon {
+    transition: transform 0.2s ease-in-out;
+}
+
+.collapsible-section.collapsed .collapsible-section-icon::before {
+    content: '▶'; /* Right-pointing triangle for collapsed state */
+}
+
+.collapsible-section:not(.collapsed) .collapsible-section-icon::before {
+    content: '▼'; /* Down-pointing triangle for expanded state */
+}
+
+.collapsible-section-content {
+    padding: 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    margin-top: -1px;
+}
+
+/* Action Buttons in Side Panel */  
+.side-panel-view-actions {  
+    display: flex;  
+    width: 100%;  
+    gap: 10px;  
+    margin-bottom: 15px;  
+    position: relative;
+    z-index: 1; /* 降低层级避免遮挡窗口控件 */
+}  
+  
+.side-panel-view-actions button {  
+    flex: 1;  
+    padding: 8px 4px;  
+    font-size: 0.9em;  
+    background: transparent;
+    border: none;
+    outline: none; /* 移除焦点时的轮廓 */
+    box-shadow: none; /* 移除可能存在的阴影 */
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    appearance: none; /* 移除浏览器默认样式 */
+    -webkit-appearance: none; /* 兼容WebKit浏览器 */
+    -moz-appearance: none; /* 兼容Firefox浏览器 */
+}
+
+.side-panel-view-actions button:hover {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.side-panel-view-actions button:focus {
+    outline: none;
+    border: none;
+    box-shadow: none;
+}
+
+.button-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.button-content svg {
+    flex-shrink: 0;
+    color: #0abab5; /* 蒂芙尼蓝色 */
+    stroke-width: 2.5; /* 适当加粗SVG线 */
+}
+
+.button-tooltip {
+    position: absolute;
+    bottom: -30px;
+    background-color: #333;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 10; /* 提高层级避免被遮挡 */
+}
+
+.button-content:hover .button-tooltip {
+    opacity: 1;
+}
+
+/* 图片未找到样式 */
+.image-not-found {
+    border: 2px dashed #ff6b6b;
+    background-color: #ffeeee;
+    min-height: 50px;
+    min-width: 50px;
+    display: inline-block;
+    position: relative;
+}
+
+.image-not-found::after {
+    content: "⚠️ 图片未找到";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ff6b6b;
+    font-size: 12px;
+    white-space: nowrap;
+}

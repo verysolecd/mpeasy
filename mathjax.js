@@ -1,1 +1,0 @@
-(()=>{window.MathJax={tex:{inlineMath:[["$","$"],["(",")"]],displayMath:[["$$","$$"],["[","]"]]},svg:{fontCache:"global"}};(function(){var t=document.createElement("script");t.src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js",t.async=!0,document.head.appendChild(t)})();})();
